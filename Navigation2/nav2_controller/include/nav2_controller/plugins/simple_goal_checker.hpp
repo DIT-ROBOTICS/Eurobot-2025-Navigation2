@@ -73,6 +73,7 @@ public:
 
 protected:
   double xy_goal_tolerance_, yaw_goal_tolerance_;
+  int xy_debounce_counter_, yaw_debounce_counter_;
   bool stateful_, check_xy_;
   // Cached squared xy_goal_tolerance_
   double xy_goal_tolerance_sq_;
