@@ -165,7 +165,8 @@ void
 InflationLayer::onFootprintChanged()
 {
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
-  inscribed_radius_ = layered_costmap_->getInscribedRadius();
+  // inscribed_radius_ = layered_costmap_->getInscribedRadius();
+  inscribed_radius_ = 0.0;  // Modified to avoid using the inscribed radius
   cell_inflation_radius_ = cellDistance(inflation_radius_);
   computeCaches();
   need_reinflation_ = true;

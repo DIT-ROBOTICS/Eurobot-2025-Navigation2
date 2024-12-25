@@ -103,7 +103,10 @@ bool SimpleGoalChecker::isGoalReached(
     double dx = query_pose.position.x - goal_pose.position.x,
       dy = query_pose.position.y - goal_pose.position.y;
     if (dx * dx + dy * dy > xy_goal_tolerance_sq_) {
+      // xy_debounce_counter_ = 0;
       return false;
+    } else {
+      // xy_debounce_counter_++;
     }
     // We are within the window
     // If we are stateful, change the state.
@@ -115,6 +118,12 @@ bool SimpleGoalChecker::isGoalReached(
     tf2::getYaw(query_pose.orientation),
     tf2::getYaw(goal_pose.orientation));
   return fabs(dyaw) < yaw_goal_tolerance_;
+  // if (fabs(dyaw) > yaw_goal_tolerance_) {
+    // yaw_debounce_counter_ = 0;
+  // } else {
+    // yaw_debounce_counter_++;
+  // }
+  // return xy_debounce_counter_ > 5 && yaw_debounce_counter_ > 5;
 }
 
 bool SimpleGoalChecker::getTolerances(
