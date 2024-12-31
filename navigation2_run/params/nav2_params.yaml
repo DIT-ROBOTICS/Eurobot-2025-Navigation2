@@ -94,7 +94,7 @@ controller_server:
       yaw_goal_tolerance: 0.15
     # Custom controller parameters
     # FollowPath:
-    #   plugin: "custom_controller"::CustomController"
+      # plugin: "custom_controller"::CustomController"
     # PurePursuit parameters
     FollowPath:
       plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
@@ -161,7 +161,7 @@ global_costmap:
       trinary_costmap: false
       lethal_cost_threshold: 10
       unknown_cost_value: 255
-      plugins: ["static_layer", "inflation_layer"]
+      plugins: ["static_layer", "inflation_layer", "path_layer"]
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
         map_subscribe_transient_local: True
@@ -169,6 +169,8 @@ global_costmap:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 7.0
         inflation_radius: 0.1
+      path_layer:
+        plugin: "custom_path_costmap_plugin::PathLayer"
       always_send_full_costmap: True
 
 map_server:
