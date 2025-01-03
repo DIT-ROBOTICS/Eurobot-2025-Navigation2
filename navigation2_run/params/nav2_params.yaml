@@ -97,7 +97,7 @@ controller_server:
     #   plugin: "custom_controller"::CustomController"
     # PurePursuit parameters
     FollowPath:
-      plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
+      plugin: "custom_controller::CustomController"
       desired_linear_vel: 0.5
       lookahead_dist: 0.3
       min_lookahead_dist: 0.3
