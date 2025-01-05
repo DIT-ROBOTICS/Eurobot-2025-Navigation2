@@ -5,6 +5,12 @@
 	  </class>
 	</library>
 
+	<library path="nav2_run_behavior">
+		<class name="nav2_behaviors/Run" type="nav2_behaviors::Run" base_class_type="nav2_core::Behavior">
+			<description></description>
+		</class>
+	</library>
+
 	<library path="nav2_back_up_behavior">
 	  <class name="nav2_behaviors/BackUp" type="nav2_behaviors::BackUp" base_class_type="nav2_core::Behavior">
 	    <description></description>

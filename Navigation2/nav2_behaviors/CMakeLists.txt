@@ -55,6 +55,14 @@ ament_target_dependencies(nav2_spin_behavior
   ${dependencies}
 )
 
+add_library(nav2_run_behavior SHARED
+  plugins/run.cpp
+)
+
+ament_target_dependencies(nav2_run_behavior
+  ${dependencies}
+)
+
 add_library(nav2_wait_behavior SHARED
 plugins/wait.cpp
 )
@@ -113,6 +121,7 @@ rclcpp_components_register_nodes(${library_name} "behavior_server::BehaviorServe
 
 install(TARGETS ${library_name}
                 nav2_spin_behavior
+                nav2_run_behavior
                 nav2_wait_behavior
                 nav2_assisted_teleop_behavior
                 nav2_drive_on_heading_behavior
@@ -148,6 +157,7 @@ endif()
 ament_export_include_directories(include)
 ament_export_libraries(${library_name}
   nav2_spin_behavior
+  nav2_run_behavior
   nav2_wait_behavior
   nav2_assisted_teleop_behavior
   nav2_drive_on_heading_behavior
