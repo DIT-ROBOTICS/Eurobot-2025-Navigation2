@@ -6,35 +6,81 @@
 class RivalSimPub : public rclcpp::Node {
     public:
         RivalSimPub() : Node("rival_sim_pub") {
-            pub_ = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("/rival_pose", 10);
-            timer_ = this->create_wall_timer(std::chrono::milliseconds(1000), std::bind(&RivalSimPub::timer_callback, this));
+            pub_ = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("/rival_pose", 100);
+            timer_ = this->create_wall_timer(std::chrono::milliseconds(50), std::bind(&RivalSimPub::timer_callback, this));
         }   
 
     private:
         void timer_callback() {
-            auto message = geometry_msgs::msg::PoseWithCovarianceStamped();
+            trigger_once_cnt_--;
 
-            // header
-            message.header.stamp = this->now();
-            message.header.frame_id = "map";
+            if(trigger_once_cnt_ > 0) {
+                auto message = geometry_msgs::msg::PoseWithCovarianceStamped();
 
-            // position
-            message.pose.pose.position.x += move_x_;
-            message.pose.pose.position.y += move_y_;
-            message.pose.pose.position.z = 0.0;
+                // header
+                message.header.stamp = this->now();
+                message.header.frame_id = "map";
 
-            move_x_ += 0.1 * toggle_x_;
-            move_y_ += 0.1 * toggle_y_;
+                // position
+                message.pose.pose.position.x = 1.5;
+                message.pose.pose.position.y = 1.0;
 
-            if (move_x_ > 2.5 || move_x_ < 0.5) {
-                toggle_x_ *= -1;
+                pub_->publish(message);
+            } else {  
+                auto message = geometry_msgs::msg::PoseWithCovarianceStamped();
+
+                // header
+                message.header.stamp = this->now();
+                message.header.frame_id = "map";
+
+                // position
+                // Hardcoded moving rival
+                if (pause_) {
+                    cooldown_++;
+                    
+                    message.pose.pose.position.x = pause_pose_.pose.pose.position.x;
+                    message.pose.pose.position.y = pause_pose_.pose.pose.position.y;
+
+                    if (cooldown_ > 50) {
+                        pause_ = false;
+                        cooldown_ = 0;
+                    }
+
+                } else {
+                    message.pose.pose.position.x += move_x_;
+                    message.pose.pose.position.y += move_y_;
+
+                    // move_x_ += (0.01+float(rand()%5-2)/400.0) * toggle_x_;
+                    // move_y_ += (0.01+float(rand()%5-2)/400.0) * toggle_y_;
+
+                    move_x_ += 0.01 * toggle_x_;
+                    move_y_ += 0.01 * toggle_y_;
+                    // move_x_ += 0.0;
+                    // move_y_ += 0.0;
+
+                    if (move_x_ > 2.5 || move_x_ < 0.5) {
+                        toggle_x_ *= -1;
+                        pause_ = true;
+                        pause_pose_ = message;
+                    }
+                    if (move_y_ > 1.5 || move_y_ < 0.5) {
+                        toggle_y_ *= -1;
+                        pause_ = true;
+                        pause_pose_ = message;
+                    }
+                }
+
+                // Hardcoded wandering rival
+                // message.pose.pose.position.x = float(rand()%51-25)/200.0 + 1.5;
+                // message.pose.pose.position.y = float(rand()%51-25)/200.0 + 1.0;
+
+                // Hardcoded halted rival
+                message.pose.pose.position.x = float(rand()%5-2)/200.0 + 1.5;
+                message.pose.pose.position.y = float(rand()%5-2)/200.0 + 1.0;
+
+                // RCLCPP_INFO(this->get_logger(), "Publishing: x=%f, y=%f\n", message.pose.pose.position.x, message.pose.pose.position.y);
+                pub_->publish(message);
             }
-            if (move_y_ > 1.5 || move_y_ < 0.5) {
-                toggle_y_ *= -1;
-            }
-
-            RCLCPP_INFO(this->get_logger(), "Publishing: x=%f, y=%f, z=%f\n", message.pose.pose.position.x, message.pose.pose.position.y, message.pose.pose.position.z);
-            pub_->publish(message);
         }
 
         rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pub_;
@@ -43,6 +89,10 @@ class RivalSimPub : public rclcpp::Node {
         double move_y_ = 1.0;
         int toggle_x_ = 1;
         int toggle_y_ = 1;
+        bool pause_ = false;
+        int cooldown_ = 0;
+        int trigger_once_cnt_ = 50;
+        geometry_msgs::msg::PoseWithCovarianceStamped pause_pose_;
 };
 
 int main(int argc, char * argv[]) {
