@@ -8,6 +8,10 @@ class RivalSimPub : public rclcpp::Node {
         RivalSimPub() : Node("rival_sim_pub") {
             pub_ = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("/rival_pose", 100);
             timer_ = this->create_wall_timer(std::chrono::milliseconds(50), std::bind(&RivalSimPub::timer_callback, this));
+
+            // Get the rival mode -> 0: Halted, 1: Wandering, 2: Moving, 3: Moving with noise
+            declare_parameter("Rival_mode", rclcpp::ParameterValue(0));
+            this->get_parameter("Rival_mode", rival_mode_);
         }   
 
     private:
@@ -50,13 +54,15 @@ class RivalSimPub : public rclcpp::Node {
                     message.pose.pose.position.x += move_x_;
                     message.pose.pose.position.y += move_y_;
 
-                    // move_x_ += (0.01+float(rand()%5-2)/400.0) * toggle_x_;
-                    // move_y_ += (0.01+float(rand()%5-2)/400.0) * toggle_y_;
+                    if(rival_mode_ == 3) {
+                        move_x_ += (0.01+float(rand()%5-2)/400.0) * toggle_x_;
+                        move_y_ += (0.01+float(rand()%5-2)/400.0) * toggle_y_;
+                    }
 
-                    move_x_ += 0.01 * toggle_x_;
-                    move_y_ += 0.01 * toggle_y_;
-                    // move_x_ += 0.0;
-                    // move_y_ += 0.0;
+                    if(rival_mode_ == 2) {
+                        move_x_ += 0.01 * toggle_x_;
+                        move_y_ += 0.01 * toggle_y_;
+                    }
 
                     if (move_x_ > 2.5 || move_x_ < 0.5) {
                         toggle_x_ *= -1;
@@ -71,12 +77,16 @@ class RivalSimPub : public rclcpp::Node {
                 }
 
                 // Hardcoded wandering rival
-                // message.pose.pose.position.x = float(rand()%51-25)/200.0 + 1.5;
-                // message.pose.pose.position.y = float(rand()%51-25)/200.0 + 1.0;
+                if(rival_mode_ == 1) {
+                    message.pose.pose.position.x = float(rand()%51-25)/200.0 + 1.5;
+                    message.pose.pose.position.y = float(rand()%51-25)/200.0 + 1.0;
+                }
 
                 // Hardcoded halted rival
-                message.pose.pose.position.x = float(rand()%5-2)/200.0 + 1.5;
-                message.pose.pose.position.y = float(rand()%5-2)/200.0 + 1.0;
+                if(rival_mode_ == 0) {
+                    message.pose.pose.position.x = float(rand()%5-2)/200.0 + 1.5;
+                    message.pose.pose.position.y = float(rand()%5-2)/200.0 + 1.0;
+                }
 
                 // RCLCPP_INFO(this->get_logger(), "Publishing: x=%f, y=%f\n", message.pose.pose.position.x, message.pose.pose.position.y);
                 pub_->publish(message);
@@ -85,6 +95,7 @@ class RivalSimPub : public rclcpp::Node {
 
         rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pub_;
         rclcpp::TimerBase::SharedPtr timer_;
+        int rival_mode_ = 0;
         double move_x_ = 1.5;
         double move_y_ = 1.0;
         int toggle_x_ = 1;

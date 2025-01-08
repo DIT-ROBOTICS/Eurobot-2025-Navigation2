@@ -275,6 +275,27 @@ global_costmap:
         inflation_radius: 0.1
       path_layer:
         plugin: "custom_path_costmap_plugin::PathLayer"
+        enabled: True
+        model_size: 22
+        x_cov_threshold: 0.01
+        y_cov_threshold: 0.01
+        R_sq_threshold: 0.85
+        reset_timeout_threshold: 40
+        rival_inscribed_radius: 0.22
+        halted_inflation_radius: 0.4
+        wandering_inflation_radius: 0.5
+        moving_inflation_radius: 0.43
+        unknown_inflation_radius: 0.55
+        halted_cost_scaling_factor: 10.0
+        wandering_cost_scaling_factor: 3.0
+        moving_cost_scaling_factor: 11.0
+        unknown_cost_scaling_factor: 3.0
+        max_extend_length: 0.6
+        cov_range_max: 0.05385164807134504  # sqrt(0.0029)
+        cov_range_min: 0.01414213562373095  # sqrt(0.0002)
+        inscribed_radius_rate: 0.99
+        inflation_radius_rate: 1.005
+        debug_mode: 2                       # 0: off, 1: Print rival state change only, 2: Print rival state change and statistics, 3: Print everything continuously
       always_send_full_costmap: True
 
 map_server:

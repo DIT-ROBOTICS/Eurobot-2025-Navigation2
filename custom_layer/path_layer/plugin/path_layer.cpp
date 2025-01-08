@@ -11,15 +11,84 @@ namespace custom_path_costmap_plugin {
         enabled_ = true;
         current_ = true;
 
+        // Declare the parameters
+        declareParameter("enabled", rclcpp::ParameterValue(true));
+
+        declareParameter("model_size", rclcpp::ParameterValue(22));
+
+        declareParameter("x_cov_threshold", rclcpp::ParameterValue(0.01));
+        declareParameter("y_cov_threshold", rclcpp::ParameterValue(0.01));
+        declareParameter("R_sq_threshold", rclcpp::ParameterValue(0.85));
+
+        declareParameter("reset_timeout_threshold", rclcpp::ParameterValue(40));
+
+        declareParameter("rival_inscribed_radius_", rclcpp::ParameterValue(0.22));
+
+        declareParameter("halted_inflation_radius_", rclcpp::ParameterValue(0.4));
+        declareParameter("wandering_inflation_radius_", rclcpp::ParameterValue(0.5));
+        declareParameter("moving_inflation_radius_", rclcpp::ParameterValue(0.43));
+        declareParameter("unknown_inflation_radius_", rclcpp::ParameterValue(0.55));
+
+        declareParameter("halted_cost_scaling_factor_", rclcpp::ParameterValue(10.0));
+        declareParameter("wandering_cost_scaling_factor_", rclcpp::ParameterValue(3.0));
+        declareParameter("moving_cost_scaling_factor_", rclcpp::ParameterValue(11.0));
+        declareParameter("unknown_cost_scaling_factor_", rclcpp::ParameterValue(3.0));
+
+        declareParameter("max_extend_length_", rclcpp::ParameterValue(0.5));
+
+        declareParameter("cov_range_max_", rclcpp::ParameterValue(sqrt(0.0029)));
+        declareParameter("cov_range_min_", rclcpp::ParameterValue(sqrt(0.0002)));
+
+        declareParameter("inscribed_radius_rate_", rclcpp::ParameterValue(0.99));
+        declareParameter("inflation_radius_rate_", rclcpp::ParameterValue(1.005));
+
+        declareParameter("debug_mode", rclcpp::ParameterValue(0));
+
         // Get the node
         auto node = node_.lock();
         if (!node) {
             throw std::runtime_error{"Failed to lock node"};
         }
-        
+    
+        // Get the parameters
+        node->get_parameter(name_ + "." + "enabled", enabled_);
+
+        node->get_parameter(name_ + "." + "model_size", model_size_);
+
+        node->get_parameter(name_ + "." + "x_cov_threshold", x_cov_threshold_);
+        node->get_parameter(name_ + "." + "y_cov_threshold", y_cov_threshold_);
+        node->get_parameter(name_ + "." + "R_sq_threshold", R_sq_threshold_);
+
+        node->get_parameter(name_ + "." + "reset_timeout_threshold", reset_timeout_threshold_);
+
+        node->get_parameter(name_ + "." + "rival_inscribed_radius_", rival_inscribed_radius_);
+
+        node->get_parameter(name_ + "." + "halted_inflation_radius_", halted_inflation_radius_);
+        node->get_parameter(name_ + "." + "wandering_inflation_radius_", wandering_inflation_radius_);
+        node->get_parameter(name_ + "." + "moving_inflation_radius_", moving_inflation_radius_);
+        node->get_parameter(name_ + "." + "unknown_inflation_radius_", unknown_inflation_radius_);
+
+        node->get_parameter(name_ + "." + "halted_cost_scaling_factor_", halted_cost_scaling_factor_);
+        node->get_parameter(name_ + "." + "wandering_cost_scaling_factor_", wandering_cost_scaling_factor_);
+        node->get_parameter(name_ + "." + "moving_cost_scaling_factor_", moving_cost_scaling_factor_);
+        node->get_parameter(name_ + "." + "unknown_cost_scaling_factor_", unknown_cost_scaling_factor_);
+
+        node->get_parameter(name_ + "." + "max_extend_length_", max_extend_length_);
+
+        node->get_parameter(name_ + "." + "cov_range_max_", cov_range_max_);
+        node->get_parameter(name_ + "." + "cov_range_min_", cov_range_min_);
+
+        node->get_parameter(name_ + "." + "inscribed_radius_rate_", inscribed_radius_rate_);
+        node->get_parameter(name_ + "." + "inflation_radius_rate_", inflation_radius_rate_);
+
+        node->get_parameter(name_ + "." + "debug_mode", debug_mode_);
+
         // Subscribe to the rival's pose
         rival_pose_sub_ = node->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
             "/rival_pose", 100, std::bind(&PathLayer::rivalPoseCallback, this, std::placeholders::_1));
+
+        // Initialize the queue
+        rival_path_.init(model_size_);
     }
 
     void PathLayer::updateBounds(
@@ -103,7 +172,7 @@ namespace custom_path_costmap_plugin {
 
     void PathLayer::PredictRivalPath(){
         // Debug
-        PrintRivalState();
+        if(debug_mode_ == 1 || debug_mode_ == 2 || debug_mode_ == 3)    PrintRivalState();
 
         // Pedict the rival's state
         UpdateStatistics();
@@ -183,9 +252,11 @@ namespace custom_path_costmap_plugin {
             R_sq_ = 1 - SSres_ / SStot_;
 
         } else {
-            RCLCPP_WARN(
-                rclcpp::get_logger("PathLayer"), 
-                "Not enough data for statistics calculation");
+            if(debug_mode_ == 3) {
+                RCLCPP_WARN(
+                    rclcpp::get_logger("PathLayer"), 
+                    "Not enough data for statistics calculation");
+            }
             return;
         }
     }
@@ -245,8 +316,8 @@ namespace custom_path_costmap_plugin {
             }
 
             // Decrease the InscribedRadius
-            InscribedRadius *= 0.99;
-            InflationRadius *= 1.005;
+            InscribedRadius *= inscribed_radius_rate_;
+            InflationRadius *= inflation_radius_rate_;
         }
     }
 
@@ -257,19 +328,20 @@ namespace custom_path_costmap_plugin {
         // Expand the costmap based on the rival's state
         switch (rival_state_) {
             case RivalState::HALTED:
-                ExpandPointWithCircle(x, y, nav2_costmap_2d::LETHAL_OBSTACLE, 0.4, 10.0, 0.22);
+                ExpandPointWithCircle(x, y, nav2_costmap_2d::LETHAL_OBSTACLE, halted_inflation_radius_, halted_cost_scaling_factor_, rival_inscribed_radius_);
                 break;
             
-            case RivalState::MOVING:
-                ExpandLine(x, y, nav2_costmap_2d::LETHAL_OBSTACLE, 0.43, 11.0, 0.22, 0.5*std::min(1.0, hypot(rival_x_cov_, rival_y_cov_)/(sqrt(0.0029)-sqrt(0.0002))));
+            case RivalState::WANDERING:
+                ExpandPointWithCircle(x, y, nav2_costmap_2d::LETHAL_OBSTACLE, wandering_inflation_radius_, wandering_cost_scaling_factor_, rival_inscribed_radius_);
                 break;
 
-            case RivalState::WANDERING:
-                ExpandPointWithCircle(x, y, nav2_costmap_2d::LETHAL_OBSTACLE, 0.5, 3.0, 0.22);
+            case RivalState::MOVING:
+                ExpandLine(x, y, nav2_costmap_2d::LETHAL_OBSTACLE, moving_inflation_radius_, moving_cost_scaling_factor_, rival_inscribed_radius_, 
+                    max_extend_length_*std::min(1.0, hypot(rival_x_cov_, rival_y_cov_)/(cov_range_max_-cov_range_min_)));
                 break;
             
             case RivalState::UNKNOWN:
-                ExpandPointWithCircle(x, y, nav2_costmap_2d::LETHAL_OBSTACLE, 0.55, 3.0, 0.22);
+                ExpandPointWithCircle(x, y, nav2_costmap_2d::LETHAL_OBSTACLE, unknown_inflation_radius_, unknown_cost_scaling_factor_, rival_inscribed_radius_);
                 break;
             
             default:
@@ -316,16 +388,20 @@ namespace custom_path_costmap_plugin {
         rival_y_sq_sum_ += rival_y_ * rival_y_;
         rival_xy_sum_ += rival_x_ * rival_y_;
 
-        // RCLCPP_INFO(
-        //         rclcpp::get_logger("PathLayer"), 
-        //         "Statistics: x_mean=%f, y_mean=%f, x_cov=%f, y_cov=%f, R_sq=%f", rival_x_mean_, rival_y_mean_, rival_x_cov_, rival_y_cov_, R_sq_);
+        if(debug_mode_ == 3) {
+            RCLCPP_INFO(
+                rclcpp::get_logger("PathLayer"), 
+                "Statistics: x_mean=%f, y_mean=%f, x_cov=%f, y_cov=%f, R_sq=%f", rival_x_mean_, rival_y_mean_, rival_x_cov_, rival_y_cov_, R_sq_);
+        }
     }
 
     void PathLayer::PrintRivalState() {
         if(rival_state_ != rival_state_prev_) {
-            // RCLCPP_INFO(
-            //     rclcpp::get_logger("PathLayer"), 
-            //     "Statistics: x_mean=%f, y_mean=%f, x_var=%f, y_var=%f, x_cov=%f, y_cov=%f, R_sq=%f", rival_x_mean_, rival_y_mean_, rival_x_var_, rival_y_var_, rival_x_cov_, rival_y_cov_, R_sq_);
+            if(debug_mode_ == 2) {
+                RCLCPP_INFO(
+                    rclcpp::get_logger("PathLayer"), 
+                    "Statistics: x_mean=%f, y_mean=%f, x_var=%f, y_var=%f, x_cov=%f, y_cov=%f, R_sq=%f", rival_x_mean_, rival_y_mean_, rival_x_var_, rival_y_var_, rival_x_cov_, rival_y_cov_, R_sq_);
+            }
 
             switch (rival_state_) {
                 case RivalState::HALTED:

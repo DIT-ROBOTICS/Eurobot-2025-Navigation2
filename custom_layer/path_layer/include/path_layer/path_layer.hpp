@@ -11,15 +11,18 @@
 // Circular Queue for rival's path      |front| ____ <--- ____ |rear|
 class CircularQueue {
     public:
-        CircularQueue(int size) : size_(size) {
+        CircularQueue() {}
+        ~CircularQueue() {
+            delete[] queue_;
+        }
+
+        void init(int size) {
+            size_ = size;
+                
             queue_ = new std::pair<double, double>[size_];
             for(int i = 0; i < size_; i++) {
                 queue_[i] = std::make_pair(0.0, 0.0);
             }
-        }
-
-        ~CircularQueue() {
-            delete[] queue_;
         }
 
         void push(std::pair<double, double> element) {
@@ -48,7 +51,7 @@ class CircularQueue {
         }
 
     private:
-        int size_;
+        int size_ = 22;
         int front_ = 0;
         int rear_ = size_ - 1;
         bool first_cycle_ = true;
@@ -58,10 +61,10 @@ class CircularQueue {
 namespace custom_path_costmap_plugin {
     class PathLayer : public nav2_costmap_2d::CostmapLayer {
         public:
-            PathLayer() : rival_path_(model_size_) {};
+            PathLayer() {}
             ~PathLayer() {
                 rival_path_.~CircularQueue();
-            };
+            }
 
             // Functions from Layers
             void onInitialize() override;
@@ -75,12 +78,26 @@ namespace custom_path_costmap_plugin {
             void deactivate() override;
 
         private:
+            // Model size for rival's statistics
+            int model_size_ = 22;
+            // Thresholds for evaluating rival's state and prediction
+            double x_cov_threshold_, y_cov_threshold_;
+            double R_sq_threshold_;
+            // Timeout for reset the costmap
+            int reset_timeout_threshold_;
+            // Parameters for expansion
+            double rival_inscribed_radius_;
+            double halted_inflation_radius_, wandering_inflation_radius_, moving_inflation_radius_, unknown_inflation_radius_;
+            double halted_cost_scaling_factor_, wandering_cost_scaling_factor_, moving_cost_scaling_factor_, unknown_cost_scaling_factor_;
+            double max_extend_length_, cov_range_max_, cov_range_min_;
+            double inscribed_radius_rate_, inflation_radius_rate_;
+            // Debug mode
+            int debug_mode_;    // 0: off, 1: Print rival state change only, 2: Print rival state change and statistics, 3: Print everything continuously
+
             // Variables for boundaries
             double min_x_ = 0.0, min_y_ = 0.0, max_x_ = 3.0, max_y_ = 2.0;
 
             // Variables for statistics calculation
-            int model_size_ = 22;
-
             double rival_x_sum_ = 0.0, rival_y_sum_ = 0.0;
             double rival_x_sq_sum_ = 0.0, rival_y_sq_sum_ = 0.0;
             double rival_xy_sum_ = 0.0;
@@ -92,11 +109,7 @@ namespace custom_path_costmap_plugin {
 
             double SSres_ = 0.0, SStot_ = 0.0;
             double R_sq_ = 0.0;
-
-            // Thresholds for evaluation
-            double x_cov_threshold_ = 0.01, y_cov_threshold_ = 0.01;
-            double R_sq_threshold_ = 0.85;
-
+            
             // Variables for rival's pose
             double rival_x_ = 0.0, rival_y_ = 0.0;
             CircularQueue rival_path_;
@@ -131,7 +144,6 @@ namespace custom_path_costmap_plugin {
 
             // Timeout for reset the costmap
             int reset_timeout_ = 0;
-            int reset_timeout_threshold_ = 40;
 
             // DEBUG
             RivalState rival_state_prev_ = RivalState::UNKNOWN;
