@@ -1,11 +1,11 @@
-#include "path_layer/path_layer.hpp"
+#include "rival_layer/rival_layer.hpp"
 
 namespace custom_path_costmap_plugin { 
-    // PathLayer class
-    void PathLayer::onInitialize() {
+    // RivalLayer class
+    void RivalLayer::onInitialize() {
         RCLCPP_INFO(
-            rclcpp::get_logger("PathLayer"), 
-            "Initializing PathLayer");
+            rclcpp::get_logger("RivalLayer"), 
+            "Initializing RivalLayer");
 
         // Initialize the layer
         enabled_ = true;
@@ -85,13 +85,13 @@ namespace custom_path_costmap_plugin {
 
         // Subscribe to the rival's pose
         rival_pose_sub_ = node->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-            "/rival_pose", 100, std::bind(&PathLayer::rivalPoseCallback, this, std::placeholders::_1));
+            "/rival_pose", 100, std::bind(&RivalLayer::rivalPoseCallback, this, std::placeholders::_1));
 
         // Initialize the queue
         rival_path_.init(model_size_);
     }
 
-    void PathLayer::updateBounds(
+    void RivalLayer::updateBounds(
         double /*robot_x*/, double /*robot_y*/, double /*robot_yaw*/, 
         double *min_x, double *min_y, double *max_x, double *max_y) {
 
@@ -102,7 +102,7 @@ namespace custom_path_costmap_plugin {
         *max_y = std::max(max_y_, *max_y);
     }
 
-    void PathLayer::updateCosts(
+    void RivalLayer::updateCosts(
         nav2_costmap_2d::Costmap2D &master_grid, 
         int /*min_i*/, int /*min_j*/, int /*max_i*/, int /*max_j*/) {
 
@@ -127,11 +127,11 @@ namespace custom_path_costmap_plugin {
         }
     }
 
-    bool PathLayer::isClearable() {
+    bool RivalLayer::isClearable() {
         return true;
     }
 
-    void PathLayer::reset() {
+    void RivalLayer::reset() {
         enabled_ = true;
         current_ = true;
 
@@ -166,11 +166,11 @@ namespace custom_path_costmap_plugin {
         reset_timeout_ = 0;
 
         RCLCPP_WARN(
-            rclcpp::get_logger("PathLayer"), 
-            "Resetting PathLayer");
+            rclcpp::get_logger("RivalLayer"), 
+            "Resetting RivalLayer");
     }
 
-    void PathLayer::PredictRivalPath(){
+    void RivalLayer::PredictRivalPath(){
         // Debug
         if(debug_mode_ == 1 || debug_mode_ == 2 || debug_mode_ == 3)    PrintRivalState();
 
@@ -194,11 +194,11 @@ namespace custom_path_costmap_plugin {
         }
     }
 
-    double PathLayer::GetRegressionPrediction(double x) {
+    double RivalLayer::GetRegressionPrediction(double x) {
         return regression_slope_ * x + regression_intercept_;
     }
 
-    void PathLayer::UpdateStatistics() {
+    void RivalLayer::UpdateStatistics() {
         // Calculate the rival's statistics
         if(rival_path_.isFull()) {
             // Calculate the CoV
@@ -225,7 +225,7 @@ namespace custom_path_costmap_plugin {
             // Check if the regression line is not vertical
             if(fabs(model_size_ * rival_x_sq_sum_ - rival_x_sum_ * rival_x_sum_) < 1e-6) {
                 // RCLCPP_WARN(
-                //     rclcpp::get_logger("PathLayer"), 
+                //     rclcpp::get_logger("RivalLayer"), 
                 //     "Regression line is vertical, using  approximation !!!");
 
                 regression_slope_ = 1e6;
@@ -254,14 +254,14 @@ namespace custom_path_costmap_plugin {
         } else {
             if(debug_mode_ == 3) {
                 RCLCPP_WARN(
-                    rclcpp::get_logger("PathLayer"), 
+                    rclcpp::get_logger("RivalLayer"), 
                     "Not enough data for statistics calculation");
             }
             return;
         }
     }
 
-    void PathLayer::ExpandPointWithCircle(double x, double y, double MaxCost, double InflationRadius, double CostScalingFactor, double InscribedRadius) {
+    void RivalLayer::ExpandPointWithCircle(double x, double y, double MaxCost, double InflationRadius, double CostScalingFactor, double InscribedRadius) {
         double MaxX = x + InflationRadius;
         double MinX = x - InflationRadius;
         double MaxY;
@@ -298,7 +298,7 @@ namespace custom_path_costmap_plugin {
         }
     }
 
-    void PathLayer::ExpandLine(double x, double y, double MaxCost, double InflationRadius, double CostScalingFactor, double InscribedRadius, double ExtendLength) {
+    void RivalLayer::ExpandLine(double x, double y, double MaxCost, double InflationRadius, double CostScalingFactor, double InscribedRadius, double ExtendLength) {
         double mark_x = 0, mark_y = 0;
         unsigned int mx, my;
         int goal_steps = ExtendLength / resolution_;
@@ -321,7 +321,7 @@ namespace custom_path_costmap_plugin {
         }
     }
 
-    void PathLayer::FieldExpansion(double x, double y) {
+    void RivalLayer::FieldExpansion(double x, double y) {
         // Update Prediction
         PredictRivalPath();
 
@@ -346,26 +346,26 @@ namespace custom_path_costmap_plugin {
             
             default:
                 RCLCPP_WARN(
-                    rclcpp::get_logger("PathLayer"), 
+                    rclcpp::get_logger("RivalLayer"), 
                     "Unknown rival state");
                 break;
         }
     }
 
     // Subscribe to the rival's pose
-    void PathLayer::activate() {
+    void RivalLayer::activate() {
         RCLCPP_INFO(
-            rclcpp::get_logger("PathLayer"), 
-            "Activating PathLayer");
+            rclcpp::get_logger("RivalLayer"), 
+            "Activating RivalLayer");
     }
 
-    void PathLayer::deactivate() {
+    void RivalLayer::deactivate() {
         RCLCPP_INFO(
-            rclcpp::get_logger("PathLayer"), 
-            "Deactivating PathLayer");
+            rclcpp::get_logger("RivalLayer"), 
+            "Deactivating RivalLayer");
     }
 
-    void PathLayer::rivalPoseCallback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr rival_pose) {
+    void RivalLayer::rivalPoseCallback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr rival_pose) {
         // Store the rival's pose
         rival_x_ = rival_pose->pose.pose.position.x;
         rival_y_ = rival_pose->pose.pose.position.y;
@@ -390,47 +390,47 @@ namespace custom_path_costmap_plugin {
 
         if(debug_mode_ == 3) {
             RCLCPP_INFO(
-                rclcpp::get_logger("PathLayer"), 
+                rclcpp::get_logger("RivalLayer"), 
                 "Statistics: x_mean=%f, y_mean=%f, x_cov=%f, y_cov=%f, R_sq=%f", rival_x_mean_, rival_y_mean_, rival_x_cov_, rival_y_cov_, R_sq_);
         }
     }
 
-    void PathLayer::PrintRivalState() {
+    void RivalLayer::PrintRivalState() {
         if(rival_state_ != rival_state_prev_) {
             if(debug_mode_ == 2) {
                 RCLCPP_INFO(
-                    rclcpp::get_logger("PathLayer"), 
+                    rclcpp::get_logger("RivalLayer"), 
                     "Statistics: x_mean=%f, y_mean=%f, x_var=%f, y_var=%f, x_cov=%f, y_cov=%f, R_sq=%f", rival_x_mean_, rival_y_mean_, rival_x_var_, rival_y_var_, rival_x_cov_, rival_y_cov_, R_sq_);
             }
 
             switch (rival_state_) {
                 case RivalState::HALTED:
                     RCLCPP_INFO(
-                        rclcpp::get_logger("PathLayer"), 
+                        rclcpp::get_logger("RivalLayer"), 
                         "Rival is HALTED");
                     break;
 
                 case RivalState::WANDERING:
                     RCLCPP_INFO(
-                        rclcpp::get_logger("PathLayer"), 
+                        rclcpp::get_logger("RivalLayer"), 
                         "Rival is WANDERING");
                     break;
                 
                 case RivalState::MOVING:
                     RCLCPP_INFO(
-                        rclcpp::get_logger("PathLayer"), 
+                        rclcpp::get_logger("RivalLayer"), 
                         "Rival is MOVING");
                     break;
 
                 case RivalState::UNKNOWN:
                     RCLCPP_INFO(
-                        rclcpp::get_logger("PathLayer"), 
+                        rclcpp::get_logger("RivalLayer"), 
                         "Rival state is UNKNOWN");
                     break;
                 
                 default:
                     RCLCPP_WARN(
-                        rclcpp::get_logger("PathLayer"), 
+                        rclcpp::get_logger("RivalLayer"), 
                         "Unknown rival state");
                     break;
             }
@@ -441,4 +441,4 @@ namespace custom_path_costmap_plugin {
 }   // namespace custom_path_costmap_plugin
 
 #include "pluginlib/class_list_macros.hpp"
-PLUGINLIB_EXPORT_CLASS(custom_path_costmap_plugin::PathLayer, nav2_costmap_2d::Layer)
+PLUGINLIB_EXPORT_CLASS(custom_path_costmap_plugin::RivalLayer, nav2_costmap_2d::Layer)

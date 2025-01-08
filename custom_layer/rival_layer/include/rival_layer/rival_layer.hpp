@@ -1,5 +1,5 @@
-#ifndef PATH_LAYER_HPP_
-#define PATH_LAYER_HPP_
+#ifndef RIVAL_LAYER_HPP_
+#define RIVAL_LAYER_HPP_
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_layer.hpp"
@@ -59,10 +59,10 @@ class CircularQueue {
 };
 
 namespace custom_path_costmap_plugin {
-    class PathLayer : public nav2_costmap_2d::CostmapLayer {
+    class RivalLayer : public nav2_costmap_2d::CostmapLayer {
         public:
-            PathLayer() {}
-            ~PathLayer() {
+            RivalLayer() {}
+            ~RivalLayer() {
                 rival_path_.~CircularQueue();
             }
 
@@ -151,4 +151,4 @@ namespace custom_path_costmap_plugin {
     };
 }
 
-#endif  // PATH_LAYER_HPP_
+#endif  // RIVAL_LAYER_HPP_

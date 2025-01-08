@@ -1,0 +1,5 @@
+<library path="rival_layer">
+    <class type="custom_path_costmap_plugin::RivalLayer" base_class_type="nav2_costmap_2d::Layer">
+        <description>This layer provides a custom costmap for rival prediction</description>
+    </class>
+</library>

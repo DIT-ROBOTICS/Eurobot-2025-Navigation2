@@ -1,5 +1,0 @@
-<library path="path_layer">
-    <class type="custom_path_costmap_plugin::PathLayer" base_class_type="nav2_costmap_2d::Layer">
-        <description>This layer provides a custom costmap for rival path velocity prediction</description>
-    </class>
-</library>

@@ -228,27 +228,48 @@ controller_server:
 local_costmap:
   local_costmap:
     ros__parameters:
-      update_frequency: 5.0
-      publish_frequency: 2.0
+      update_frequency: 20.0
+      publish_frequency: 20.0
       global_frame: odom
       robot_base_frame: base_link
       use_sim_time: False
-      rolling_window: true
+      rolling_window: False
       width: 3
-      height: 3
+      height: 2
       resolution: 0.01
-      robot_radius: 0.144
+      robot_radius: 0.22
       # plugins: ["static_layer", "inflation_layer"]
-      plugins: ["static_layer"]
+      plugins: ["static_layer", "rival_layer"]
+      static_layer:
+        plugin: "nav2_costmap_2d::StaticLayer"
+        map_subscribe_transient_local: True
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 0.1
         inflation_radius: 0.1
-      static_layer:
-        plugin: "nav2_costmap_2d::StaticLayer"
-        map_subscribe_transient_local: True
-      path_layer:
-        plugin: "custom_path_costmap_plugin::PathLayer"
+      rival_layer:
+        plugin: "custom_path_costmap_plugin::RivalLayer"
+        enabled: True
+        model_size: 22
+        x_cov_threshold: 0.01
+        y_cov_threshold: 0.01
+        R_sq_threshold: 0.85
+        reset_timeout_threshold: 40
+        rival_inscribed_radius: 0.22
+        halted_inflation_radius: 0.4
+        wandering_inflation_radius: 0.5
+        moving_inflation_radius: 0.43
+        unknown_inflation_radius: 0.55
+        halted_cost_scaling_factor: 10.0
+        wandering_cost_scaling_factor: 3.0
+        moving_cost_scaling_factor: 11.0
+        unknown_cost_scaling_factor: 3.0
+        max_extend_length: 0.6
+        cov_range_max: 0.05385164807134504  # sqrt(0.0029)
+        cov_range_min: 0.01414213562373095  # sqrt(0.0002)
+        inscribed_radius_rate: 0.99
+        inflation_radius_rate: 1.005
+        debug_mode: 2                       # 0: off, 1: Print rival state change only, 2: Print rival state change and statistics, 3: Print everything continuously
       always_send_full_costmap: True
 
 global_costmap:
@@ -259,13 +280,13 @@ global_costmap:
       global_frame: map
       robot_base_frame: base_link
       use_sim_time: False
-      robot_radius: 0.144
+      robot_radius: 0.22
       resolution: 0.01
       track_unknown_space: false
       trinary_costmap: false
       lethal_cost_threshold: 10
       unknown_cost_value: 255
-      plugins: ["static_layer", "inflation_layer", "path_layer"]
+      plugins: ["static_layer", "inflation_layer", "rival_layer"]
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
         map_subscribe_transient_local: True
@@ -273,8 +294,8 @@ global_costmap:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 7.0
         inflation_radius: 0.1
-      path_layer:
-        plugin: "custom_path_costmap_plugin::PathLayer"
+      rival_layer:
+        plugin: "custom_path_costmap_plugin::RivalLayer"
         enabled: True
         model_size: 22
         x_cov_threshold: 0.01
