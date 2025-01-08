@@ -71,9 +71,11 @@ bt_navigator_navigate_to_pose_rclcpp_node:
 controller_server:
   ros__parameters:
     use_sim_time: False
+    holonomic: true
+    use_omnidirectional_robot: true
     controller_frequency: 20.0
     min_x_velocity_threshold: 0.001
-    min_y_velocity_threshold: 0.5
+    min_y_velocity_threshold: 0.001
     min_theta_velocity_threshold: 0.001
     failure_tolerance: 0.2
     progress_checker_plugin: "progress_checker"
@@ -90,7 +92,7 @@ controller_server:
     percise_goal_checker:
       stateful: True
       plugin: "nav2_controller::SimpleGoalChecker"
-      xy_goal_tolerance: 0.01
+      xy_goal_tolerance: 0.05
       yaw_goal_tolerance: 0.15
     # Custom controller parameters
     # FollowPath:
@@ -99,7 +101,7 @@ controller_server:
     FollowPath:
       plugin: "custom_controller::CustomController"
       desired_linear_vel: 0.5
-      lookahead_dist: 0.3
+      lookahead_dist: 0.15
       min_lookahead_dist: 0.3
       max_lookahead_dist: 0.9
       lookahead_time: 1.5
@@ -122,6 +124,8 @@ controller_server:
       max_angular_accel: 3.2
       max_robot_pose_search_dist: 10.0
       use_interpolation: false
+      look_ahead_distance: 0.2
+      max_linear_vel: 0.4
 
 local_costmap:
   local_costmap:
@@ -182,6 +186,7 @@ planner_server:
   ros__parameters:
     expected_planner_frequency: 20.0
     use_sim_time: False
+    use_omnidirectional_robot: true
     planner_plugins: ["GridBased"]
     GridBased:
       plugin: "nav2_navfn_planner/NavfnPlanner"
@@ -192,6 +197,7 @@ planner_server:
 smoother_server:
   ros__parameters:
     use_sim_time: False
+    # smoother_plugins: [""]
     smoother_plugins: ["simple_smoother"]
     simple_smoother:
       plugin: "nav2_smoother::SimpleSmoother"
@@ -245,10 +251,10 @@ velocity_smoother:
     smoothing_frequency: 20.0
     scale_velocities: False
     feedback: "OPEN_LOOP"
-    max_velocity: [0.26, 0.0, 1.0]
-    min_velocity: [-0.26, 0.0, -1.0]
-    max_accel: [2.5, 0.0, 3.2]
-    max_decel: [-2.5, 0.0, -3.2]
+    max_velocity: [0.5, 0.5, 0.5]
+    min_velocity: [-0.5, -0.5, -0.5]
+    max_accel: [1.0, 1.0, 3.2]
+    max_decel: [-1.0, -1.0, -3.2]
     odom_topic: "odom"
     odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]

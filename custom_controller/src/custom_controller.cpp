@@ -32,7 +32,7 @@ void CustomController::configure(
 {
     node_ = parent;
     auto node = parent.lock();
-
+    speed_test = 0.0;
     costmap_ros_ = costmap_ros;
     tf_ = tf;
     plugin_name_ = name;
@@ -40,10 +40,6 @@ void CustomController::configure(
     clock_ = node->get_clock();
 
    
-
- 
-
-
     // Declare parameters if not declared
     declare_parameter_if_not_declared(node, plugin_name_ + ".max_linear_vel", rclcpp::ParameterValue(0.7));
     declare_parameter_if_not_declared(node, plugin_name_ + ".min_linear_vel", rclcpp::ParameterValue(0.0));
@@ -66,7 +62,7 @@ void CustomController::configure(
     node->get_parameter(plugin_name_ + ".angular_kp", angular_kp_);
     node->get_parameter(plugin_name_ + ".look_ahead_distance", look_ahead_distance_);
     double transform_tolerance;
-    double look_ahead_distance_;
+    
     node->get_parameter(plugin_name_ + ".transform_tolerance", transform_tolerance);
     transform_tolerance_ = rclcpp::Duration::from_seconds(transform_tolerance);
 }
@@ -92,6 +88,7 @@ void CustomController::setPlan(const nav_msgs::msg::Path & path)
 {
     RCLCPP_INFO(logger_, "Received a new plan");
     global_plan_ = path;
+    RCLCPP_INFO(logger_, "global_plan_ final angle = [%lf]", global_plan_.poses.back().pose.orientation.z);
 }
 RobotState::RobotState(double x, double y, double theta) {
     x_ = x;
@@ -110,6 +107,7 @@ void CustomController::posetoRobotState(geometry_msgs::msg::Pose pose, RobotStat
     tf2::Matrix3x3 qt(q);
     double pitch, row, yaw;
     qt.getRPY(pitch, row, yaw);
+    
     state.theta_ = yaw;
 }
 
@@ -123,13 +121,14 @@ void CustomController::pathToVector(nav_msgs::msg::Path path, std::vector<RobotS
 RobotState CustomController::globalTOlocal(RobotState cur_pose, RobotState goal) {
     RobotState local_goal;
     local_goal.x_ = (goal.x_ - cur_pose.x_) * cos(cur_pose.theta_) + (goal.y_ - cur_pose.y_) * sin(cur_pose.theta_);
-    local_goal.y_ = (goal.x_ - cur_pose.x_) * sin(cur_pose.theta_) + (goal.y_ - cur_pose.y_) * cos(cur_pose.theta_);
-    local_goal.theta_ = goal.theta_ - cur_pose.theta_;
+    local_goal.y_ = -(goal.x_ - cur_pose.x_) * sin(cur_pose.theta_) + (goal.y_ - cur_pose.y_) * cos(cur_pose.theta_);
+    // local_goal.theta_ = goal.theta_ - cur_pose.theta_;
+    //RCLCPP_INFO(logger_, "local_goal is [%lf] [%lf] [%lf]", local_goal.x_, local_goal.y_, local_goal.theta_);
     return local_goal;
 }
-auto CustomController::getLookAheadPoint(
+RobotState CustomController::getLookAheadPoint(
     RobotState cur_pose,
-    std::vector<RobotState> path, 
+    std::vector<RobotState> &path, 
     double look_ahead_distance)
 {
     
@@ -143,11 +142,11 @@ auto CustomController::getLookAheadPoint(
     int nearest_index = 0;
     int next_index = 0;
     
-    RCLCPP_INFO(logger_, "path size [%d]", path.size());
+    //RCLCPP_INFO(logger_, "path size [%d]", path.size());
     for(int i=path.size()-1; i>=0; --i){
         if(cur_pose.distanceTo(path[i]) <= look_ahead_distance) {
             next_index = i;
-            
+            //RCLCPP_INFO(logger_, "next_index [%d]", next_index);
             break;
         }
     }
@@ -160,6 +159,7 @@ auto CustomController::getLookAheadPoint(
     //     next_index++;
     // }
     // if (next_index == 0) next_index = path.size()-1;
+    //RCLCPP_INFO(logger_, "current pose is [%lf] [%lf]", cur_pose.x_, cur_pose.y_);
 
     local_goal.x_ = cur_pose.x_ + (path[next_index].x_ - cur_pose.x_)*(look_ahead_distance/cur_pose.distanceTo(path[next_index]));
     local_goal.y_ = cur_pose.y_ + (path[next_index].y_ - cur_pose.y_)*(look_ahead_distance/cur_pose.distanceTo(path[next_index]));
@@ -188,7 +188,7 @@ auto CustomController::getLookAheadPoint(
     // pos_msg.pose.orientation.w = q.w();
     // local_goal_pub_.publish(pos_msg);
     
-    // RCLCPP_INFO(logger_, "local_goal is [%lf] [%lf]", local_goal.x_, local_goal.y_);
+    //RCLCPP_INFO(logger_, "local_goal is [%lf] [%lf]", local_goal.x_, local_goal.y_);
     // RCLCPP_INFO(logger_, "angle = [%lf]", cur_pose.theta_);
     path.clear();
     return local_goal;
@@ -208,14 +208,23 @@ geometry_msgs::msg::TwistStamped CustomController::computeVelocityCommands(
     cmd_vel.header.stamp = clock_->now();
 
     if(!goal_checker->isGoalReached(pose.pose, global_plan_.poses.back().pose, velocity)){
-        look_ahead_distance_ = 0.1;
+        
+        //RCLCPP_INFO(logger_, "look_ahead_distance is [%lf]", look_ahead_distance_);
+        final_goal_angle_ = vector_global_path_[vector_global_path_.size()-1].theta_ - cur_pose_.theta_;
+        //RCLCPP_INFO(logger_, "final goal angle raw is [%lf]", global_plan_.poses.back().pose.orientation.z);
         local_goal_ = getLookAheadPoint(cur_pose_, vector_global_path_, look_ahead_distance_); 
-        double local_angle = atan2((local_goal_.y_ - cur_pose_.y_),(local_goal_.x_ - cur_pose_.x_));
+        double global_distance = sqrt(pow(global_plan_.poses.back().pose.position.x - cur_pose_.x_, 2) + pow(global_plan_.poses.back().pose.position.y - cur_pose_.y_, 2));
+        local_goal_ = globalTOlocal(cur_pose_, local_goal_);
+        double local_angle = atan2(local_goal_.y_, local_goal_.x_);
         double local_distance = sqrt(pow(local_goal_.x_ - cur_pose_.x_, 2) + pow(local_goal_.y_ - cur_pose_.y_, 2));
-        cmd_vel.twist.linear.x = local_distance * cos(local_angle);
-        cmd_vel.twist.linear.y = local_distance * sin(local_angle);
-        cmd_vel.twist.angular.z = 0.0;
-        RCLCPP_INFO(logger_, "local_angle is [%lf]", local_angle);
+        
+        //RCLCPP_INFO(logger_, "final goal angle is [%lf]", vector_global_path_[vector_global_path_.size()-1].theta_);
+        RCLCPP_INFO(logger_, "cur_pose angle is [%lf]", cur_pose_.theta_);
+        cmd_vel.twist.linear.x = std::min(global_distance * 1.5, max_linear_vel_) * cos(local_angle);
+        cmd_vel.twist.linear.y = std::min(global_distance * 1.5, max_linear_vel_) * sin(local_angle);
+        cmd_vel.twist.angular.z = (final_goal_angle - cur_pose_.theta_)  * 5;
+        RCLCPP_INFO(logger_, "cmd_vel is [%lf] [%lf] [%lf]", cmd_vel.twist.linear.x, cmd_vel.twist.linear.y, cmd_vel.twist.angular.z);
+        //RCLCPP_INFO(logger_, "local_angle is [%lf]", local_angle);
         
         
         // Spin
@@ -243,7 +252,9 @@ geometry_msgs::msg::TwistStamped CustomController::computeVelocityCommands(
         //     cmd_vel.twist.linear.y = 0.0;
         //     cmd_vel.twist.angular.z = 0.0;
         // }
-
+        // cmd_vel.twist.linear.x = 0.0;
+        // cmd_vel.twist.linear.y = 0.0;
+        // cmd_vel.twist.angular.z = 0.0;
         return cmd_vel;
     }
     else{

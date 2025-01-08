@@ -16,6 +16,7 @@ void vel_callback(const geometry_msgs::msg::Twist::SharedPtr data) {
     car[0] = data->linear.x;
     car[1] = data->linear.y;
     car[2] = data->angular.z;
+    //RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Received velocity command: linear.x=%f, linear.y=%f, angular.z=%f", car[0], car[1], car[2]);
 }
 
 void initial_pose_callback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr data) {
