@@ -5,16 +5,19 @@
 
 namespace nav2_behaviors
 {
-    Run::Run() : TimedBehavior<RunAction>(), 
+    Run::Run() : TimedBehavior<RunAction>(),
                     feedback(std::make_shared<RunAction::Feedback>()),
                     min_linear_vel(0.0),
                     max_linear_vel(0.0),
                     cmd_yaw(0.0),
                     prev_yaw(0.0),
-                    relative_yaw(0.0){}
-
+                    relative_yaw(0.0)
+                    {
+                        rclNode = std::make_shared<rclcpp::Node>("costmap_sub_node");
+                        subscription = rclNode->create_subscription<nav_msgs::msg::OccupancyGrid>("/global_costmap/costmap", 10, std::bind(&Run::costmapCallback, this, std::placeholders::_1));
+                    }
     Run::~Run() = default;
-    
+
     void Run::onConfigure(){
         min_linear_vel = 0.0;
         max_linear_vel = 1.0;
@@ -44,11 +47,18 @@ namespace nav2_behaviors
 
         command_time_allowance = command->time_allowance;
         end_time = this->clock_->now() + command_time_allowance;
-
+        
         return Status::SUCCEEDED;
     }
 
+    void Run::costmapCallback(const nav_msgs::msg::OccupancyGrid& msg){
+        RCLCPP_INFO(logger_, "In call back");
+        costmap = msg;
+        RCLCPP_INFO(logger_, "Costmap is available., %d x %d", msg.info.width, msg.info.height);
+    }
+
     Status Run::onCycleUpdate(){
+        RCLCPP_INFO(logger_, "the map is %d x %d", costmap.info.width, costmap.info.height);
         rclcpp::Duration time_remaining = end_time - this->clock_->now();
         if(time_remaining.seconds() < 0.0 && command_time_allowance.seconds() > 0.0){
             stopRobot();

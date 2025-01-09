@@ -25,6 +25,7 @@ namespace nav2_behaviors
             const double & distance,
             geometry_msgs::msg::Twist * cmd_vel,
             geometry_msgs::msg::Pose2D & pose2d);
+        void costmapCallback(const nav_msgs::msg::OccupancyGrid& msg);
 
         RunAction::Feedback::SharedPtr feedback;
         double min_linear_vel;
@@ -32,9 +33,11 @@ namespace nav2_behaviors
         double cmd_yaw;
         double prev_yaw;
         double relative_yaw;
+        std::shared_ptr<rclcpp::Node> rclNode;
+        rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr subscription;
+        nav_msgs::msg::OccupancyGrid costmap;
         rclcpp::Duration command_time_allowance{0,0};
         rclcpp::Time end_time;
-        rclcpp::Node;
     };
 }  // namespace nav2_behaviors
 
