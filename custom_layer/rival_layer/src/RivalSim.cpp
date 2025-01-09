@@ -6,8 +6,8 @@
 class RivalSimPub : public rclcpp::Node {
     public:
         RivalSimPub() : Node("rival_sim_pub") {
-            pub_ = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("/rival_pose", 100);
-            timer_ = this->create_wall_timer(std::chrono::milliseconds(50), std::bind(&RivalSimPub::timer_callback, this));
+            rival_pub_ = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("/rival_pose", 100);
+            rival_timer_ = this->create_wall_timer(std::chrono::milliseconds(50), std::bind(&RivalSimPub::timer_callback, this));
 
             // Get the rival mode -> 0: Halted, 1: Wandering, 2: Moving, 3: Moving with noise
             declare_parameter("Rival_mode", rclcpp::ParameterValue(0));
@@ -29,7 +29,7 @@ class RivalSimPub : public rclcpp::Node {
                 message.pose.pose.position.x = 1.5;
                 message.pose.pose.position.y = 1.0;
 
-                pub_->publish(message);
+                rival_pub_->publish(message);
             } else {  
                 auto message = geometry_msgs::msg::PoseWithCovarianceStamped();
 
@@ -89,12 +89,12 @@ class RivalSimPub : public rclcpp::Node {
                 }
 
                 // RCLCPP_INFO(this->get_logger(), "Publishing: x=%f, y=%f\n", message.pose.pose.position.x, message.pose.pose.position.y);
-                pub_->publish(message);
+                rival_pub_->publish(message);
             }
         }
 
-        rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pub_;
-        rclcpp::TimerBase::SharedPtr timer_;
+        rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr rival_pub_;
+        rclcpp::TimerBase::SharedPtr rival_timer_;
         int rival_mode_ = 0;
         double move_x_ = 1.5;
         double move_y_ = 1.0;
