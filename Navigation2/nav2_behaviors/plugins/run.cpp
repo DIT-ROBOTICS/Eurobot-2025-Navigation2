@@ -11,23 +11,31 @@ namespace nav2_behaviors
                     max_linear_vel(0.0),
                     cmd_yaw(0.0),
                     prev_yaw(0.0),
-                    command_time_allowance(0.0),
-                    end_time(0.0){}
+                    relative_yaw(0.0){}
 
     Run::~Run() = default;
-    void Run()::onConfigure(){
+    
+    void Run::onConfigure(){
         min_linear_vel = 0.0;
         max_linear_vel = 1.0;
     }
 
     Status Run::onRun(const std::shared_ptr<const RunAction::Goal> command){
         geometry_msgs::msg::PoseStamped current_pose;
-        if(!nav2_util::getCurrentPose(current_pose, *tf_, global_frame_, robot_base_frame_, transform_trolerance_)){
+        if(!nav2_util::getCurrentPose(current_pose, *tf_, global_frame_, robot_base_frame_, transform_tolerance_)){
             RCLCPP_ERROR(logger_, "Current robot pose is not available.");
             return Status::FAILED;
         }
 
-        prev_yaw = tf2::getYaw(current_pose.pose.orientation);
+        // nav2_msgs::msg::Costmap costmap;
+        // if(!nav2_util::Costmap::get_costmap(costmap)){
+        //     RCLCPP_ERROR(logger_, "Costmap is not available.");
+        //     return Status::FAILED;
+        // }
+        // RCLCPP_INFO(logger_, "Costmap is available.");
+
+
+        // prev_yaw = tf2::getYaw(current_pose.pose.orientation);
         relative_yaw = 0.0;
 
         cmd_yaw = command->target_yaw;
@@ -54,8 +62,9 @@ namespace nav2_behaviors
             return Status::FAILED;
         }
 
-        const double current_yaw = tf2::getYaw(current_pose.pose.position.x);
-        ROS_INFO("Current yaw: %f", current_yaw);              
+        // const double current_yaw = tf2::getYaw(current_pose.pose.position);
+        const double current_yaw = 0;
+        RCLCPP_INFO(logger_ ,"Current yaw: %f", current_yaw);              
         double vel = 1;
         auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>();
         cmd_vel->linear.x = vel;

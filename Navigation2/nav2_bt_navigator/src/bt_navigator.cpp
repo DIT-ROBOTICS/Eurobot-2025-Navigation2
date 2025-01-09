@@ -41,6 +41,7 @@ BtNavigator::BtNavigator(rclcpp::NodeOptions options)
     "nav2_follow_path_action_bt_node",
     "nav2_spin_action_bt_node",
     "nav2_wait_action_bt_node",
+    "nav2_run_action_bt_node",
     "nav2_assisted_teleop_action_bt_node",
     "nav2_back_up_action_bt_node",
     "nav2_drive_on_heading_bt_node",

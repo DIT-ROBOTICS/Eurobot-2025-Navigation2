@@ -190,8 +190,7 @@
     <Action ID="Run">
       <input_port name="run_dist">Run distance</input_port>
       <input_port name="time_allowance">Allowed time for running</input_port>
-      <input_port name="server_name">Server name</input_port>
-      <input_port name="server_timeout">Server timeout</input_port>
+      <input_port name="is_recovery"></input_port>
     </Action>
 
     <Action ID="Wait">
