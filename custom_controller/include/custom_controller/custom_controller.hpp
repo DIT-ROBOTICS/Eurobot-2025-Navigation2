@@ -51,6 +51,7 @@ class CustomController : public nav2_core::Controller{
         void setPlan(const nav_msgs::msg::Path & path) override;
         void pathToVector(nav_msgs::msg::Path path, std::vector<RobotState> &vector_path);
         void posetoRobotState(geometry_msgs::msg::Pose pose, RobotState &state);
+        double getGoalAngle(double cur_pose, double goal);
         RobotState getLookAheadPoint(RobotState cur_pose, std::vector<RobotState> &path, double look_ahead_distance);
         RobotState globalTOlocal(RobotState cur_pose, RobotState goal);
     protected:
