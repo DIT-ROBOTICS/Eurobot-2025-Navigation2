@@ -13,6 +13,7 @@ namespace nav2_behaviors
                     prev_yaw(0.0),
                     relative_yaw(0.0)
                     {
+                        auto node_test = node_.lock();
                         rclNode = std::make_shared<rclcpp::Node>("costmap_sub_node");
                         subscription = rclNode->create_subscription<nav_msgs::msg::OccupancyGrid>("/global_costmap/costmap", 10, std::bind(&Run::costmapCallback, this, std::placeholders::_1));
                     }
@@ -44,7 +45,7 @@ namespace nav2_behaviors
         cmd_yaw = command->target_yaw;
 
         RCLCPP_INFO(logger_, "Running %0.2f for run behavior.", cmd_yaw);
-
+        //test
         command_time_allowance = command->time_allowance;
         end_time = this->clock_->now() + command_time_allowance;
         
