@@ -1,7 +1,4 @@
 #include "nav2_behaviors/plugins/run.hpp"
-#include "tf2/utils.h"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
-#include "nav2_util/node_utils.hpp"
 
 namespace nav2_behaviors
 {
@@ -13,39 +10,45 @@ namespace nav2_behaviors
                     prev_yaw(0.0),
                     relative_yaw(0.0)
                     {
-                        auto node_test = node_.lock();
-                        rclNode = std::make_shared<rclcpp::Node>("costmap_sub_node");
-                        subscription = rclNode->create_subscription<nav_msgs::msg::OccupancyGrid>("/global_costmap/costmap", 10, std::bind(&Run::costmapCallback, this, std::placeholders::_1));
+                        scan_radius = 20;
+                        map_x = 0;
+                        map_y = 0;
+                        scanSquard = new double*[scan_radius];
+                        for(int i = 0; i < scan_radius; i++) {
+                            scanSquard[i] = new double[scan_radius];
+                        }
                     }
-    Run::~Run() = default;
+    Run::~Run() {
+        for(int i = 0; i < scan_radius; i++) {
+            delete[] scanSquard[i];
+        }
+        delete[] scanSquard;
+    }
 
     void Run::onConfigure(){
         min_linear_vel = 0.0;
         max_linear_vel = 1.0;
+        auto node_test = node_.lock();
+        sub_costmap = node_test->create_subscription<nav_msgs::msg::OccupancyGrid>("/global_costmap/costmap", rclcpp::QoS(10), std::bind(&Run::costmapCallback, this, std::placeholders::_1));
+        sub_rival = node_test->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>("/rival_pose", rclcpp::QoS(10), std::bind(&Run::rivalCallback, this, std::placeholders::_1));
     }
 
     Status Run::onRun(const std::shared_ptr<const RunAction::Goal> command){
-        geometry_msgs::msg::PoseStamped current_pose;
-        if(!nav2_util::getCurrentPose(current_pose, *tf_, global_frame_, robot_base_frame_, transform_tolerance_)){
+        if(!nav2_util::getCurrentPose(robotPose, *tf_, global_frame_, robot_base_frame_, transform_tolerance_)){
             RCLCPP_ERROR(logger_, "Current robot pose is not available.");
             return Status::FAILED;
         }
+        map_x = robotPose.pose.position.x * 100;
+        map_y = robotPose.pose.position.y * 100;
+        rival_x = rivalPose.pose.pose.position.x * 100;
+        rival_y = rivalPose.pose.pose.position.y * 100;
 
-        // nav2_msgs::msg::Costmap costmap;
-        // if(!nav2_util::Costmap::get_costmap(costmap)){
-        //     RCLCPP_ERROR(logger_, "Costmap is not available.");
-        //     return Status::FAILED;
-        // }
-        // RCLCPP_INFO(logger_, "Costmap is available.");
-
-
-        // prev_yaw = tf2::getYaw(current_pose.pose.orientation);
         relative_yaw = 0.0;
 
         cmd_yaw = command->target_yaw;
 
         RCLCPP_INFO(logger_, "Running %0.2f for run behavior.", cmd_yaw);
-        //test
+        //testing
         command_time_allowance = command->time_allowance;
         end_time = this->clock_->now() + command_time_allowance;
         
@@ -56,6 +59,26 @@ namespace nav2_behaviors
         RCLCPP_INFO(logger_, "In call back");
         costmap = msg;
         RCLCPP_INFO(logger_, "Costmap is available., %d x %d", msg.info.width, msg.info.height);
+    }
+
+    void Run::rivalCallback(const geometry_msgs::msg::PoseWithCovarianceStamped& msg){
+        rivalPose = msg;
+        RCLCPP_INFO(logger_, "Rival pose is available.");
+        RCLCPP_INFO(logger_, "Rival pose is %f, %f", rivalPose.pose.pose.position.x, rivalPose.pose.pose.position.y);
+    }
+
+    double Run::getOneGridCost(double map_x, double map_y){
+        int index_cost = (int)((map_y-1)*300+map_x);
+        return costmap.data[index_cost];
+    }
+
+    void Run::findscanSquardCost(double center_x, double center_y){
+        for(int i = 0;i<scan_radius;i++){
+        for(int j = 0;j<scan_radius;j++){
+            int index_cost = (center_y - scan_radius/2 + i -1) * 300 + center_x - scan_radius/2 + j;
+            scanSquard[i][j] = costmap.data[index_cost];
+        }
+    }
     }
 
     Status Run::onCycleUpdate(){
@@ -75,7 +98,7 @@ namespace nav2_behaviors
 
         // const double current_yaw = tf2::getYaw(current_pose.pose.position);
         const double current_yaw = 0;
-        RCLCPP_INFO(logger_ ,"Current yaw: %f", current_yaw);              
+        RCLCPP_INFO(logger_ ,"Current yaw: %f", current_yaw);           
         double vel = 1;
         auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>();
         cmd_vel->linear.x = vel;
