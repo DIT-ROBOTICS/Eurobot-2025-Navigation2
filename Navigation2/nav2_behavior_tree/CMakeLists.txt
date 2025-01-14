@@ -93,8 +93,8 @@ list(APPEND plugin_libs nav2_spin_action_bt_node)
 add_library(nav2_wait_action_bt_node SHARED plugins/action/wait_action.cpp)
 list(APPEND plugin_libs nav2_wait_action_bt_node)
 
-add_library(nav2_run_action_bt_node SHARED plugins/action/run_action.cpp)
-list(APPEND plugin_libs nav2_run_action_bt_node)
+add_library(nav2_escape_action_bt_node SHARED plugins/action/escape_action.cpp)
+list(APPEND plugin_libs nav2_escape_action_bt_node)
 
 add_library(nav2_assisted_teleop_action_bt_node SHARED plugins/action/assisted_teleop_action.cpp)
 list(APPEND plugin_libs nav2_assisted_teleop_action_bt_node)

@@ -1,7 +1,7 @@
-#ifndef NAV2_BEHAVIORS__PLUGINS__RUN_HPP_
-#define NAV2_BEHAVIORS__PLUGINS__RUN_HPP_
+#ifndef NAV2_BEHAVIORS__PLUGINS__ESCAPE_HPP_
+#define NAV2_BEHAVIORS__PLUGINS__ESCAPE_HPP_
 
-#include "nav2_msgs/action/run.hpp"
+#include "nav2_msgs/action/escape.hpp"
 #include "nav2_behaviors/timed_behavior.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "tf2/utils.h"
@@ -14,14 +14,14 @@
 
 namespace nav2_behaviors
 {
-    using RunAction = nav2_msgs::action::Run;
+    using EscapeAction = nav2_msgs::action::Escape;
 
-    class Run: public TimedBehavior<RunAction>
+    class Escape: public TimedBehavior<EscapeAction>
     {
     public:
-        Run();
-        ~Run();
-        Status onRun(const std::shared_ptr<const RunAction::Goal> command) override;
+        Escape();
+        ~Escape();
+        Status onRun(const std::shared_ptr<const EscapeAction::Goal> command) override;
         void onConfigure() override;
         Status onCycleUpdate() override;
 
@@ -42,7 +42,7 @@ namespace nav2_behaviors
         geometry_msgs::msg::PoseWithCovarianceStamped rivalPose;
 
 
-        RunAction::Feedback::SharedPtr feedback;
+        EscapeAction::Feedback::SharedPtr feedback;
         double min_linear_vel;
         double max_linear_vel;
         double cmd_yaw;
@@ -56,4 +56,4 @@ namespace nav2_behaviors
     };
 }  // namespace nav2_behaviors
 
-#endif  // NAV2_BEHAVIORS__PLUGINS__RUN_HPP_
+#endif  // NAV2_BEHAVIORS__PLUGINS__ESCAPE_HPP_

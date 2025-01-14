@@ -1,15 +1,15 @@
 #include <string>
 #include <memory>
 
-#include "nav2_behavior_tree/plugins/action/run_action.hpp"
+#include "nav2_behavior_tree/plugins/action/escape_action.hpp"
 
 namespace nav2_behavior_tree
 {
-    RunAction::RunAction(
+    EscapeAction::EscapeAction(
         const std::string & xml_tag_name,
         const std::string & action_name,
         const BT::NodeConfiguration & conf)
-    : BtActionNode<nav2_msgs::action::Run>(xml_tag_name, action_name, conf)
+    : BtActionNode<nav2_msgs::action::Escape>(xml_tag_name, action_name, conf)
     {
         double dist;
         getInput("run_dist", dist);
@@ -19,15 +19,15 @@ namespace nav2_behavior_tree
         goal_.time_allowance = rclcpp::Duration::from_seconds(time_allowance);
         getInput("is_recovery", is_recovery_);
         if(is_recovery_){
-            RCLCPP_WARN(node_->get_logger(), "start run_action node");
+            RCLCPP_WARN(node_->get_logger(), "start escape_action node");
         }
     }
 
-    void RunAction::on_tick()
+    void EscapeAction::on_tick()
     {   
         int i = 0;
         if (is_recovery_) {
-            RCLCPP_WARN(node_->get_logger(), "Run run_action node %d", i);
+            RCLCPP_WARN(node_->get_logger(), "Run escape_action node %d", i);
             i++;
         }
     }
@@ -39,8 +39,8 @@ BT_REGISTER_NODES(factory)
     BT::NodeBuilder builder =
         [](const std::string & name, const BT::NodeConfiguration & config)
         {
-            return std::make_unique<nav2_behavior_tree::RunAction>(name, "run", config);
+            return std::make_unique<nav2_behavior_tree::EscapeAction>(name, "escape", config);
         };
 
-    factory.registerBuilder<nav2_behavior_tree::RunAction>("Run", builder);
+    factory.registerBuilder<nav2_behavior_tree::EscapeAction>("Escape", builder);
 }

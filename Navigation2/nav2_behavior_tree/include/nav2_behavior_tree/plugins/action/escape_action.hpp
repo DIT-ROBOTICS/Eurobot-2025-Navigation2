@@ -1,16 +1,16 @@
-#ifndef NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__RUN_ACTION_HPP_
-#define NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__RUN_ACTION_HPP_
+#ifndef NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__ESCAPE_ACTION_HPP_
+#define NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__ESCAPE_ACTION_HPP_
 
 #include <string>
 #include "nav2_behavior_tree/bt_action_node.hpp"
-#include "nav2_msgs/action/run.hpp"
+#include "nav2_msgs/action/escape.hpp"
 
 namespace nav2_behavior_tree
 {
-    class RunAction : public BtActionNode<nav2_msgs::action::Run>
+    class EscapeAction : public BtActionNode<nav2_msgs::action::Escape>
     {
         public:
-            RunAction(
+            EscapeAction(
                 const std::string & xml_tag_name,
                 const std::string & action_name,
                 const BT::NodeConfiguration & conf);
@@ -32,4 +32,4 @@ namespace nav2_behavior_tree
     };
 }
 
-#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__RUN_ACTION_HPP_
+#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__ESCAPE_ACTION_HPP_
