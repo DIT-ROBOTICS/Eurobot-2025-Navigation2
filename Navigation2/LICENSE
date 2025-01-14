@@ -1,17 +1,21 @@
-Portions of this repository are available under one of the following licenses
+MIT License
 
-SPDX-ID:
-* LGPL-2.1-or-later
-* Apache-2.0
-* BSD-3-Clause
-* Apache-2.0 AND BSD-3-Clause
+Copyright (c) 2024 DIT Robotics @ National Tsing Hua University
 
-Please see the package.xml file for each package to see the specific license for
-that package.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-Contributions to existing files should be made under the license of that file.
-New files should be made under the first license listed in the appropriate
-package.xml file
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-For files that are not otherwise marked, they are provided under the Apache-2.0
-license.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

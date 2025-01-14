@@ -1,0 +1,7 @@
+<library path="custom_controller">
+  <class type="custom_controller::CustomController" base_class_type="nav2_core::Controller">
+    <description>
+      This is a custom controller
+    </description>
+  </class>
+</library>
