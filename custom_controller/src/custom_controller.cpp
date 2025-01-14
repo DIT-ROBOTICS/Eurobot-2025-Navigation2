@@ -8,6 +8,10 @@
 #include "nav2_util/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
+#include "nav2_costmap_2d/costmap_2d_ros.hpp"
+#include "nav2_costmap_2d/costmap_2d.hpp"
+#include "nav_msgs/msg/occupancy_grid.hpp" // For raw costmap data
+
 
 using std::hypot;
 using std::min;
@@ -38,8 +42,16 @@ void CustomController::configure(
     plugin_name_ = name;
     logger_ = node->get_logger();
     clock_ = node->get_clock();
-
-   
+    update_plan_ = true;
+    isObstacleExist_ = false;
+    costmap_subscription_ = node->create_subscription<nav_msgs::msg::OccupancyGrid>(
+        "/global_costmap/costmap",  // Replace with your actual costmap topic
+        rclcpp::QoS(10),
+        [this](const nav_msgs::msg::OccupancyGrid::SharedPtr msg) {
+            // Store the latest costmap
+            latest_costmap_ = msg;
+            //RCLCPP_INFO(logger_, "Received costmap data.");
+        });
     // Declare parameters if not declared
     declare_parameter_if_not_declared(node, plugin_name_ + ".max_linear_vel", rclcpp::ParameterValue(0.7));
     declare_parameter_if_not_declared(node, plugin_name_ + ".min_linear_vel", rclcpp::ParameterValue(0.0));
@@ -86,24 +98,37 @@ void CustomController::deactivate(){
 // Get the global plan with transformed poses
 void CustomController::setPlan(const nav_msgs::msg::Path & path)
 {
-    RCLCPP_INFO(logger_, "Received a new plan");
+    if(!update_plan_){
+        return;
+    }
+    
+    if(!global_plan_.poses.empty()){
+        global_plan_.poses.clear();
+    }   
     global_plan_ = path;
-    RCLCPP_INFO(logger_, "global_plan_.orientation x y z w = [%lf] [%lf] [%lf] [%lf]", global_plan_.poses.back().pose.orientation.x, global_plan_.poses.back().pose.orientation.y, global_plan_.poses.back().pose.orientation.z, global_plan_.poses.back().pose.orientation.w);
+    RCLCPP_INFO(logger_, "Received a new plan");
+    //RCLCPP_INFO(logger_, "global_plan_.orientation x y z w = [%lf] [%lf] [%lf] [%lf]", global_plan_.poses.back().pose.orientation.x, global_plan_.poses.back().pose.orientation.y, global_plan_.poses.back().pose.orientation.z, global_plan_.poses.back().pose.orientation.w);
     tf2::Quaternion q;
     tf2::fromMsg(global_plan_.poses.back().pose.orientation, q);
     tf2::Matrix3x3 qt(q);
     double pitch, row, yaw;
     qt.getRPY(pitch, row, yaw);
-    RCLCPP_INFO(logger_, "yaw is = [%lf]", yaw);
+    //RCLCPP_INFO(logger_, "yaw is = [%lf]", yaw);
     final_goal_angle_ = yaw;
-    // if(fabs(global_plan_.poses.back().pose.orientation.z) <= 0.70455){
-    //     final_goal_angle_ = (global_plan_.poses.back().pose.orientation.z * 3.1415926 / 2 / 0.70455); 
-    // }else{
-    //     final_goal_angle_ = (global_plan_.poses.back().pose.orientation.z * 3.1415926 / 2 );
+
+    update_plan_ = false;
+    isObstacleExist_ = false;
+    //print the distance between the points
+    // RCLCPP_INFO(logger_, "global_plan_.poses.size() = [%d]", global_plan_.poses.size());
+    // for(int i = 0; i < global_plan_.poses.size()-1; i++){
+    //     RCLCPP_INFO(logger_, "distance between points [%d] and [%d] is [%lf]", i, i+1, euclidean_distance(global_plan_.poses[i].pose.position, global_plan_.poses[i+1].pose.position));
+    // } 
+
+
+    // for(int i = 0; i < latest_costmap_->data.size(); i++){
+    //     RCLCPP_INFO(logger_, "costmap data is [%d]", latest_costmap_->data[i]);
     // }
     
-    //RCLCPP_INFO(logger_, "global_plan_ final angle = [%lf]", (global_plan_.poses.back().pose.orientation.z * 1));
-    //RCLCPP_INFO(logger_, "final_goal_angle_ = [%lf]", (final_goal_angle_ * 180 / 3.1415926));
 }
 RobotState::RobotState(double x, double y, double theta) {
     x_ = x;
@@ -132,6 +157,8 @@ void CustomController::pathToVector(nav_msgs::msg::Path path, std::vector<RobotS
         posetoRobotState(path.poses[i].pose, state);
         vector_path.push_back(state);
     }
+    //RCLCPP_INFO(logger_, "vector_path final goal angle = [%lf]", vector_path[vector_path.size()-1].theta_);
+    //RCLCPP_INFO(logger_, "vector_global_path_ final goal angle = [%lf]", vector_global_path_[vector_global_path_.size()-1].theta_);
 }
 RobotState CustomController::globalTOlocal(RobotState cur_pose, RobotState goal) {
     RobotState local_goal;
@@ -205,7 +232,7 @@ RobotState CustomController::getLookAheadPoint(
     
     //RCLCPP_INFO(logger_, "local_goal is [%lf] [%lf]", local_goal.x_, local_goal.y_);
     // RCLCPP_INFO(logger_, "angle = [%lf]", cur_pose.theta_);
-    path.clear();
+    
     return local_goal;
 
     
@@ -241,11 +268,65 @@ double CustomController::getGoalAngle(double cur_angle, double goal_angle) {
     //     return goal_angle;
     // }
 }
+
+int CustomController::getIndex(RobotState cur_pose, std::vector<RobotState> &path, double look_ahead_distance){
+    if (path.empty()) {
+        RCLCPP_INFO(logger_, "[%s] Path is empty", plugin_name_.c_str());
+        return 0;
+    }
+    
+    RobotState local_goal;
+    
+    int nearest_index = 0;
+    int next_index = 0;
+    
+    //RCLCPP_INFO(logger_, "path size [%d]", path.size());
+    for(int i=path.size()-1; i>=0; --i){
+        if(cur_pose.distanceTo(path[i]) <= look_ahead_distance) {
+            next_index = i;
+            //RCLCPP_INFO(logger_, "next_index [%d]", next_index);
+            break;
+        }
+    }
+    if (next_index == 0) next_index = path.size()-1;
+
+    if (next_index < path.size()-1) {
+        next_index = next_index+1;
+    }
+    return next_index;
+}
+
+bool CustomController::checkObstacle(int current_index, int check_index){
+    if(current_index >= check_index){
+        for(int i = 0; i < current_index; i++){
+            int mapX = vector_global_path_[i].x_ * 100;
+            int mapY = vector_global_path_[i].y_ * 100;
+            int index = (mapY-1) * 300 + mapX;
+            if(latest_costmap_->data[index] > 0){
+                return true;
+            }
+        }
+        
+    }else{
+        for(int i = current_index; i < check_index; i++){
+            int mapX = vector_global_path_[i].x_ * 100;
+            int mapY = vector_global_path_[i].y_ * 100;
+            int index = (mapY-1) * 300 + mapX;
+            if(latest_costmap_->data[index] > 0){
+                return true;
+            }
+        }
+    }
+    
+    return false;
+}
+
 geometry_msgs::msg::TwistStamped CustomController::computeVelocityCommands(
   const geometry_msgs::msg::PoseStamped & pose,
   const geometry_msgs::msg::Twist & velocity,
   nav2_core::GoalChecker * goal_checker)
 {
+    vector_global_path_.clear();
     posetoRobotState(pose.pose, cur_pose_);
     pathToVector(global_plan_, vector_global_path_);
     // cmd_vel
@@ -254,12 +335,15 @@ geometry_msgs::msg::TwistStamped CustomController::computeVelocityCommands(
     cmd_vel.header.stamp = clock_->now();
 
     if(!goal_checker->isGoalReached(pose.pose, global_plan_.poses.back().pose, velocity)){
-        
+        //RCLCPP_INFO(logger_, "vector_global_path_ final goal angle in goal checker is = [%lf]", vector_global_path_[vector_global_path_.size()-1].theta_);
         //RCLCPP_INFO(logger_, "look_ahead_distance is [%lf]", look_ahead_distance_);
         //RCLCPP_INFO(logger_, "cur_pose row angle is [%lf]", cur_pose_.theta_);
         //RCLCPP_INFO(logger_, "final goal angle raw is [%lf]", global_plan_.poses.back().pose.orientation.z);
         local_goal_ = getLookAheadPoint(cur_pose_, vector_global_path_, look_ahead_distance_);
-        // final_goal_angle_ = vector_global_path_[vector_global_path_.size()-1].theta_;
+        check_index_ = 0;
+        current_index_ = 0;
+        //RCLCPP_INFO(logger_, "vector_global_path_ final goal angle after get LAD is = [%lf]", vector_global_path_[vector_global_path_.size()-1].theta_);
+        //final_goal_angle_ = vector_global_path_[vector_global_path_.size()-1].theta_;
         //RCLCPP_INFO(logger_, "final goal angle is [%lf]", final_goal_angle_); 
         double global_distance = sqrt(pow(global_plan_.poses.back().pose.position.x - cur_pose_.x_, 2) + pow(global_plan_.poses.back().pose.position.y - cur_pose_.y_, 2));
         local_goal_ = globalTOlocal(cur_pose_, local_goal_);
@@ -270,39 +354,26 @@ geometry_msgs::msg::TwistStamped CustomController::computeVelocityCommands(
         cmd_vel.twist.linear.x = std::min(global_distance * 1.5, max_linear_vel_) * cos(local_angle);
         cmd_vel.twist.linear.y = std::min(global_distance * 1.5, max_linear_vel_) * sin(local_angle);
         cmd_vel.twist.angular.z = getGoalAngle(cur_pose_.theta_, final_goal_angle_);
+        double vel_ = sqrt(pow(cmd_vel.twist.linear.x, 2) + pow(cmd_vel.twist.linear.y, 2));
+        check_distance_ = std::max(vel_ * 0.5, look_ahead_distance_);
+        check_index_ = getIndex(cur_pose_, vector_global_path_, check_distance_);
+        current_index_ = getIndex(cur_pose_, vector_global_path_, look_ahead_distance_);
+        // RCLCPP_INFO(logger_, "check_index is [%d]", check_index_);
+        // RCLCPP_INFO(logger_, "current_index is [%d]", current_index_);
+        // RCLCPP_INFO(logger_, "vector_global_path size is [%d]", vector_global_path_.size());
+        // RCLCPP_INFO(logger_, "global_path size is [%d]", global_plan_.poses.size());
         //RCLCPP_INFO(logger_, "final_goal_angle is [%lf]", final_goal_angle_);
         //RCLCPP_INFO(logger_, "cmd_vel is [%lf] [%lf] [%lf]", cmd_vel.twist.linear.x, cmd_vel.twist.linear.y, cmd_vel.twist.angular.z);
         //RCLCPP_INFO(logger_, "local_angle is [%lf]", local_angle);
+        isObstacleExist_ = checkObstacle(current_index_, check_index_);
+        if(isObstacleExist_){
+            cmd_vel.twist.linear.x = 0.0;
+            cmd_vel.twist.linear.y = 0.0;
+            cmd_vel.twist.angular.z = 0.0;
+            update_plan_ = true;
+            return cmd_vel;
+        }
         
-        
-        // Spin
-        //     double dyaw = angles::shortest_angular_distance(tf2::getYaw(pose.pose.orientation), tf2::getYaw(global_plan_.poses.back().pose.orientation));
-        //     if (fabs(dyaw) > yaw_goal_tolerance_) {
-        //         yaw_debounce_counter_ = 0;
-        //     } else {
-        //         yaw_debounce_counter_++;
-        //     }
-
-        //     if(yaw_debounce_counter_ > 5){
-        //         RCLCPP_INFO(logger_, "[%s] Orientation reached", plugin_name_.c_str());
-        //         cmd_vel.twist.angular.z = 0.0;
-        //     } else {
-        //         cmd_vel.twist.angular.z = 1.0;
-        //     }
-
-        //     // Move
-        //     // cmd_vel.twist.linear.x = 0.1;
-        //     // cmd_vel.twist.linear.y = 0.1;
-        // }
-        // else {
-        //     RCLCPP_INFO(logger_, "[%s] Goal reached", plugin_name_.c_str());
-        //     cmd_vel.twist.linear.x = 0.0;
-        //     cmd_vel.twist.linear.y = 0.0;
-        //     cmd_vel.twist.angular.z = 0.0;
-        // }
-        // cmd_vel.twist.linear.x = 0.0;
-        // cmd_vel.twist.linear.y = 0.0;
-        // cmd_vel.twist.angular.z = 0.0;
         return cmd_vel;
     }
     else if(fabs(final_goal_angle_ - cur_pose_.theta_) > 0.01){
@@ -316,6 +387,7 @@ geometry_msgs::msg::TwistStamped CustomController::computeVelocityCommands(
         cmd_vel.twist.linear.x = 0.0;
         cmd_vel.twist.linear.y = 0.0;
         cmd_vel.twist.angular.z = 0.0;
+        update_plan_ = true;
         return cmd_vel;
     }
 }

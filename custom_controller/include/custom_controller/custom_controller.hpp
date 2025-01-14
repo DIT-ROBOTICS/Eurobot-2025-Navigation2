@@ -54,14 +54,19 @@ class CustomController : public nav2_core::Controller{
         double getGoalAngle(double cur_pose, double goal);
         RobotState getLookAheadPoint(RobotState cur_pose, std::vector<RobotState> &path, double look_ahead_distance);
         RobotState globalTOlocal(RobotState cur_pose, RobotState goal);
+        int getIndex(RobotState cur_pose, std::vector<RobotState> &path, double look_ahead_distance);
+        bool checkObstacle(int current_index, int check_index);
     protected:
         // Setup parameters
         rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
         std::shared_ptr<tf2_ros::Buffer> tf_;
         std::string plugin_name_;
         std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
-        rclcpp::Logger logger_ {rclcpp::get_logger("CustomController")};
+        
         rclcpp::Clock::SharedPtr clock_;
+        rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr costmap_subscription_;
+        nav_msgs::msg::OccupancyGrid::SharedPtr latest_costmap_; // Store the received costmap
+        rclcpp::Logger logger_{rclcpp::get_logger("CustomController")};
 
         rcl_interfaces::msg::SetParametersResult
         dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
@@ -87,6 +92,12 @@ class CustomController : public nav2_core::Controller{
         RobotState cur_pose_;
         RobotState cur_odom_;
         RobotState velocity_state_;
+        bool update_plan_;
+        double check_distance_;
+        int check_index_;
+        int current_index_;
+        bool isObstacleExist_;
+        
 };
 
 }  // namespace custom_controller
