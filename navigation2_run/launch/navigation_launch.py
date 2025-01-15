@@ -109,6 +109,18 @@ def generate_launch_description():
         'log_level', default_value='info',
         description='log level')
 
+    controller_selector_node = Node(
+        package='custom_nav_thru_poses',
+        executable='ControllerSelector',
+        name='ControllerSelector',
+        output='screen',
+        respawn=use_respawn,
+        respawn_delay=2.0,
+        parameters=[configured_params],
+        arguments=['--ros-args', '--log-level', log_level],
+        remappings=remappings
+    )
+
     load_nodes = GroupAction(
         condition=IfCondition(PythonExpression(['not ', use_composition])),
         actions=[
@@ -267,6 +279,7 @@ def generate_launch_description():
     ld.add_action(declare_use_respawn_cmd)
     ld.add_action(declare_log_level_cmd)
     # Add the actions to launch all of the navigation nodes
+    ld.add_action(controller_selector_node)
     ld.add_action(load_nodes)
     ld.add_action(load_composable_nodes)
 
