@@ -17,9 +17,9 @@ namespace nav2_behaviors
                         for(int i = 0; i < scan_radius; i++) {
                             scanSquard[i] = new double[scan_radius];
                         }
-                        target_point.x = 0;
-                        target_point.y = 0;
-                        target_point.z = 0;
+                        target_point.position.x = 0;
+                        target_point.position.y = 0;
+                        target_point.position.z = 0;
                     }
     Escape::~Escape() {
         for(int i = 0; i < scan_radius; i++) {
@@ -36,7 +36,7 @@ namespace nav2_behaviors
         sub_rival = node_test->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>("/rival_pose", rclcpp::QoS(10), std::bind(&Escape::rivalCallback, this, std::placeholders::_1));
     }
 
-    Status Escape::onRun(const std::shared_ptr<const Escape::Goal> command){
+    Status Escape::onRun(const std::shared_ptr<const EscapeAction::Goal> command){
         if(!nav2_util::getCurrentPose(robotPose, *tf_, global_frame_, robot_base_frame_, transform_tolerance_)){
             RCLCPP_ERROR(logger_, "Current robot pose is not available.");
             return Status::FAILED;
@@ -117,7 +117,7 @@ namespace nav2_behaviors
         // Get current robot pose
         if (!nav2_util::getCurrentPose(robotPose, *tf_buffer_)) {
             RCLCPP_ERROR(logger_, "Failed to get current pose");
-            return robotPose.pose.position;
+            return robotPose.pose;
         }
 
         const double scan_radius = 0.5;  // meters
@@ -216,7 +216,7 @@ namespace nav2_behaviors
 
         // const double current_yaw = tf2::getYaw(robotPose.pose.position);
         
-        auto cmd_vel = makeMove(target_point.x, target_point.y);
+        auto cmd_vel = makeMove(target_point.position.x, target_point.position.y);
         vel_pub_->publish(std::move(cmd_vel));
         return Status::RUNNING;
     }
