@@ -68,6 +68,8 @@ class CustomController : public nav2_core::Controller{
         nav_msgs::msg::OccupancyGrid::SharedPtr latest_costmap_; // Store the received costmap
         rclcpp::Logger logger_{rclcpp::get_logger("CustomController")};
 
+        rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr local_goal_pub_;
+
         rcl_interfaces::msg::SetParametersResult
         dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
 
