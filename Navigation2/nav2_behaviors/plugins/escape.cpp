@@ -113,7 +113,7 @@ namespace nav2_behaviors
         return true;
     }
 
-    geometry_msgs::msg::Point Escape::findTargetPoint() {
+    geometry_msgs::msg::Pose Escape::findTargetPoint() {
         // Get current robot pose
         if (!nav2_util::getCurrentPose(robotPose, *tf_buffer_)) {
             RCLCPP_ERROR(logger_, "Failed to get current pose");
@@ -125,7 +125,7 @@ namespace nav2_behaviors
         const double angle_increment = 2 * M_PI / num_points;
         
         double lowest_cost = 100.0;  // Max cost threshold
-        geometry_msgs::msg::Point best_point = robotPose.pose.position;
+        geometry_msgs::msg::Pose best_point = robotPose.pose;
         
         // Scan increasing radius circles
         for (double r = 0.1; r <= scan_radius; r += 0.1) {
@@ -145,9 +145,9 @@ namespace nav2_behaviors
                     double cost = getOneGridCost(map_x, map_y);
                     if (cost < lowest_cost) {
                         lowest_cost = cost;
-                        best_point.x = world_x;
-                        best_point.y = world_y;
-                        best_point.z = 0.0;
+                        best_point.position.x = world_x;
+                        best_point.position.y = world_y;
+                        best_point.position.z = 0.0;
                         
                         // If we find a very good point, return immediately
                         if (cost < 10) {
@@ -162,7 +162,7 @@ namespace nav2_behaviors
         
         if (lowest_cost < 100.0) {
             RCLCPP_INFO(logger_, "Found target point at (%f, %f) with cost %f",
-                        best_point.x, best_point.y, lowest_cost);
+                        best_point.position.x, best_point.position.y, lowest_cost);
         } else {
             RCLCPP_WARN(logger_, "No suitable target point found, staying in place");
         }
@@ -209,7 +209,7 @@ namespace nav2_behaviors
         }
 
         target_point = findTargetPoint();
-        if(target_point.x == robotPose.pose.position.x){
+        if(target_point.position.x == robotPose.pose.position.x){
             RCLCPP_INFO(logger_, "No target point found");
             return Status::FAILED;
         }

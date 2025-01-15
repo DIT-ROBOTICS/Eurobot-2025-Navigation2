@@ -35,8 +35,8 @@ namespace nav2_behaviors
         int scan_radius;
         double getOneGridCost(double map_x, double map_y);
         bool scanRadius();
-        geometry_msgs::Point target_point;
-        geometry_msgs::Point findTargetPoint();
+        geometry_msgs::msg::Pose target_point;
+        geometry_msgs::msg::Pose findTargetPoint();
         double** scanSquard;
         geometry_msgs::msg::Twist makeMove(double x, double y);
         void costmapCallback(const nav_msgs::msg::OccupancyGrid& msg);
