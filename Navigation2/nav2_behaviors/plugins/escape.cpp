@@ -76,12 +76,6 @@ namespace nav2_behaviors
         const int num_points = 36;  // number of points to check on each circle
         const double angle_increment = 2 * M_PI / num_points;
         
-        // Get current robot pose
-        if (!nav2_util::getCurrentPose(robotPose, *tf_buffer_)) {
-            RCLCPP_ERROR(logger_, "Failed to get current pose");
-            return false;
-        }
-        
         // Check circles with increasing radius
         for (double r = 0.1; r <= scan_radius; r += 0.1) {
             // Check points around the circle
@@ -114,12 +108,6 @@ namespace nav2_behaviors
     }
 
     geometry_msgs::msg::Pose Escape::findTargetPoint() {
-        // Get current robot pose
-        if (!nav2_util::getCurrentPose(robotPose, *tf_buffer_)) {
-            RCLCPP_ERROR(logger_, "Failed to get current pose");
-            return robotPose.pose;
-        }
-
         const double scan_radius = 0.5;  // meters
         const int num_points = 36;  // points per circle
         const double angle_increment = 2 * M_PI / num_points;
