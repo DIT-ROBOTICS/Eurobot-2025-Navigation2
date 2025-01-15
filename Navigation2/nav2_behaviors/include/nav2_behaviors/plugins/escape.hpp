@@ -39,7 +39,7 @@ namespace nav2_behaviors
         geometry_msgs::msg::Pose target_point;
         geometry_msgs::msg::Pose findTargetPoint();
         double** scanSquard;
-        geometry_msgs::msg::Twist makeMove(double x, double y);
+        std::unique_ptr<geometry_msgs::msg::Twist> makeMove(double x, double y);
         void costmapCallback(const nav_msgs::msg::OccupancyGrid& msg);
         void rivalCallback(const geometry_msgs::msg::PoseWithCovarianceStamped& msg);
         geometry_msgs::msg::PoseStamped robotPose;

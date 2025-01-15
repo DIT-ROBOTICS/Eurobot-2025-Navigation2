@@ -163,11 +163,11 @@ namespace nav2_behaviors
         return costmap.data[index_cost];
     }
 
-    geometry_msgs::msg::Twist makeMove(double x, double y){
+    std::unique_ptr<geometry_msgs::msg::Twist> makeMove(double x, double y){
         auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>();
         double vel_x, vel_y, max_vel;
         double dist = hypot(robotPose.pose.position.x - x, robotPose.pose.position.y - y);
-        double ang_diff;
+        // double ang_diff;
         double first_ang_diff = atan2(y - robotPose.pose.position.y, x - robotPose.pose.position.x);
         double cur_linear_kp = 2;
         double linear_max_vel;
