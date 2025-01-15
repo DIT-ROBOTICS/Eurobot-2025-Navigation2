@@ -34,8 +34,11 @@ namespace nav2_behaviors
         double rival_x, rival_y;
         int scan_radius;
         double getOneGridCost(double map_x, double map_y);
+        bool scanRadius();
+        geometry_msgs::Point target_point;
+        geometry_msgs::Point findTargetPoint();
         double** scanSquard;
-        void findscanSquardCost(double center_x, double center_y);
+        geometry_msgs::msg::Twist makeMove(double x, double y);
         void costmapCallback(const nav_msgs::msg::OccupancyGrid& msg);
         void rivalCallback(const geometry_msgs::msg::PoseWithCovarianceStamped& msg);
         geometry_msgs::msg::PoseStamped robotPose;
