@@ -91,7 +91,7 @@ namespace nav2_behaviors
         double robot_cost = getOneGridCost(robotPose.pose.position.x, robotPose.pose.position.y);
         
         // Scan increasing radius circles
-        for (double r = 0.3; r <= scan_radius; r -= 0.05) {
+        for (double r = 0.01; r <= scan_radius; r += 0.01) {
             for (double angle = 0; angle < 2 * M_PI; angle += angle_increment) {
                 // Calculate world coordinates
                 double world_x = robotPose.pose.position.x + r * cos(angle);
