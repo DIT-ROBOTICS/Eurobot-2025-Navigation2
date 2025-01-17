@@ -28,10 +28,11 @@ namespace nav2_behaviors
 
     protected:
         double map_x, map_y;
+        int map_width, map_height;
         double rival_x, rival_y;
         int scan_radius;
         double getOneGridCost(double x, double y);
-        bool scanRadius();
+        bool isEscape();
         bool outOfBound(double x, double map_y);
         void worldToMap(double wx, double wy, int & mx, int & my);
         geometry_msgs::msg::Pose target_point;
