@@ -27,15 +27,13 @@ namespace nav2_behaviors
         Status onCycleUpdate() override;
 
     protected:
-        bool isRunAway(
-            const double & distance,
-            geometry_msgs::msg::Twist * cmd_vel,
-            geometry_msgs::msg::Pose2D & pose2d);
         double map_x, map_y;
         double rival_x, rival_y;
         int scan_radius;
-        double getOneGridCost(double map_x, double map_y);
+        double getOneGridCost(double x, double y);
         bool scanRadius();
+        bool outOfBound(double x, double map_y);
+        void worldToMap(double wx, double wy, int & mx, int & my);
         geometry_msgs::msg::Pose target_point;
         geometry_msgs::msg::Pose findTargetPoint();
         double** scanSquard;

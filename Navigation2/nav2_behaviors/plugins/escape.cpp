@@ -46,69 +46,73 @@ namespace nav2_behaviors
         rival_x = rivalPose.pose.pose.position.x * 100;
         rival_y = rivalPose.pose.pose.position.y * 100;
 
-        relative_yaw = 0.0;
-
-        cmd_yaw = command->target_yaw;
-
-        RCLCPP_INFO(logger_, "Running %0.2f for run behavior.", cmd_yaw);
         //testing
         command_time_allowance = command->time_allowance;
         end_time = this->clock_->now() + command_time_allowance;
-        
+        if(scanRadius()){
+            stopRobot();
+            RCLCPP_INFO(logger_, "Escape successfully");
+            return Status::SUCCEEDED;
+        }
         return Status::SUCCEEDED;
     }
 
     void Escape::costmapCallback(const nav_msgs::msg::OccupancyGrid& msg){
-        RCLCPP_INFO(logger_, "In call back");
         costmap = msg;
-        RCLCPP_INFO(logger_, "Costmap is available., %d x %d", msg.info.width, msg.info.height);
     }
 
     void Escape::rivalCallback(const geometry_msgs::msg::PoseWithCovarianceStamped& msg){
         rivalPose = msg;
-        RCLCPP_INFO(logger_, "Rival pose is available.");
-        RCLCPP_INFO(logger_, "Rival pose is %f, %f", rivalPose.pose.pose.position.x, rivalPose.pose.pose.position.y);
     }
 
     bool Escape::scanRadius() {
         // Define scan parameters
-        const double scan_radius = 0.5;  // meters
-        const int num_points = 36;  // number of points to check on each circle
-        const double angle_increment = 2 * M_PI / num_points;
+        // const double scan_radius = 0.1;  // meters
+        // const int num_points = 36;  // number of points to check on each circle
+        // const double angle_increment = 2 * M_PI / num_points;
         
-        // Check circles with increasing radius
-        for (double r = 0.1; r <= scan_radius; r += 0.1) {
-            // Check points around the circle
-            for (double angle = 0; angle < 2 * M_PI; angle += angle_increment) {
-                // Calculate point coordinates
-                double world_x = robotPose.pose.position.x + r * cos(angle);
-                double world_y = robotPose.pose.position.y + r * sin(angle);
+        // // Check circles with increasing radius
+        // for (double r = 0.05; r <= scan_radius; r += 0.005) {
+        //     // Check points around the circle
+        //     for (double angle = 0; angle < 2 * M_PI; angle += angle_increment) {
+        //         // Calculate point coordinates
+        //         double world_x = robotPose.pose.position.x + r * cos(angle);
+        //         double world_y = robotPose.pose.position.y + r * sin(angle);
                 
-                // Convert world coordinates to map coordinates
-                double map_x = (world_x - costmap.info.origin.position.x) / costmap.info.resolution;
-                double map_y = (world_y - costmap.info.origin.position.y) / costmap.info.resolution;
+        //         // Convert world coordinates to map coordinates
+        //         double map_x = (world_x - costmap.info.origin.position.x) / costmap.info.resolution;
+        //         double map_y = (world_y - costmap.info.origin.position.y) / costmap.info.resolution;
                 
-                // Check if point is within map bounds
-                if (map_x >= 0 && map_x < costmap.info.width && 
-                    map_y >= 0 && map_y < costmap.info.height) {
+        //         // Check if point is within map bounds
+        //         if (map_x >= 0 && map_x < costmap.info.width && 
+        //             map_y >= 0 && map_y < costmap.info.height) {
                         
-                    double cost = getOneGridCost(map_x, map_y);
-                    // If cost is above threshold (obstacle), return false
-                    if (cost > 50) {  // Assuming cost threshold of 50
-                        RCLCPP_INFO(logger_, "Obstacle detected at radius %f, angle %f", r, angle);
-                        return false;
-                    }
-                }
-            }
-        }
+        //             double cost = getOneGridCost(map_x, map_y);
+        //             // If cost is above threshold (obstacle), return false
+        //             if (cost > 50) {  // Assuming cost threshold of 50
+        //                 RCLCPP_INFO(logger_, "cost of the center of the robot:%f", getOneGridCost(robotPose.pose.position.x/costmap.info.resolution, robotPose.pose.position.y/costmap.info.resolution));
+        //                 RCLCPP_INFO(logger_, "Obstacle detected at radius %f, at position x: %f, y: %f, cost %f", r,world_x, world_y, cost);
+        //                 return false;
+        //             }
+        //         }
+        //     }
+        // }
         
         // If we get here, all circles were clear
-        RCLCPP_INFO(logger_, "Path is clear for straight motion");
-        return true;
+        int cost = getOneGridCost(robotPose.pose.position.x, robotPose.pose.position.y);
+        if(cost > 50){
+            RCLCPP_INFO(logger_, "Obstacle detected at the center of the robot: the center %f, %f; the cost: %d", robotPose.pose.position.x, robotPose.pose.position.y, cost);
+            return false;
+        }
+        else {
+            RCLCPP_INFO(logger_, "cost of the center of the robot:%f", getOneGridCost(robotPose.pose.position.x, robotPose.pose.position.y));
+            RCLCPP_INFO(logger_, "Path is clear for straight motion");
+            return true;
+        }
     }
 
     geometry_msgs::msg::Pose Escape::findTargetPoint() {
-        const double scan_radius = 0.5;  // meters
+        const double scan_radius = 0.3;  // meters
         const int num_points = 36;  // points per circle
         const double angle_increment = 2 * M_PI / num_points;
         
@@ -116,21 +120,20 @@ namespace nav2_behaviors
         geometry_msgs::msg::Pose best_point = robotPose.pose;
         
         // Scan increasing radius circles
-        for (double r = 0.1; r <= scan_radius; r += 0.1) {
+        for (double r = 0.145; r <= scan_radius; r += 0.1) {
             for (double angle = 0; angle < 2 * M_PI; angle += angle_increment) {
                 // Calculate world coordinates
                 double world_x = robotPose.pose.position.x + r * cos(angle);
                 double world_y = robotPose.pose.position.y + r * sin(angle);
                 
                 // Convert to map coordinates
-                double map_x = (world_x - costmap.info.origin.position.x) / costmap.info.resolution;
-                double map_y = (world_y - costmap.info.origin.position.y) / costmap.info.resolution;
-                
+                int map_x, map_y;
+                worldToMap(world_x, world_y, map_x, map_y);
                 // Check map bounds
                 if (map_x >= 0 && map_x < costmap.info.width && 
                     map_y >= 0 && map_y < costmap.info.height) {
                     
-                    double cost = getOneGridCost(map_x, map_y);
+                    double cost = getOneGridCost(world_x, world_y);
                     if (cost < lowest_cost) {
                         lowest_cost = cost;
                         best_point.position.x = world_x;
@@ -158,8 +161,11 @@ namespace nav2_behaviors
         return best_point;
     }
 
-    double Escape::getOneGridCost(double map_x, double map_y){
-        int index_cost = (int)((map_y-1)*300+map_x);
+    double Escape::getOneGridCost(double x, double y){
+        int map_x, map_y;
+        worldToMap(x, y, map_x, map_y);
+        int index_cost = (int)((map_y)*300+map_x);
+        RCLCPP_INFO(logger_, "index_cost: %d", index_cost);
         return costmap.data[index_cost];
     }
 
@@ -170,7 +176,7 @@ namespace nav2_behaviors
         // double ang_diff;
         double first_ang_diff = atan2(y - this->robotPose.pose.position.y, x - this->robotPose.pose.position.x);
         double cur_linear_kp = 2;
-        double linear_max_vel;
+        double linear_max_vel = 0.3;
         max_vel = std::min(dist*cur_linear_kp, linear_max_vel);
         vel_x = max_vel * cos(first_ang_diff);
         vel_y = max_vel * sin(first_ang_diff);
@@ -183,17 +189,36 @@ namespace nav2_behaviors
         return cmd_vel;
     }
 
+    bool Escape::outOfBound(double x, double y){
+        int map_x, map_y;
+        worldToMap(x, y, map_x, map_y);
+        if(map_x < 0 || map_x > costmap.info.width || map_y < 0 || map_y > costmap.info.height){
+            return true;
+        }
+        return false;
+    }
+
+    void Escape::worldToMap(double wx, double wy, double & mx, double & my){
+        mx = (int)((wx - costmap.info.origin.position.x) / costmap.info.resolution);
+        my = (int)((wy - costmap.info.origin.position.y) / costmap.info.resolution);
+    }
+
    
     Status Escape::onCycleUpdate(){
         rclcpp::Duration time_remaining = end_time - this->clock_->now();
-        if(scanRadius()){
-            stopRobot();
-            RCLCPP_INFO(logger_, "Escape successfully");
-            return Status::SUCCEEDED;
-        }
+        RCLCPP_INFO(logger_, "robotPose, current position: %f, %f; robot cost %f", robotPose.pose.position.x, robotPose.pose.position.y, getOneGridCost(robotPose.pose.position.x, robotPose.pose.position.y));
         if(!nav2_util::getCurrentPose(robotPose, *tf_, global_frame_, robot_base_frame_, transform_tolerance_)){
             RCLCPP_ERROR(logger_, "Current robot pose is not available.");
             return Status::FAILED;
+        }
+        else {
+            // output the current robot pose in original pose value
+            RCLCPP_INFO(logger_, "Current robot pose: %f, %f", robotPose.pose.position.x, robotPose.pose.position.y);
+        }
+        if(scanRadius() || outOfBound(robotPose.pose.position.x, robotPose.pose.position.y)){
+            stopRobot();
+            RCLCPP_INFO(logger_, "Escape successfully");
+            return Status::SUCCEEDED;
         }
 
         target_point = findTargetPoint();
