@@ -88,7 +88,7 @@ controller_server:
     progress_checker_plugin: "progress_checker"
     current_goal_checker: "percise_goal_checker"
     goal_checker_plugins: ["percise_goal_checker"]
-    controller_plugins: ["FollowPath", "DockMission", "MPPI"]
+    controller_plugins: ["FollowPath", "DockMission", "Graceful", "MPPI"]
 
     # Progress checker parameters
     progress_checker:
@@ -126,6 +126,25 @@ controller_server:
       use_fixed_curvature_lookahead: false
       curvature_lookahead_dist: 0.25
       
+    Graceful:
+      plugin: nav2_graceful_controller::GracefulController
+      transform_tolerance: 0.1
+      min_lookahead: 0.25
+      max_lookahead: 1.0
+      initial_rotation: true
+      initial_rotation_threshold: 0.75
+      prefer_final_rotation: true
+      allow_backward: false
+      k_phi: 2.0
+      k_delta: 1.0
+      beta: 0.4
+      lambda: 2.0
+      v_linear_min: 0.1
+      v_linear_max: 0.5
+      v_angular_max: 5.0
+      v_angular_min_in_place: 0.25
+      slowdown_radius: 1.5
+
     MPPI:
       plugin: "nav2_mppi_controller::MPPIController"
       time_steps: 56
@@ -407,3 +426,64 @@ velocity_smoother:
     odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]
     velocity_timeout: 1.0
+
+lifecycle_manager:
+  ros__parameters:
+    autostart: true
+    node_names: ['controller_server', 'smoother_server', 'planner_server', 'behavior_server', 'bt_navigator', 'waypoint_follower', 'velocity_smoother', 'docking_server']
+    bond_timeout: 4.0
+
+
+docking_server:
+  ros__parameters:
+    controller_frequency: 50.0
+    initial_perception_timeout: 5.0
+    wait_charge_timeout: 5.0
+    dock_approach_timeout: 30.0
+    undock_linear_tolerance: 0.05
+    undock_angular_tolerance: 0.1
+    max_retries: 3
+    base_frame: "base_link"
+    fixed_frame: "odom"
+    dock_backwards: false
+    dock_prestaging_tolerance: 0.5
+
+    # Types of docks
+    dock_plugins: ['nova_carter_dock']
+    nova_carter_dock:
+      plugin: 'opennav_docking::SimpleChargingDock'
+      docking_threshold: 0.05
+      staging_x_offset: -0.7
+      use_external_detection_pose: false
+      use_battery_status: false
+      use_stall_detection: false
+
+      external_detection_timeout: 1.0
+      external_detection_translation_x: -0.18
+      external_detection_translation_y: 0.0
+      external_detection_rotation_roll: -1.57
+      external_detection_rotation_pitch: -1.57
+      external_detection_rotation_yaw: 0.0
+      filter_coef: 0.1
+
+    docks: ['home_dock','flex_dock1', 'flex_dock2']
+    home_dock:
+      type: 'nova_carter_dock'
+      frame: map
+      pose: [0.0, 0.0, 0.0]
+    flex_dock1:
+      type: 'nova_carter_dock'
+      frame: map
+      pose: [1.0, 1.0, 0.0]
+    flex_dock2:
+      type: 'nova_carter_dock'
+      frame: map
+      pose: [1.5, 1.0, 0.0]
+    
+    # dock_database: /my/path/to/dock_database.yaml
+
+    controller:
+      k_phi: 3.0
+      k_delta: 2.0
+      v_linear_min: 0.15
+      v_linear_max: 0.15
