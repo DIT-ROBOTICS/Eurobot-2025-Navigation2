@@ -55,6 +55,14 @@ ament_target_dependencies(nav2_spin_behavior
   ${dependencies}
 )
 
+add_library(nav2_shrink_behavior SHARED
+  plugins/shrink.cpp
+)
+
+ament_target_dependencies(nav2_shrink_behavior
+  ${dependencies}
+)
+
 add_library(nav2_escape_behavior SHARED
   plugins/escape.cpp
 )
@@ -123,6 +131,7 @@ install(TARGETS ${library_name}
                 nav2_spin_behavior
                 nav2_escape_behavior
                 nav2_wait_behavior
+                nav2_shrink_behavior
                 nav2_assisted_teleop_behavior
                 nav2_drive_on_heading_behavior
                 nav2_back_up_behavior
@@ -159,6 +168,7 @@ ament_export_libraries(${library_name}
   nav2_spin_behavior
   nav2_escape_behavior
   nav2_wait_behavior
+  nav2_shrink_behavior
   nav2_assisted_teleop_behavior
   nav2_drive_on_heading_behavior
   nav2_back_up_behavior

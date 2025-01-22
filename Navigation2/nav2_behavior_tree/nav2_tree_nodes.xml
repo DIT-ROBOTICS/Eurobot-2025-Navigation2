@@ -183,6 +183,10 @@
       <input_port name="is_recovery"></input_port>
     </Action>
 
+    <Action ID="Shrink">
+      <input_port name="shrink_to">shrink to</input_port>
+    </Action>
+
     <Action ID="Wait">
       <input_port name="wait_duration">Wait time</input_port>
       <input_port name="server_name">Server name</input_port>

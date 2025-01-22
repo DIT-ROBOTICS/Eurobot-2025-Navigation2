@@ -19,6 +19,7 @@ bt_navigator:
       - nav2_spin_action_bt_node
       - nav2_wait_action_bt_node
       - nav2_escape_action_bt_node
+      - nav2_shrink_action_bt_node
       - nav2_assisted_teleop_action_bt_node
       - nav2_back_up_action_bt_node
       - nav2_drive_on_heading_bt_node
@@ -207,7 +208,7 @@ behavior_server:
     costmap_topic: local_costmap/costmap_raw
     footprint_topic: local_costmap/published_footprint
     cycle_frequency: 10.0
-    behavior_plugins: ["spin", "backup", "drive_on_heading", "assisted_teleop", "wait", "escape"]
+    behavior_plugins: ["spin", "backup", "drive_on_heading", "assisted_teleop", "wait", "escape", "shrink"]
     spin:
       plugin: "nav2_behaviors/Spin"
     backup:
@@ -220,6 +221,8 @@ behavior_server:
       plugin: "nav2_behaviors/Escape"
     wait:
       plugin: "nav2_behaviors/Wait"
+    shrink:
+      plugin: "nav2_behaviors/Shrink"
     global_frame: odom
     robot_base_frame: base_link
     transform_tolerance: 0.1
