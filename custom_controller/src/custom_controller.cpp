@@ -305,7 +305,8 @@ bool CustomController::checkObstacle(int current_index, int check_index){
             int mapX = vector_global_path_[i].x_ * 100;
             int mapY = vector_global_path_[i].y_ * 100;
             int index = (mapY-1) * 300 + mapX;
-            if(latest_costmap_->data[index] > 0){
+            if(latest_costmap_->data[index] > 50){
+                RCLCPP_INFO(logger_, "Obstacle data is [%d]", latest_costmap_->data[index]);
                 return true;
             }
         }
@@ -315,7 +316,8 @@ bool CustomController::checkObstacle(int current_index, int check_index){
             int mapX = vector_global_path_[i].x_ * 100;
             int mapY = vector_global_path_[i].y_ * 100;
             int index = (mapY-1) * 300 + mapX;
-            if(latest_costmap_->data[index] > 0){
+            if(latest_costmap_->data[index] > 50){
+                RCLCPP_INFO(logger_, "Obstacle data is [%d]", latest_costmap_->data[index]);
                 return true;
             }
         }
