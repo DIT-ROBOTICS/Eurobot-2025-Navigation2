@@ -40,6 +40,7 @@ DockingServer::DockingServer(const rclcpp::NodeOptions & options)
   declare_parameter("fixed_frame", "odom");
   declare_parameter("dock_backwards", false);
   declare_parameter("dock_prestaging_tolerance", 0.5);
+  declare_parameter("backward_projection", 0.03);
 }
 
 nav2_util::CallbackReturn
@@ -59,6 +60,7 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   get_parameter("fixed_frame", fixed_frame_);
   get_parameter("dock_backwards", dock_backwards_);
   get_parameter("dock_prestaging_tolerance", dock_prestaging_tolerance_);
+  get_parameter("backward_projection", backward_projection_);
   RCLCPP_INFO(get_logger(), "Controller frequency set to %.4fHz", controller_frequency_);
 
   vel_publisher_ = create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 1);
@@ -412,10 +414,9 @@ bool DockingServer::approachDock(Dock * dock, geometry_msgs::msg::PoseStamped & 
     // Thus, we backward project the controller's target pose a little bit after the
     // dock so that the robot never gets to the end of the spiral before its in contact
     // with the dock to stop the docking procedure.
-    const double backward_projection = 0.25;
     const double yaw = tf2::getYaw(target_pose.pose.orientation);
-    target_pose.pose.position.x += cos(yaw) * backward_projection;
-    target_pose.pose.position.y += sin(yaw) * backward_projection;
+    target_pose.pose.position.x += cos(yaw) * backward_projection_;
+    target_pose.pose.position.y += sin(yaw) * backward_projection_;
     tf2_buffer_->transform(target_pose, target_pose, base_frame_);
 
     // Compute and publish controls

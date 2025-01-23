@@ -239,6 +239,8 @@ protected:
   bool dock_backwards_;
   // The tolerance to the dock's staging pose not requiring navigation
   double dock_prestaging_tolerance_;
+  // The adjustment for graceful controller
+  double backward_projection_;
 
   // This is a class member so it can be accessed in publish feedback
   rclcpp::Time action_start_time_;

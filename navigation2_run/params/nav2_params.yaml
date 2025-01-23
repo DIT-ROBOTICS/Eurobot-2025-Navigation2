@@ -427,13 +427,6 @@ velocity_smoother:
     deadband_velocity: [0.0, 0.0, 0.0]
     velocity_timeout: 1.0
 
-lifecycle_manager:
-  ros__parameters:
-    autostart: true
-    node_names: ['controller_server', 'smoother_server', 'planner_server', 'behavior_server', 'bt_navigator', 'waypoint_follower', 'velocity_smoother', 'docking_server']
-    bond_timeout: 4.0
-
-
 docking_server:
   ros__parameters:
     controller_frequency: 50.0
@@ -447,43 +440,44 @@ docking_server:
     fixed_frame: "odom"
     dock_backwards: false
     dock_prestaging_tolerance: 0.5
+    backward_projection: 0.03
 
     # Types of docks
-    dock_plugins: ['nova_carter_dock']
-    nova_carter_dock:
+    dock_plugins: ['mission_dock']
+    mission_dock:
       plugin: 'opennav_docking::SimpleChargingDock'
-      docking_threshold: 0.05
+      docking_threshold: 0.1
       staging_x_offset: -0.7
-      use_external_detection_pose: false
+      use_external_detection_pose: true
       use_battery_status: false
       use_stall_detection: false
 
       external_detection_timeout: 1.0
-      external_detection_translation_x: -0.18
+      external_detection_translation_x: 0.0
       external_detection_translation_y: 0.0
-      external_detection_rotation_roll: -1.57
-      external_detection_rotation_pitch: -1.57
+      external_detection_rotation_roll: 0.0
+      external_detection_rotation_pitch: 0.0
       external_detection_rotation_yaw: 0.0
       filter_coef: 0.1
 
-    docks: ['home_dock','flex_dock1', 'flex_dock2']
+    docks: ['home_dock', 'flex_dock1', 'flex_dock2']
     home_dock:
-      type: 'nova_carter_dock'
+      type: 'mission_dock'
       frame: map
       pose: [0.0, 0.0, 0.0]
     flex_dock1:
-      type: 'nova_carter_dock'
+      type: 'mission_dock'
       frame: map
       pose: [1.0, 1.0, 0.0]
     flex_dock2:
-      type: 'nova_carter_dock'
+      type: 'mission_dock'
       frame: map
       pose: [1.5, 1.0, 0.0]
     
     # dock_database: /my/path/to/dock_database.yaml
 
     controller:
-      k_phi: 3.0
-      k_delta: 2.0
-      v_linear_min: 0.15
+      k_phi: 8.5
+      k_delta: 0.7
+      v_linear_min: 0.01
       v_linear_max: 0.15

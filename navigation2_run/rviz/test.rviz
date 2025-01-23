@@ -10,12 +10,6 @@ Panels:
         - /Global Planner1/Global Costmap1
         - /Controller1/Local Costmap1/Position1
         - /Controller1/Local Costmap1/Orientation1
-        - /Pose1
-        - /Odometry1
-        - /MarkerArray2
-        - /Pose2
-        - /Pose3
-        - /Pose4
       Splitter Ratio: 0.5833333134651184
     Tree Height: 516
   - Class: rviz_common/Selection
@@ -283,7 +277,7 @@ Visualization Manager:
       Enabled: true
       Head Length: 0.10000000149011612
       Head Radius: 0.07999999821186066
-      Name: Pose
+      Name: GoalPose
       Shaft Length: 0.25
       Shaft Radius: 0.03999999910593033
       Shape: Arrow
@@ -389,7 +383,7 @@ Visualization Manager:
       Enabled: true
       Head Length: 0.10000000149011612
       Head Radius: 0.07999999821186066
-      Name: Pose
+      Name: StagingPose
       Shaft Length: 0.25
       Shaft Radius: 0.03999999910593033
       Shape: Arrow
@@ -399,7 +393,7 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /local_goal
+        Value: /staging_pose
       Value: true
     - Alpha: 1
       Axes Length: 1
@@ -409,7 +403,7 @@ Visualization Manager:
       Enabled: true
       Head Length: 0.10000000149011612
       Head Radius: 0.07999999821186066
-      Name: Pose
+      Name: DockPose
       Shaft Length: 0.25
       Shaft Radius: 0.03999999910593033
       Shape: Arrow
@@ -425,13 +419,13 @@ Visualization Manager:
       Axes Length: 1
       Axes Radius: 0.10000000149011612
       Class: rviz_default_plugins/Pose
-      Color: 255; 25; 0
+      Color: 170; 170; 255
       Enabled: true
-      Head Length: 0.30000001192092896
-      Head Radius: 0.10000000149011612
-      Name: Pose
-      Shaft Length: 1
-      Shaft Radius: 0.05000000074505806
+      Head Length: 0.10000000149011612
+      Head Radius: 0.07999999821186066
+      Name: RefinePose
+      Shaft Length: 0.25
+      Shaft Radius: 0.03999999910593033
       Shape: Arrow
       Topic:
         Depth: 5
@@ -440,6 +434,26 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /filtered_dock_pose
+      Value: true
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.10000000149011612
+      Class: rviz_default_plugins/Pose
+      Color: 0; 255; 127
+      Enabled: true
+      Head Length: 0.10000000149011612
+      Head Radius: 0.07999999821186066
+      Name: LocalGoal
+      Shaft Length: 0.25
+      Shaft Radius: 0.03999999910593033
+      Shape: Arrow
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /local_goal
       Value: true
   Enabled: true
   Global Options:
@@ -485,7 +499,7 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Angle: 0.16499951481819153
+      Angle: 0.04000015929341316
       Class: rviz_default_plugins/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
