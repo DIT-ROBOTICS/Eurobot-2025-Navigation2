@@ -11,7 +11,7 @@
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp" // For raw costmap data
-
+#include "geometry_msgs/msg/pose_stamped.hpp"
 
 using std::hypot;
 using std::min;
@@ -52,8 +52,14 @@ void CustomController::configure(
             latest_costmap_ = msg;
             // RCLCPP_INFO(logger_, "Received costmap data.");
         });
+controller
     global_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("received_global_plan", 5);
     check_goal_pub_ = node->create_publisher<geometry_msgs::msg::PoseStamped>("check_goal", 5);
+// =======
+
+//     local_goal_pub_ = node->create_publisher<geometry_msgs::msg::PoseStamped>("/local_goal", rclcpp::QoS(10));
+
+// >>>>>>> develop
     // Declare parameters if not declared
     declare_parameter_if_not_declared(node, plugin_name_ + ".max_linear_vel", rclcpp::ParameterValue(0.7));
     declare_parameter_if_not_declared(node, plugin_name_ + ".min_linear_vel", rclcpp::ParameterValue(0.0));
@@ -226,21 +232,39 @@ RobotState CustomController::getLookAheadPoint(
         // is_local_goal_final_reached_ = true;
     }
     // ROS_INFO_STREAM("[Path Executor]: next_index: " << next_index);    
-    // // for rviz visualization
-    // geometry_msgs::PoseStamped check_goal_;
-    // check_goal_.header.frame_id = frame_;
-    // check_goal_.header.stamp = ros::Time::now();
-    // check_goal_.pose.position.x = local_goal.x_;
-    // check_goal_.pose.position.y = local_goal.y_;
+// <<<<<<< controller
+//     // // for rviz visualization
+//     // geometry_msgs::PoseStamped check_goal_;
+//     // check_goal_.header.frame_id = frame_;
+//     // check_goal_.header.stamp = ros::Time::now();
+//     // check_goal_.pose.position.x = local_goal.x_;
+//     // check_goal_.pose.position.y = local_goal.y_;
 
-    // tf2::Quaternion q;
-    // q.setRPY(0, 0, local_goal.theta_);
-    // check_goal_.pose.orientation.x = q.x();
-    // check_goal_.pose.orientation.y = q.y();
-    // check_goal_.pose.orientation.z = q.z();
-    // check_goal_.pose.orientation.w = q.w();
-    // local_goal_pub_.publish(check_goal_);
+//     // tf2::Quaternion q;
+//     // q.setRPY(0, 0, local_goal.theta_);
+//     // check_goal_.pose.orientation.x = q.x();
+//     // check_goal_.pose.orientation.y = q.y();
+//     // check_goal_.pose.orientation.z = q.z();
+//     // check_goal_.pose.orientation.w = q.w();
+//     // local_goal_pub_.publish(check_goal_);
     
+// =======
+//     // for rviz visualization
+//     geometry_msgs::msg::PoseStamped pos_msg;
+//     pos_msg.header.frame_id = "map";
+//     pos_msg.header.stamp = clock_->now();
+//     pos_msg.pose.position.x = local_goal.x_;
+//     pos_msg.pose.position.y = local_goal.y_;
+
+//     tf2::Quaternion q;
+//     q.setRPY(0, 0, local_goal.theta_);
+//     pos_msg.pose.orientation.x = q.x();
+//     pos_msg.pose.orientation.y = q.y();
+//     pos_msg.pose.orientation.z = q.z();
+//     pos_msg.pose.orientation.w = q.w();
+//     local_goal_pub_->publish(pos_msg);
+
+// >>>>>>> develop
     //RCLCPP_INFO(logger_, "local_goal is [%lf] [%lf]", local_goal.x_, local_goal.y_);
     // RCLCPP_INFO(logger_, "angle = [%lf]", cur_pose.theta_);
     
