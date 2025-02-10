@@ -50,8 +50,10 @@ void CustomController::configure(
         [this](const nav_msgs::msg::OccupancyGrid::SharedPtr msg) {
             // Store the latest costmap
             latest_costmap_ = msg;
-            //RCLCPP_INFO(logger_, "Received costmap data.");
+            // RCLCPP_INFO(logger_, "Received costmap data.");
         });
+    global_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("received_global_plan", 5);
+    check_goal_pub_ = node->create_publisher<geometry_msgs::msg::PoseStamped>("check_goal", 5);
     // Declare parameters if not declared
     declare_parameter_if_not_declared(node, plugin_name_ + ".max_linear_vel", rclcpp::ParameterValue(0.7));
     declare_parameter_if_not_declared(node, plugin_name_ + ".min_linear_vel", rclcpp::ParameterValue(0.0));
@@ -82,12 +84,19 @@ void CustomController::configure(
 // Lifecycle methods
 void CustomController::cleanup(){
     RCLCPP_INFO(logger_, "[%s] Cleaning up controller", plugin_name_.c_str());
+    global_path_pub_.reset();
+    check_goal_pub_.reset();
 }
 void CustomController::activate(){
     RCLCPP_INFO(logger_, "[%s] Activating controller", plugin_name_.c_str());
+    global_path_pub_->on_activate();
+    check_goal_pub_->on_activate();
+
 }
 void CustomController::deactivate(){
     RCLCPP_INFO(logger_, "[%s] Deactivating controller", plugin_name_.c_str());
+    global_path_pub_->on_deactivate();
+    check_goal_pub_->on_deactivate();
 }
 
 // void CustomController::setSpeedLimit(double speed_limit, double speed_limit_yaw){
@@ -107,6 +116,12 @@ void CustomController::setPlan(const nav_msgs::msg::Path & path)
     }   
     global_plan_ = path;
     RCLCPP_INFO(logger_, "Received a new plan");
+    
+    auto msg = std::make_unique<nav_msgs::msg::Path>(global_plan_);
+    global_plan_.header.stamp = path.header.stamp;
+    global_plan_.header.frame_id = path.header.frame_id;  // or "odom"
+    global_path_pub_->publish(std::move(msg));
+  
     //RCLCPP_INFO(logger_, "global_plan_.orientation x y z w = [%lf] [%lf] [%lf] [%lf]", global_plan_.poses.back().pose.orientation.x, global_plan_.poses.back().pose.orientation.y, global_plan_.poses.back().pose.orientation.z, global_plan_.poses.back().pose.orientation.w);
     tf2::Quaternion q;
     tf2::fromMsg(global_plan_.poses.back().pose.orientation, q);
@@ -117,6 +132,7 @@ void CustomController::setPlan(const nav_msgs::msg::Path & path)
     final_goal_angle_ = yaw;
 
     update_plan_ = false;
+    // update_plan_ = true;
     isObstacleExist_ = false;
     //print the distance between the points
     // RCLCPP_INFO(logger_, "global_plan_.poses.size() = [%d]", global_plan_.poses.size());
@@ -197,11 +213,6 @@ RobotState CustomController::getLookAheadPoint(
     if (next_index < path.size()-1) {
         next_index = next_index+1;
     }
-    // while (next_index < path.size()-1 && cur_pose.distanceTo(path[next_index]) < look_ahead_distance) {
-    //     next_index++;
-    // }
-    // if (next_index == 0) next_index = path.size()-1;
-    //RCLCPP_INFO(logger_, "current pose is [%lf] [%lf]", cur_pose.x_, cur_pose.y_);
 
     local_goal.x_ = cur_pose.x_ + (path[next_index].x_ - cur_pose.x_)*(look_ahead_distance/cur_pose.distanceTo(path[next_index]));
     local_goal.y_ = cur_pose.y_ + (path[next_index].y_ - cur_pose.y_)*(look_ahead_distance/cur_pose.distanceTo(path[next_index]));
@@ -216,19 +227,19 @@ RobotState CustomController::getLookAheadPoint(
     }
     // ROS_INFO_STREAM("[Path Executor]: next_index: " << next_index);    
     // // for rviz visualization
-    // geometry_msgs::PoseStamped pos_msg;
-    // pos_msg.header.frame_id = frame_;
-    // pos_msg.header.stamp = ros::Time::now();
-    // pos_msg.pose.position.x = local_goal.x_;
-    // pos_msg.pose.position.y = local_goal.y_;
+    // geometry_msgs::PoseStamped check_goal_;
+    // check_goal_.header.frame_id = frame_;
+    // check_goal_.header.stamp = ros::Time::now();
+    // check_goal_.pose.position.x = local_goal.x_;
+    // check_goal_.pose.position.y = local_goal.y_;
 
     // tf2::Quaternion q;
     // q.setRPY(0, 0, local_goal.theta_);
-    // pos_msg.pose.orientation.x = q.x();
-    // pos_msg.pose.orientation.y = q.y();
-    // pos_msg.pose.orientation.z = q.z();
-    // pos_msg.pose.orientation.w = q.w();
-    // local_goal_pub_.publish(pos_msg);
+    // check_goal_.pose.orientation.x = q.x();
+    // check_goal_.pose.orientation.y = q.y();
+    // check_goal_.pose.orientation.z = q.z();
+    // check_goal_.pose.orientation.w = q.w();
+    // local_goal_pub_.publish(check_goal_);
     
     //RCLCPP_INFO(logger_, "local_goal is [%lf] [%lf]", local_goal.x_, local_goal.y_);
     // RCLCPP_INFO(logger_, "angle = [%lf]", cur_pose.theta_);
@@ -297,23 +308,78 @@ int CustomController::getIndex(RobotState cur_pose, std::vector<RobotState> &pat
 }
 
 bool CustomController::checkObstacle(int current_index, int check_index){
+    
     if(current_index >= check_index){
+        
+        check_goal_.header.frame_id = global_plan_.header.frame_id;
+        check_goal_.header.stamp = global_plan_.header.stamp;
+        check_goal_.pose.position.x = vector_global_path_[current_index].x_;
+        check_goal_.pose.position.y = vector_global_path_[current_index].y_;
+        auto msg = std::make_unique<geometry_msgs::msg::PoseStamped>(check_goal_);
+        tf2::Quaternion q;
+        q.setRPY(0, 0, vector_global_path_[current_index].theta_);
+        check_goal_.pose.orientation.x = q.x();
+        check_goal_.pose.orientation.y = q.y();
+        check_goal_.pose.orientation.z = q.z();
+        check_goal_.pose.orientation.w = q.w();
+        check_goal_pub_->publish(std::move(msg));
         for(int i = 0; i < current_index; i++){
+            // check_goal_.header.frame_id = global_plan_.header.frame_id;
+            // check_goal_.header.stamp = global_plan_.header.stamp;
+            // check_goal_.pose.position.x = vector_global_path_[i].x_;
+            // check_goal_.pose.position.y = vector_global_path_[i].y_;
+            // auto msg = std::make_unique<geometry_msgs::msg::PoseStamped>(check_goal_);
+            // tf2::Quaternion q;
+            // q.setRPY(0, 0, vector_global_path_[i].theta_);
+            // check_goal_.pose.orientation.x = q.x();
+            // check_goal_.pose.orientation.y = q.y();
+            // check_goal_.pose.orientation.z = q.z();
+            // check_goal_.pose.orientation.w = q.w();
+            // check_goal_pub_->publish(std::move(msg));
             int mapX = vector_global_path_[i].x_ * 100;
             int mapY = vector_global_path_[i].y_ * 100;
             int index = (mapY-1) * 300 + mapX;
-            if(latest_costmap_->data[index] > 0){
+            if(latest_costmap_->data[index] > 60){
+                //RCLCPP_INFO(logger_, "Obstacle data is [%d]", latest_costmap_->data[index]);
                 return true;
+                // return false;
             }
         }
         
     }else{
+        
+        check_goal_.header.frame_id = global_plan_.header.frame_id;
+        check_goal_.header.stamp = global_plan_.header.stamp;
+        check_goal_.pose.position.x = vector_global_path_[check_index].x_;
+        check_goal_.pose.position.y = vector_global_path_[check_index].y_;
+        auto msg = std::make_unique<geometry_msgs::msg::PoseStamped>(check_goal_);
+        tf2::Quaternion q;
+        q.setRPY(0, 0, vector_global_path_[check_index].theta_);
+        check_goal_.pose.orientation.x = q.x();
+        check_goal_.pose.orientation.y = q.y();
+        check_goal_.pose.orientation.z = q.z();
+        check_goal_.pose.orientation.w = q.w();
+        check_goal_pub_->publish(std::move(msg));
         for(int i = current_index; i < check_index; i++){
+            // check_goal_.header.frame_id = global_plan_.header.frame_id;
+            // check_goal_.header.stamp = global_plan_.header.stamp;
+            // check_goal_.pose.position.x = vector_global_path_[i].x_;
+            // check_goal_.pose.position.y = vector_global_path_[i].y_;
+            // auto msg = std::make_unique<geometry_msgs::msg::PoseStamped>(check_goal_);
+            // tf2::Quaternion q;
+            // q.setRPY(0, 0, vector_global_path_[i].theta_);
+            // check_goal_.pose.orientation.x = q.x();
+            // check_goal_.pose.orientation.y = q.y();
+            // check_goal_.pose.orientation.z = q.z();
+            // check_goal_.pose.orientation.w = q.w();
+            // check_goal_pub_->publish(std::move(msg));
             int mapX = vector_global_path_[i].x_ * 100;
             int mapY = vector_global_path_[i].y_ * 100;
             int index = (mapY-1) * 300 + mapX;
-            if(latest_costmap_->data[index] > 0){
+            if(latest_costmap_->data[index] > 60){
+                RCLCPP_INFO(logger_, "Obstacle data is [%d]", latest_costmap_->data[index]);
                 return true;
+                // return false;
             }
         }
     }
@@ -355,7 +421,8 @@ geometry_msgs::msg::TwistStamped CustomController::computeVelocityCommands(
         cmd_vel.twist.linear.y = std::min(global_distance * 1.5, max_linear_vel_) * sin(local_angle);
         cmd_vel.twist.angular.z = getGoalAngle(cur_pose_.theta_, final_goal_angle_);
         double vel_ = sqrt(pow(cmd_vel.twist.linear.x, 2) + pow(cmd_vel.twist.linear.y, 2));
-        check_distance_ = std::max(vel_ * 0.5, look_ahead_distance_);
+        check_distance_ = std::max(vel_ * 2, look_ahead_distance_);
+        RCLCPP_INFO(logger_, "check_distance is [%lf]", check_distance_);
         check_index_ = getIndex(cur_pose_, vector_global_path_, check_distance_);
         current_index_ = getIndex(cur_pose_, vector_global_path_, look_ahead_distance_);
         // RCLCPP_INFO(logger_, "check_index is [%d]", check_index_);

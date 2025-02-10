@@ -10,7 +10,7 @@ class RivalSimPub : public rclcpp::Node {
             timer_ = this->create_wall_timer(std::chrono::milliseconds(50), std::bind(&RivalSimPub::timer_callback, this));
 
             // Get the rival mode -> 0: Halted, 1: Wandering, 2: Moving, 3: Moving with noise
-            declare_parameter("Rival_mode", rclcpp::ParameterValue(0));
+            declare_parameter("Rival_mode", rclcpp::ParameterValue(2));
             this->get_parameter("Rival_mode", rival_mode_);
         }   
 

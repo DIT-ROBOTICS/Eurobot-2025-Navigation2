@@ -86,6 +86,9 @@ class CustomController : public nav2_core::Controller{
         int yaw_debounce_counter_ = 0;
 
         nav_msgs::msg::Path global_plan_;  // Store the global plan
+        geometry_msgs::msg::PoseStamped check_goal_;
+        std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> global_path_pub_;
+        std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseStamped>> check_goal_pub_;
         std::vector<RobotState> vector_global_path_;
         RobotState goal_pose_;
         RobotState local_goal_;

@@ -282,7 +282,7 @@ local_costmap:
         map_subscribe_transient_local: True
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 0.1
+        cost_scaling_factor: 0.03
         inflation_radius: 0.1
       rival_layer:
         plugin: "custom_path_costmap_plugin::RivalLayer"
