@@ -29,8 +29,7 @@ def generate_launch_description():
     lifecycle_nodes = ['map_server']
 
     # Remappings
-    remappings = [('/tf', 'tf'),
-                  ('/tf_static', 'tf_static')]
+    remappings = LaunchConfiguration('remappings')
 
     # Parameter substitution
     param_substitutions = {
@@ -71,6 +70,11 @@ def generate_launch_description():
     declare_log_level_cmd = DeclareLaunchArgument(
         'log_level', default_value='info', description='Log level')
 
+    declare_use_odom_sim_cmd = DeclareLaunchArgument(
+        'use_odom_sim',
+        default_value='False',
+        description='Whether to use the odometry simulation node')
+    
     # Load static transform
     static_tf_node = Node(
         package='tf2_ros',
@@ -84,18 +88,19 @@ def generate_launch_description():
         ]
     )
 
-    # # Load odometry simulation
-    # odometry_sim_node = Node(
-    #     package='navigation2_run',
-    #     executable='odometry_sim',
-    #     name='odometry_sim',
-    #     output='screen',
-    #     respawn=use_respawn,
-    #     respawn_delay=2.0,
-    #     parameters=[{"cmd_cb_name": "/cmd_vel"}],
-    #     arguments=['--ros-args', '--log-level', log_level],
-    #     remappings=remappings
-    # )
+    # Load odometry simulation
+    odometry_sim_node = Node(
+        package='navigation2_run',
+        executable='odometry_sim',
+        name='odometry_sim',
+        condition=IfCondition(LaunchConfiguration('use_odom_sim')),
+        output='screen',
+        respawn=use_respawn,
+        respawn_delay=2.0,
+        parameters=[{"cmd_cb_name": "/cmd_vel"}],
+        arguments=['--ros-args', '--log-level', log_level],
+        remappings=remappings
+    )
 
     # Load nodes group
     load_nodes = GroupAction(
@@ -160,10 +165,11 @@ def generate_launch_description():
     ld.add_action(declare_container_name_cmd)
     ld.add_action(declare_use_respawn_cmd)
     ld.add_action(declare_log_level_cmd)
+    ld.add_action(declare_use_odom_sim_cmd)
 
     # Add nodes to launch description
     ld.add_action(static_tf_node)
-    # ld.add_action(odometry_sim_node)
+    ld.add_action(odometry_sim_node)
     ld.add_action(load_nodes)
     ld.add_action(load_composable_nodes)
 

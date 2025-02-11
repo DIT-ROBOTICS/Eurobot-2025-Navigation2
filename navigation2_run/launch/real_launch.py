@@ -1,7 +1,6 @@
 import os
 
-from ament_index_python.packages import get_package_share_directory
-
+from ament_index_python.packages import get_package_share_directory # type: ignore
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, ExecuteProcess, IncludeLaunchDescription # type: ignore
 from launch.conditions import IfCondition # type: ignore
@@ -31,6 +30,7 @@ def generate_launch_description():
     use_robot_state_pub = LaunchConfiguration('use_robot_state_pub')
     use_rviz = LaunchConfiguration('use_rviz')
     headless = LaunchConfiguration('headless')
+    use_odom_sim = LaunchConfiguration('use_odom_sim')
     # world = LaunchConfiguration('world')
     pose = {'x': LaunchConfiguration('x_pose', default='2.00'),
             'y': LaunchConfiguration('y_pose', default='2.00'),
@@ -48,7 +48,8 @@ def generate_launch_description():
     # TODO(orduno) Substitute with `PushNodeRemapping`
     #              https://github.com/ros2/launch_ros/issues/56
     remappings = [('/tf', 'tf'),
-                  ('/tf_static', 'tf_static')]
+                  ('/tf_static', 'tf_static'),
+                  ('/final_pose', 'odom')]
 
     # Declare the launch arguments
     declare_namespace_cmd = DeclareLaunchArgument(
@@ -119,6 +120,11 @@ def generate_launch_description():
         'headless',
         default_value='True',
         description='Whether to execute gzclient)')
+    
+    declare_use_odom_sim_cmd = DeclareLaunchArgument(
+        'use_odom_sim',
+        default_value='False',
+        description='Whether to use odometry simulation')
 
     # declare_world_cmd = DeclareLaunchArgument(
     #     'world',
@@ -197,7 +203,9 @@ def generate_launch_description():
                           'params_file': params_file,
                           'autostart': autostart,
                           'use_composition': use_composition,
-                          'use_respawn': use_respawn}.items())
+                          'use_respawn': use_respawn,
+                          'use_odom_sim' : use_odom_sim,
+                          'remappings' : remappings}.items())
 
     # Create the launch description and populate
     ld = LaunchDescription()
@@ -211,6 +219,7 @@ def generate_launch_description():
     ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_autostart_cmd)
     ld.add_action(declare_use_composition_cmd)
+    ld.add_action(declare_use_odom_sim_cmd)
 
     ld.add_action(declare_rviz_config_file_cmd)
     ld.add_action(declare_use_simulator_cmd)
