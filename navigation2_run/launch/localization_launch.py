@@ -29,7 +29,8 @@ def generate_launch_description():
     lifecycle_nodes = ['map_server']
 
     # Remappings
-    remappings = LaunchConfiguration('remappings')
+    remappings = [('/tf', 'tf'),
+                  ('/tf_static', 'tf_static')]
 
     # Parameter substitution
     param_substitutions = {
@@ -70,11 +71,6 @@ def generate_launch_description():
     declare_log_level_cmd = DeclareLaunchArgument(
         'log_level', default_value='info', description='Log level')
 
-    declare_use_odom_sim_cmd = DeclareLaunchArgument(
-        'use_odom_sim',
-        default_value='False',
-        description='Whether to use the odometry simulation node')
-    
     # Load static transform
     static_tf_node = Node(
         package='tf2_ros',
@@ -93,7 +89,6 @@ def generate_launch_description():
         package='navigation2_run',
         executable='odometry_sim',
         name='odometry_sim',
-        condition=IfCondition(LaunchConfiguration('use_odom_sim')),
         output='screen',
         respawn=use_respawn,
         respawn_delay=2.0,
@@ -165,7 +160,6 @@ def generate_launch_description():
     ld.add_action(declare_container_name_cmd)
     ld.add_action(declare_use_respawn_cmd)
     ld.add_action(declare_log_level_cmd)
-    ld.add_action(declare_use_odom_sim_cmd)
 
     # Add nodes to launch description
     ld.add_action(static_tf_node)

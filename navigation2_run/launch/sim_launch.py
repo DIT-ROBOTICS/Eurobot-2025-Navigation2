@@ -49,7 +49,6 @@ def generate_launch_description():
     use_robot_state_pub = LaunchConfiguration('use_robot_state_pub')
     use_rviz = LaunchConfiguration('use_rviz')
     headless = LaunchConfiguration('headless')
-    use_odom_sim = LaunchConfiguration('use_odom_sim')
     # world = LaunchConfiguration('world')
     pose = {'x': LaunchConfiguration('x_pose', default='2.00'),
             'y': LaunchConfiguration('y_pose', default='2.00'),
@@ -138,11 +137,6 @@ def generate_launch_description():
         'headless',
         default_value='True',
         description='Whether to execute gzclient)')
-    
-    declare_use_odom_sim_cmd = DeclareLaunchArgument(
-        'use_odom_sim',
-        default_value='True',
-        description='Whether to use the odometry simulation node')
 
     # declare_world_cmd = DeclareLaunchArgument(
     #     'world',
@@ -221,9 +215,7 @@ def generate_launch_description():
                           'params_file': params_file,
                           'autostart': autostart,
                           'use_composition': use_composition,
-                          'use_respawn': use_respawn,
-                          'use_odom_sim' : use_odom_sim,
-                          'remappings' : remappings}.items())
+                          'use_respawn': use_respawn}.items())
 
     # Create the launch description and populate
     ld = LaunchDescription()
@@ -243,7 +235,6 @@ def generate_launch_description():
     ld.add_action(declare_use_robot_state_pub_cmd)
     ld.add_action(declare_use_rviz_cmd)
     ld.add_action(declare_simulator_cmd)
-    ld.add_action(declare_use_odom_sim_cmd)
     # ld.add_action(declare_world_cmd)
     # ld.add_action(declare_robot_name_cmd)
     # ld.add_action(declare_robot_sdf_cmd)
