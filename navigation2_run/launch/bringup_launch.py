@@ -52,7 +52,8 @@ def generate_launch_description():
     # https://github.com/ros/robot_state_publisher/pull/30
     # TODO(orduno) Substitute with `PushNodeRemapping`
     #              https://github.com/ros2/launch_ros/issues/56
-    remappings = LaunchConfiguration('remappings')
+    remappings = [('/tf', 'tf'),
+                  ('/tf_static', 'tf_static')]
 
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {
@@ -123,11 +124,6 @@ def generate_launch_description():
     declare_log_level_cmd = DeclareLaunchArgument(
         'log_level', default_value='info',
         description='log level')
-    
-    declare_use_odom_sim_cmd = DeclareLaunchArgument(
-        'use_odom_sim',
-        default_value='False',
-        description='Whether to use the odom simulator')
 
     # Specify the actions
     bringup_cmd_group = GroupAction([
@@ -165,9 +161,7 @@ def generate_launch_description():
                               'params_file': params_file,
                               'use_composition': use_composition,
                               'use_respawn': use_respawn,
-                              'container_name': 'nav2_container',
-                              'use_odom_sim' : LaunchConfiguration('use_odom_sim'),
-                              'remappings' : remappings}.items()),
+                              'container_name': 'nav2_container'}.items()),
 
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(os.path.join(launch_dir, 'navigation_launch.py')),
@@ -177,8 +171,7 @@ def generate_launch_description():
                               'params_file': params_file,
                               'use_composition': use_composition,
                               'use_respawn': use_respawn,
-                              'container_name': 'nav2_container',
-                              'remappings' : remappings}.items()),
+                              'container_name': 'nav2_container'}.items()),
     ])
 
     # Create the launch description and populate
@@ -198,7 +191,6 @@ def generate_launch_description():
     ld.add_action(declare_use_composition_cmd)
     ld.add_action(declare_use_respawn_cmd)
     ld.add_action(declare_log_level_cmd)
-    ld.add_action(declare_use_odom_sim_cmd)
 
     # Add the actions to launch all of the navigation nodes
     ld.add_action(bringup_cmd_group)
