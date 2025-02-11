@@ -52,7 +52,6 @@ void CustomController::configure(
             latest_costmap_ = msg;
             // RCLCPP_INFO(logger_, "Received costmap data.");
         });
-controller
     global_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("received_global_plan", 5);
     check_goal_pub_ = node->create_publisher<geometry_msgs::msg::PoseStamped>("check_goal", 5);
 // =======

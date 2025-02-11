@@ -1,31 +1,12 @@
-# Copyright (c) 2018 Intel Corporation
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-"""This is all-in-one launch script intended for use by nav2 developers."""
-
 import os
 
 from ament_index_python.packages import get_package_share_directory # type: ignore
-# from launch_ros.substitutions import FindPackageShare # type: ignore
-
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, ExecuteProcess, IncludeLaunchDescription # type: ignore
 from launch.conditions import IfCondition # type: ignore
 from launch.launch_description_sources import PythonLaunchDescriptionSource # type: ignore
 from launch.substitutions import LaunchConfiguration, PythonExpression # type: ignore
 from launch_ros.actions import Node # type: ignore
-
 
 def generate_launch_description():
     # Get the launch directory
@@ -67,7 +48,8 @@ def generate_launch_description():
     # TODO(orduno) Substitute with `PushNodeRemapping`
     #              https://github.com/ros2/launch_ros/issues/56
     remappings = [('/tf', 'tf'),
-                  ('/tf_static', 'tf_static')]
+                  ('/tf_static', 'tf_static'),
+                  ('/final_pose', 'odom')]
 
     # Declare the launch arguments
     declare_namespace_cmd = DeclareLaunchArgument(
@@ -131,7 +113,7 @@ def generate_launch_description():
 
     declare_use_rviz_cmd = DeclareLaunchArgument(
         'use_rviz',
-        default_value='True',
+        default_value='False',
         description='Whether to start RVIZ')
 
     declare_simulator_cmd = DeclareLaunchArgument(
@@ -141,8 +123,8 @@ def generate_launch_description():
     
     declare_use_odom_sim_cmd = DeclareLaunchArgument(
         'use_odom_sim',
-        default_value='True',
-        description='Whether to use the odometry simulation node')
+        default_value='False',
+        description='Whether to use odometry simulation')
 
     # declare_world_cmd = DeclareLaunchArgument(
     #     'world',
@@ -237,13 +219,13 @@ def generate_launch_description():
     ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_autostart_cmd)
     ld.add_action(declare_use_composition_cmd)
+    ld.add_action(declare_use_odom_sim_cmd)
 
     ld.add_action(declare_rviz_config_file_cmd)
     ld.add_action(declare_use_simulator_cmd)
     ld.add_action(declare_use_robot_state_pub_cmd)
     ld.add_action(declare_use_rviz_cmd)
     ld.add_action(declare_simulator_cmd)
-    ld.add_action(declare_use_odom_sim_cmd)
     # ld.add_action(declare_world_cmd)
     # ld.add_action(declare_robot_name_cmd)
     # ld.add_action(declare_robot_sdf_cmd)

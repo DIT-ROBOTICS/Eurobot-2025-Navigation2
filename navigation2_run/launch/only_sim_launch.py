@@ -1,18 +1,3 @@
-# Copyright (c) 2018 Intel Corporation
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-"""This is all-in-one launch script intended for use by nav2 developers."""
 
 import os
 
@@ -49,7 +34,6 @@ def generate_launch_description():
     use_robot_state_pub = LaunchConfiguration('use_robot_state_pub')
     use_rviz = LaunchConfiguration('use_rviz')
     headless = LaunchConfiguration('headless')
-    use_odom_sim = LaunchConfiguration('use_odom_sim')
     # world = LaunchConfiguration('world')
     pose = {'x': LaunchConfiguration('x_pose', default='2.00'),
             'y': LaunchConfiguration('y_pose', default='2.00'),
@@ -138,11 +122,6 @@ def generate_launch_description():
         'headless',
         default_value='True',
         description='Whether to execute gzclient)')
-    
-    declare_use_odom_sim_cmd = DeclareLaunchArgument(
-        'use_odom_sim',
-        default_value='True',
-        description='Whether to use the odometry simulation node')
 
     # declare_world_cmd = DeclareLaunchArgument(
     #     'world',
@@ -210,21 +189,6 @@ def generate_launch_description():
                           'use_namespace': use_namespace,
                           'rviz_config': rviz_config_file}.items())
 
-    bringup_cmd = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(launch_dir, 'bringup_launch.py')),
-        launch_arguments={'namespace': namespace,
-                          'use_namespace': use_namespace,
-                        #   'slam': slam,
-                          'map': map_yaml_file,
-                          'use_sim_time': use_sim_time,
-                          'params_file': params_file,
-                          'autostart': autostart,
-                          'use_composition': use_composition,
-                          'use_respawn': use_respawn,
-                          'use_odom_sim' : use_odom_sim,
-                          'remappings' : remappings}.items())
-
     # Create the launch description and populate
     ld = LaunchDescription()
 
@@ -243,7 +207,6 @@ def generate_launch_description():
     ld.add_action(declare_use_robot_state_pub_cmd)
     ld.add_action(declare_use_rviz_cmd)
     ld.add_action(declare_simulator_cmd)
-    ld.add_action(declare_use_odom_sim_cmd)
     # ld.add_action(declare_world_cmd)
     # ld.add_action(declare_robot_name_cmd)
     # ld.add_action(declare_robot_sdf_cmd)
@@ -257,6 +220,5 @@ def generate_launch_description():
     # Add the actions to launch all of the navigation nodes
     # ld.add_action(start_robot_state_publisher_cmd)
     ld.add_action(rviz_cmd)
-    ld.add_action(bringup_cmd)
 
     return ld
