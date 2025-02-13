@@ -42,6 +42,7 @@ def generate_launch_description():
     autostart = LaunchConfiguration('autostart')
     use_composition = LaunchConfiguration('use_composition')
     use_respawn = LaunchConfiguration('use_respawn')
+    use_odometry_sim = LaunchConfiguration('use_odometry_sim')
 
     # Launch configuration variables specific to simulation
     rviz_config_file = LaunchConfiguration('rviz_config_file')
@@ -133,68 +134,15 @@ def generate_launch_description():
         default_value='True',
         description='Whether to start RVIZ')
 
+    declare_use_odometry_sim_cmd = DeclareLaunchArgument(
+        'use_odometry_sim',
+        default_value='True',
+        description='Whether to start odometry simulation')
+
     declare_simulator_cmd = DeclareLaunchArgument(
         'headless',
         default_value='True',
         description='Whether to execute gzclient)')
-
-    # declare_world_cmd = DeclareLaunchArgument(
-    #     'world',
-    #     # TODO(orduno) Switch back once ROS argument passing has been fixed upstream
-    #     #              https://github.com/ROBOTIS-GIT/turtlebot3_simulations/issues/91
-    #     # default_value=os.path.join(get_package_share_directory('turtlebot3_gazebo'),
-    #     # worlds/turtlebot3_worlds/waffle.model')
-    #     default_value=os.path.join(bringup_dir, 'worlds', 'world_only.model'),
-    #     description='Full path to world model file to load')
-
-    # declare_robot_name_cmd = DeclareLaunchArgument(
-    #     'robot_name',
-    #     default_value='turtlebot3_waffle',
-    #     description='name of the robot')
-
-    # declare_robot_sdf_cmd = DeclareLaunchArgument(
-    #     'robot_sdf',
-    #     default_value=os.path.join(bringup_dir, 'worlds', 'waffle.model'),
-    #     description='Full path to robot sdf file to spawn the robot in gazebo')
-
-    # Specify the actions
-    # start_gazebo_server_cmd = ExecuteProcess(
-    #     condition=IfCondition(use_simulator),
-    #     cmd=['gzserver', '-s', 'libgazebo_ros_init.so',
-    #          '-s', 'libgazebo_ros_factory.so', world],
-    #     cwd=[launch_dir], output='screen')
-
-    # start_gazebo_client_cmd = ExecuteProcess(
-    #     condition=IfCondition(PythonExpression(
-    #         [use_simulator, ' and not ', headless])),
-    #     cmd=['gzclient'],
-    #     cwd=[launch_dir], output='screen')
-
-    # urdf = os.path.join(bringup_dir, 'urdf', 'turtlebot3_waffle.urdf')
-    # with open(urdf, 'r') as infp:
-    #     robot_description = infp.read()
-
-    # start_robot_state_publisher_cmd = Node(
-    #     condition=IfCondition(use_robot_state_pub),
-    #     package='robot_state_publisher',
-    #     executable='robot_state_publisher',
-    #     name='robot_state_publisher',
-    #     namespace=namespace,
-    #     output='screen',
-    #     parameters=[{'use_sim_time': use_sim_time,
-    #                  'robot_description': robot_description}],
-    #     remappings=remappings)
-
-    # start_gazebo_spawner_cmd = Node(
-    #     package='gazebo_ros',
-    #     executable='spawn_entity.py',
-    #     output='screen',
-    #     arguments=[
-    #         '-entity', robot_name,
-    #         '-file', robot_sdf,
-    #         '-robot_namespace', namespace,
-    #         '-x', pose['x'], '-y', pose['y'], '-z', pose['z'],
-    #         '-R', pose['R'], '-P', pose['P'], '-Y', pose['Y']])
 
     rviz_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -215,6 +163,7 @@ def generate_launch_description():
                           'params_file': params_file,
                           'autostart': autostart,
                           'use_composition': use_composition,
+                          'use_odometry_sim': use_odometry_sim,
                           'use_respawn': use_respawn}.items())
 
     # Create the launch description and populate
@@ -234,6 +183,7 @@ def generate_launch_description():
     ld.add_action(declare_use_simulator_cmd)
     ld.add_action(declare_use_robot_state_pub_cmd)
     ld.add_action(declare_use_rviz_cmd)
+    ld.add_action(declare_use_odometry_sim_cmd)
     ld.add_action(declare_simulator_cmd)
     # ld.add_action(declare_world_cmd)
     # ld.add_action(declare_robot_name_cmd)

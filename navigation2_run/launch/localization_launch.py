@@ -25,6 +25,7 @@ def generate_launch_description():
     container_name = LaunchConfiguration('container_name')
     use_respawn = LaunchConfiguration('use_respawn')
     log_level = LaunchConfiguration('log_level')
+    use_odometry_sim = LaunchConfiguration('use_odometry_sim')
 
     lifecycle_nodes = ['map_server']
 
@@ -71,30 +72,32 @@ def generate_launch_description():
     declare_log_level_cmd = DeclareLaunchArgument(
         'log_level', default_value='info', description='Log level')
 
-    # Load static transform
-    static_tf_node = Node(
-        package='tf2_ros',
-        executable='static_transform_publisher',
-        name='map_to_odom',
-        arguments=[
-            '0', '0', '0',  # Translation: x, y, z
-            '0', '0', '0',  # Rotation: roll, pitch, yaw
-            [LaunchConfiguration('namespace'), '/map'],  # Parent frame
-            [LaunchConfiguration('namespace'), '/odom']  # Child frame
+    # Load static transform & odometry simulation
+    localization_sim = GroupAction(
+        condition=IfCondition(use_odometry_sim),
+        actions=[
+            Node(
+                package='tf2_ros',
+                executable='static_transform_publisher',
+                name='map_to_odom',
+                arguments=[
+                    '0', '0', '0',  # Translation: x, y, z
+                    '0', '0', '0',  # Rotation: roll, pitch, yaw
+                    [LaunchConfiguration('namespace'), '/map'],  # Parent frame
+                    [LaunchConfiguration('namespace'), '/odom']  # Child frame
+                ]),
+            Node(
+                package='navigation2_run',
+                executable='odometry_sim',
+                name='odometry_sim',
+                output='screen',
+                respawn=use_respawn,
+                respawn_delay=2.0,
+                parameters=[{"cmd_cb_name": "/cmd_vel"}],
+                arguments=['--ros-args', '--log-level', log_level],
+                remappings=remappings
+            )
         ]
-    )
-
-    # Load odometry simulation
-    odometry_sim_node = Node(
-        package='navigation2_run',
-        executable='odometry_sim',
-        name='odometry_sim',
-        output='screen',
-        respawn=use_respawn,
-        respawn_delay=2.0,
-        parameters=[{"cmd_cb_name": "/cmd_vel"}],
-        arguments=['--ros-args', '--log-level', log_level],
-        remappings=remappings
     )
 
     # Load nodes group
@@ -162,8 +165,7 @@ def generate_launch_description():
     ld.add_action(declare_log_level_cmd)
 
     # Add nodes to launch description
-    ld.add_action(static_tf_node)
-    ld.add_action(odometry_sim_node)
+    ld.add_action(localization_sim)
     ld.add_action(load_nodes)
     ld.add_action(load_composable_nodes)
 
