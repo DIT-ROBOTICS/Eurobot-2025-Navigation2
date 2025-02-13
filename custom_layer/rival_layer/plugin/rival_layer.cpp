@@ -287,7 +287,7 @@ namespace custom_path_costmap_plugin {
 
                     cost = ceil(252 * exp(-CostScalingFactor * (Distance - InscribedRadius)));
                     cost = std::max(std::min(cost, MaxCost), 0.0);
-
+                    
                     if (getCost(mx, my) != nav2_costmap_2d::NO_INFORMATION) {
                         setCost(mx, my, std::max((unsigned char)cost, getCost(mx, my)));
                     } else {
