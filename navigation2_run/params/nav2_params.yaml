@@ -316,7 +316,7 @@ global_costmap:
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 5.0
-        inflation_radius: 0.3
+        inflation_radius: 0.15
       rival_layer:
         plugin: "custom_path_costmap_plugin::RivalLayer"
         enabled: True
@@ -440,7 +440,7 @@ docking_server:
     fixed_frame: "odom"
     dock_backwards: false
     dock_prestaging_tolerance: 0.5
-    backward_projection: 0.03
+    backward_projection: 0.00
 
     # Types of docks
     dock_plugins: ['mission_dock']
@@ -468,7 +468,7 @@ docking_server:
     flex_dock1:
       type: 'mission_dock'
       frame: map
-      pose: [1.0, 1.0, 0.0]
+      pose: [2.2, 1.0, 0.0]
     flex_dock2:
       type: 'mission_dock'
       frame: map
