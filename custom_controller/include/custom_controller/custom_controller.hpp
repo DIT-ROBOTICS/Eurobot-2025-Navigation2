@@ -70,6 +70,8 @@ class CustomController : public nav2_core::Controller{
         geometry_msgs::msg::PoseWithCovarianceStamped rival_pose_; // Store the received rival pose
         rclcpp::Logger logger_{rclcpp::get_logger("CustomController")};
 
+        rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr local_goal_pub_;
+
         rcl_interfaces::msg::SetParametersResult
         dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
 
