@@ -65,7 +65,9 @@ class CustomController : public nav2_core::Controller{
         
         rclcpp::Clock::SharedPtr clock_;
         rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr costmap_subscription_;
+        rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr rival_pose_subscription_;
         nav_msgs::msg::OccupancyGrid::SharedPtr latest_costmap_; // Store the received costmap
+        geometry_msgs::msg::PoseWithCovarianceStamped rival_pose_; // Store the received rival pose
         rclcpp::Logger logger_{rclcpp::get_logger("CustomController")};
 
         rcl_interfaces::msg::SetParametersResult
@@ -80,6 +82,9 @@ class CustomController : public nav2_core::Controller{
         double look_ahead_distance_;
         double speed_test;
         double final_goal_angle_;
+        double rival_distance_;
+        double last_vel_x_;
+        double last_vel_y_;
         rclcpp::Duration transform_tolerance_ {0, 0};
 
         // Variables

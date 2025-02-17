@@ -52,6 +52,12 @@ void CustomController::configure(
             latest_costmap_ = msg;
             // RCLCPP_INFO(logger_, "Received costmap data.");
         });
+    rival_pose_subscription_ = node->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
+        "/rival_pose",  // Replace with your actual rival pose topic
+        rclcpp::QoS(10),
+        [this](const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg) {
+            rival_pose_ = *msg;
+        });
     global_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("received_global_plan", 5);
     check_goal_pub_ = node->create_publisher<geometry_msgs::msg::PoseStamped>("check_goal", 5);
     // Declare parameters if not declared
@@ -401,13 +407,19 @@ geometry_msgs::msg::TwistStamped CustomController::computeVelocityCommands(
     cmd_vel.header.stamp = clock_->now();
 
     if(!goal_checker->isGoalReached(pose.pose, global_plan_.poses.back().pose, velocity)){
-        //RCLCPP_INFO(logger_, "vector_global_path_ final goal angle in goal checker is = [%lf]", vector_global_path_[vector_global_path_.size()-1].theta_);
-        //RCLCPP_INFO(logger_, "look_ahead_distance is [%lf]", look_ahead_distance_);
-        //RCLCPP_INFO(logger_, "cur_pose row angle is [%lf]", cur_pose_.theta_);
-        //RCLCPP_INFO(logger_, "final goal angle raw is [%lf]", global_plan_.poses.back().pose.orientation.z);
+        rival_distance_ = sqrt(pow(rival_pose_.pose.pose.position.x - cur_pose_.x_, 2) + pow(rival_pose_.pose.pose.position.y - cur_pose_.y_, 2));
+        RCLCPP_INFO(logger_, "Rival distance is [%lf]", rival_distance_);
+        if(rival_distance_ < 1){
+            RCLCPP_INFO(logger_, "Rival is too close");
+            max_linear_vel_ = 0.2;
+        }else{
+            max_linear_vel_ = 0.4;
+        }
         local_goal_ = getLookAheadPoint(cur_pose_, vector_global_path_, look_ahead_distance_);
         check_index_ = 0;
         current_index_ = 0;
+        last_vel_x_ = cmd_vel.twist.linear.x;
+        last_vel_y_ = cmd_vel.twist.linear.y;
         //RCLCPP_INFO(logger_, "vector_global_path_ final goal angle after get LAD is = [%lf]", vector_global_path_[vector_global_path_.size()-1].theta_);
         //final_goal_angle_ = vector_global_path_[vector_global_path_.size()-1].theta_;
         //RCLCPP_INFO(logger_, "final goal angle is [%lf]", final_goal_angle_); 
@@ -422,7 +434,7 @@ geometry_msgs::msg::TwistStamped CustomController::computeVelocityCommands(
         cmd_vel.twist.angular.z = getGoalAngle(cur_pose_.theta_, final_goal_angle_);
         double vel_ = sqrt(pow(cmd_vel.twist.linear.x, 2) + pow(cmd_vel.twist.linear.y, 2));
         check_distance_ = std::max(vel_ * 2, look_ahead_distance_);
-        RCLCPP_INFO(logger_, "check_distance is [%lf]", check_distance_);
+        //RCLCPP_INFO(logger_, "check_distance is [%lf]", check_distance_);
         check_index_ = getIndex(cur_pose_, vector_global_path_, check_distance_);
         current_index_ = getIndex(cur_pose_, vector_global_path_, look_ahead_distance_);
         // RCLCPP_INFO(logger_, "check_index is [%d]", check_index_);
@@ -434,8 +446,8 @@ geometry_msgs::msg::TwistStamped CustomController::computeVelocityCommands(
         //RCLCPP_INFO(logger_, "local_angle is [%lf]", local_angle);
         isObstacleExist_ = checkObstacle(current_index_, check_index_);
         if(isObstacleExist_){
-            cmd_vel.twist.linear.x = 0.0;
-            cmd_vel.twist.linear.y = 0.0;
+            cmd_vel.twist.linear.x = last_vel_x_ * 0.8;
+            cmd_vel.twist.linear.y = last_vel_y_ * 0.8;
             cmd_vel.twist.angular.z = 0.0;
             update_plan_ = true;
             return cmd_vel;
