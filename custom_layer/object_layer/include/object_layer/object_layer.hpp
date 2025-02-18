@@ -6,15 +6,13 @@
 #include "nav2_costmap_2d/layer.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_util/node_utils.hpp"
-#include "geometry_msgs/PoseArray.h"
-#include "geometry_msgs/msg/poseStamped.h"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include <deque>
 #include <iostream>
 #include "geometry_msgs/msg/pose_array.hpp"
-#include "tf2_geometry_msgs/tf2_gemotry_msgs.h"
 #include <cmath>
 #include <algorithm>
+#include "tf2/utils.h"
 
 
 namespace Object_costmap_plugin {
@@ -36,13 +34,13 @@ namespace Object_costmap_plugin {
             void ExpandPointWithRectangle(double x, double y, double MaxCost, double InflationRadius, double CostScalingFactor, double InscribedRadius, geometry_msgs::msg::PoseStamped object);
             void ExpandPointWithCircle(double x, double y, double MaxCost, double InflationRadius, double CostScalingFactor, double InscribedRadius);
             // data processes
-            void columnPoseArrayCallback(const geometry_msgs::PoseArray::SharedPtr object_poseArray);
-            void boardPoseArrayCallback(const geometry_msgs::PoseArray::SharedPtr object_poseArray);
+            void columnPoseArrayCallback(const geometry_msgs::msg::PoseArray::SharedPtr object_poseArray);
+            void boardPoseArrayCallback(const geometry_msgs::msg::PoseArray::SharedPtr object_poseArray);
         private:
             std::deque<geometry_msgs::msg::PoseStamped> columnList;
             std::deque<geometry_msgs::msg::PoseStamped> boardList;
-            rclcpp::Subscription<geometry_msgs::PoseArray>::SharedPtr column_poseArray_sub;
-            rclcpp::Subscription<geometry_msgs::PoseArray>::SharedPtr board_poseArray_sub;
+            rclcpp::Subscription<geometry_msgs::msg::PoseArray>::SharedPtr column_poseArray_sub;
+            rclcpp::Subscription<geometry_msgs::msg::PoseArray>::SharedPtr board_poseArray_sub;
 
             int model_size_ = 22;
             double x_cov_threshold_, y_cov_threshold_, R_sq_threshold_;

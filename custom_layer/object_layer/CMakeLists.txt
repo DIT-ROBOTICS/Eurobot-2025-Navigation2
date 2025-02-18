@@ -26,8 +26,13 @@ rclcpp
 geometry_msgs
 tf2)  
 
+add_executable(ObjectSim 
+  src/ObjectSim.cpp)
+
 add_library(object_layer SHARED
   plugin/object_layer.cpp)
+
+  include_directories(include)
 
 
 if(BUILD_TESTING)
@@ -44,9 +49,14 @@ endif()
 
 pluginlib_export_plugin_description_file(nav2_costmap_2d object_layer.xml)
 ament_target_dependencies(object_layer ${lib_dep_pkgs})
+ament_target_dependencies(ObjectSim ${sim_dep_pkgs})
 
 install(TARGETS 
   object_layer
   DESTINATION lib/${PROJECT_NAME})
-  
+
+install(TARGETS
+  ObjectSim
+  DESTINATION lib/${PROJECT_NAME})
+
 ament_package()

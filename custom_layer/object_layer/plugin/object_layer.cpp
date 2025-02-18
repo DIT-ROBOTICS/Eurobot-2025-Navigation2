@@ -3,7 +3,7 @@
 namespace Object_costmap_plugin {
 
     void ObjectLayer::onInitialize(){
-        RCLCPP_INDO(
+        RCLCPP_INFO(
             rclcpp::get_logger("ObjectLayer"), 
             "Initializing ObjectLayer");
         
@@ -56,9 +56,9 @@ namespace Object_costmap_plugin {
         node->get_parameter(name_ + "." + "inscribed_radius_rate_", inscribed_radius_rate_);
         node->get_parameter(name_ + "." + "inflation_radius_rate_", inflation_radius_rate_);
 
-        column_poseArray_sub = node->create_subscription<geometry_msgs::PoseArray>(
+        column_poseArray_sub = node->create_subscription<geometry_msgs::msg::PoseArray>(
             "/column_pose_array", 100, std::bind(&ObjectLayer::columnPoseArrayCallback, this, std::placeholders::_1));
-        board_poseArray_sub = node->create_subscription<geometry_msgs::PoseArray>(
+        board_poseArray_sub = node->create_subscription<geometry_msgs::msg::PoseArray>(
             "/board_pose_array", 100, std::bind(&ObjectLayer::boardPoseArrayCallback, this, std::placeholders::_1));
         
         columnList.clear();
@@ -105,7 +105,7 @@ namespace Object_costmap_plugin {
             "Resetting ObjectLayer");
     }
 
-    void ObjectLayer::columnPoseArrayCallback(const geometry_msgs::PoseArray::SharedPtr object_poseArray){
+    void ObjectLayer::columnPoseArrayCallback(const geometry_msgs::msg::PoseArray::SharedPtr object_poseArray){
         columnList.clear();
         for(auto pose : object_poseArray->poses){
             geometry_msgs::msg::PoseStamped poseStamped;
@@ -114,7 +114,7 @@ namespace Object_costmap_plugin {
         }
     }
 
-    void ObjectLayer::boardPoseArrayCallback(const geometry_msgs::PoseArray::SharedPtr object_poseArray){
+    void ObjectLayer::boardPoseArrayCallback(const geometry_msgs::msg::PoseArray::SharedPtr object_poseArray){
         boardList.clear();
         for(auto pose : object_poseArray->poses){
             geometry_msgs::msg::PoseStamped poseStamped;
@@ -219,5 +219,5 @@ namespace Object_costmap_plugin {
         
 }
 
-#include "pluginlib/class_list_macros
-PLUGINLIB_EXPORT_CLASS(Object_costmap_plgin::ObjectLayer, nav2_costmap_2d::Layer)
+#include "pluginlib/class_list_macros.hpp"
+PLUGINLIB_EXPORT_CLASS(Object_costmap_plugin::ObjectLayer, nav2_costmap_2d::Layer)
