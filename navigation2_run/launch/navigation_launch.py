@@ -40,6 +40,8 @@ def generate_launch_description():
     container_name_full = (namespace, '/', container_name)
     use_respawn = LaunchConfiguration('use_respawn')
     log_level = LaunchConfiguration('log_level')
+    robot_pose_remap = LaunchConfiguration('robot_pose_remap')
+    rival_pose_remap = LaunchConfiguration('rival_pose_remap')
 
     lifecycle_nodes = ['controller_server',
                        'smoother_server',
@@ -56,7 +58,9 @@ def generate_launch_description():
     # TODO(orduno) Substitute with `PushNodeRemapping`
     #              https://github.com/ros2/launch_ros/issues/56
     remappings = [('/tf', 'tf'),
-                  ('/tf_static', 'tf_static')]
+                  ('/tf_static', 'tf_static'),
+                  ('odom', robot_pose_remap),
+                  ('/rival_pose', rival_pose_remap)]
 
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {

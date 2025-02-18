@@ -43,6 +43,8 @@ def generate_launch_description():
     use_composition = LaunchConfiguration('use_composition')
     use_respawn = LaunchConfiguration('use_respawn')
     use_odometry_sim = LaunchConfiguration('use_odometry_sim')
+    robot_pose_remap = LaunchConfiguration('robot_pose_remap')
+    rival_pose_remap = LaunchConfiguration('rival_pose_remap')
 
     # Launch configuration variables specific to simulation
     rviz_config_file = LaunchConfiguration('rviz_config_file')
@@ -59,15 +61,6 @@ def generate_launch_description():
             'Y': LaunchConfiguration('yaw', default='0.00')}
     # robot_name = LaunchConfiguration('robot_name')
     # robot_sdf = LaunchConfiguration('robot_sdf')
-
-    # Map fully qualified names to relative ones so the node's namespace can be prepended.
-    # In case of the transforms (tf), currently, there doesn't seem to be a better alternative
-    # https://github.com/ros/geometry2/issues/32
-    # https://github.com/ros/robot_state_publisher/pull/30
-    # TODO(orduno) Substitute with `PushNodeRemapping`
-    #              https://github.com/ros2/launch_ros/issues/56
-    remappings = [('/tf', 'tf'),
-                  ('/tf_static', 'tf_static')]
 
     # Declare the launch arguments
     declare_namespace_cmd = DeclareLaunchArgument(
@@ -143,6 +136,16 @@ def generate_launch_description():
         'headless',
         default_value='True',
         description='Whether to execute gzclient')
+    
+    declare_robot_pose_remap_cmd = DeclareLaunchArgument(
+        'robot_pose_remap',
+        default_value='final_pose',
+        description='Remapping for robot pose topic')
+    
+    declare_rival_pose_remap_cmd = DeclareLaunchArgument(
+        'rival_pose_remap',
+        default_value='rival/final_pose',
+        description='Remapping for rival pose topic')
 
     rviz_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -164,7 +167,9 @@ def generate_launch_description():
                           'autostart': autostart,
                           'use_composition': use_composition,
                           'use_odometry_sim': use_odometry_sim,
-                          'use_respawn': use_respawn}.items())
+                          'use_respawn': use_respawn,
+                          'robot_pose_remap': robot_pose_remap,
+                          'rival_pose_remap': rival_pose_remap}.items())
 
     # Create the launch description and populate
     ld = LaunchDescription()
@@ -189,6 +194,8 @@ def generate_launch_description():
     # ld.add_action(declare_robot_name_cmd)
     # ld.add_action(declare_robot_sdf_cmd)
     ld.add_action(declare_use_respawn_cmd)
+    ld.add_action(declare_robot_pose_remap_cmd)
+    ld.add_action(declare_rival_pose_remap_cmd)
 
     # Add any conditioned actions
     # ld.add_action(start_gazebo_server_cmd)
