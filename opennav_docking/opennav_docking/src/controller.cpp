@@ -12,12 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
+#include <string>
 #include <memory>
 
 #include "rclcpp/rclcpp.hpp"
 #include "opennav_docking/controller.hpp"
-#include "nav2_util/node_utils.hpp"
 #include "angles/angles.h"
+#include "pluginlib/class_list_macros.hpp"
+#include "nav2_core/exceptions.hpp"
+#include "nav2_util/node_utils.hpp"
+#include "nav2_util/geometry_utils.hpp"
+#include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
+#include "nav2_costmap_2d/costmap_2d_ros.hpp"
+#include "nav2_costmap_2d/costmap_2d.hpp"
+#include "nav_msgs/msg/occupancy_grid.hpp"
+#include "nav_msgs/msg/odometry.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
+
 
 using std::hypot;
 using std::min;
@@ -59,8 +71,15 @@ Controller::Controller(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node) 
     clock_ = node->get_clock();
 
     // Subscribe to the rival's pose
+    // robot_pose_sub_ = node->create_subscription<nav_msgs::msg::Odometry>(
+    //     "/odom", 100, std::bind(&Controller::robotPoseCallback, this, std::placeholders::_1));
     robot_pose_sub_ = node->create_subscription<nav_msgs::msg::Odometry>(
-        "/odom", 100, std::bind(&Controller::robotPoseCallback, this, std::placeholders::_1));
+        "/odom",  // Replace with your actual rival pose topic
+        rclcpp::QoS(10),
+        [this](const nav_msgs::msg::Odometry::SharedPtr msg) {
+            robot_pose_.x_ = (*msg).pose.pose.position.x;
+            robot_pose_.y_ = (*msg).pose.pose.position.y;
+        });
 }
 
 RobotState::RobotState(double x, double y, double theta) {
@@ -73,44 +92,37 @@ double RobotState::distanceTo(RobotState pos) {
     return sqrt(pow(x_ - pos.x_, 2) + pow(y_ - pos.y_, 2));
 }
 
-bool isGoalReached(
-  const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
-  const geometry_msgs::msg::Twist &) {
-    double dx = query_pose.position.x - goal_pose.position.x;
-    double dy = query_pose.position.y - goal_pose.position.y;
+bool Controller::isGoalReached(RobotState& robot_pose, const geometry_msgs::msg::Pose &target, double xy_goal_tolerance) {
+    double xy_goal_tolerance_sq = xy_goal_tolerance;
+    double dx = robot_pose.x_ - target.position.x;
+    double dy = robot_pose.y_ - target.position.y;
 
-    if(dx * dx + dy * dy > xy_goal_tolerance_sq_) {
+    if(dx * dx + dy * dy > xy_goal_tolerance_sq) {
         return false;
     }
 
-    double dyaw = angles::shortest_angular_distance(
-        tf2::getYaw(query_pose.orientation),
-        tf2::getYaw(goal_pose.orientation));
-
-    return fabs(dyaw) < yaw_goal_tolerance_;
+    return true;
 }
 
-void Controller::dividePath(const geometry_msgs::msg::Pose & target) {
-    // Divide the path into segments
-    // Pose -> Segment -> Target
-    RobotState point_buffer;
+// void Controller::dividePath(const geometry_msgs::msg::Pose& target) {
+//     // Divide the path into segments
+//     // Pose -> Segment -> Target
+//     RobotState point_buffer;
+//     global_path_.clear();
+//     int distance = hypot(target.position.x - robot_pose_.x_, target.position.y - robot_pose_.y_);
+//     if(distance < 1) {
+//         posetoRobotState(target, point_buffer);
+//         global_path_.push_back(point_buffer);
+//         return;
+//     } 
+//     for(int i=0; i<=distance; i++) {
+//         point_buffer.x_ = robot_pose_.x_ + i * (target.position.x - robot_pose_.x_) / distance;
+//         point_buffer.y_ = robot_pose_.y_ + i * (target.position.y - robot_pose_.y_) / distance;
+//         point_buffer.theta_ = tf2::getYaw(target.orientation);
 
-    global_path_.clear();
-
-    int distance = hypot(target.position.x - robot_pose_.x_, target.position.y - robot_pose_.y_);
-    if(distance < 1) {
-        posetoRobotState(target, point_buffer);
-        global_path_.push_back(point_buffer);
-        return;
-    } 
-    for(int i=0; i<=distance; i++) {
-        point_buffer.x_ = robot_pose_.x_ + i * (target.position.x - robot_pose_.x_) / distance;
-        point_buffer.y_ = robot_pose_.y_ + i * (target.position.y - robot_pose_.y_) / distance;
-        point_buffer.theta_ = tf2::getYaw(target.orientation);
-
-        global_path_.push_back(point_buffer);
-    }
-}
+//         global_path_.push_back(point_buffer);
+//     }
+// }
 
 void Controller::posetoRobotState(geometry_msgs::msg::Pose pose, RobotState &state) {
     state.x_ = pose.position.x;
@@ -132,65 +144,64 @@ RobotState Controller::globalTolocal(RobotState cur_pose, RobotState goal) {
     return local_goal;
 }
 
-RobotState Controller::getLookAheadPoint(
-  RobotState cur_pose, std::vector<RobotState> &path, double look_ahead_distance) {
-    if(path.empty()) {
-        // RCLCPP_INFO(logger_, "[%s] Path is empty", plugin_name_.c_str());
-        return cur_pose;
-    }
+// RobotState Controller::getLookAheadPoint(
+//   RobotState cur_pose, std::vector<RobotState> &path, double look_ahead_distance) {
+//     if(path.empty()) {
+//         // RCLCPP_INFO(logger_, "[%s] Path is empty", plugin_name_.c_str());
+//         return cur_pose;
+//     }
     
-    RobotState local_goal;
+//     RobotState local_goal;
     
-    int nearest_index = 0;
-    int next_index = 0;
+//     int nearest_index = 0;
+//     int next_index = 0;
 
-    for(int i=path.size()-1; i>=0; --i) {
-        if(cur_pose.distanceTo(path[i]) <= look_ahead_distance) {
-            next_index = i;
-            break;
-        }
-    }
+//     for(int i=path.size()-1; i>=0; --i) {
+//         if(cur_pose.distanceTo(path[i]) <= look_ahead_distance) {
+//             next_index = i;
+//             break;
+//         }
+//     }
 
-    if (next_index == 0) next_index = path.size()-1;
+//     if (next_index == 0) next_index = path.size()-1;
 
-    if (next_index < path.size()-1) {
-        next_index = next_index+1;
-    }
+//     if (next_index < path.size()-1) {
+//         next_index = next_index+1;
+//     }
 
-    local_goal.x_ = cur_pose.x_ + (path[next_index].x_ - cur_pose.x_)*(look_ahead_distance/cur_pose.distanceTo(path[next_index]));
-    local_goal.y_ = cur_pose.y_ + (path[next_index].y_ - cur_pose.y_)*(look_ahead_distance/cur_pose.distanceTo(path[next_index]));
-    local_goal.theta_ = path[next_index].theta_;
+//     local_goal.x_ = cur_pose.x_ + (path[next_index].x_ - cur_pose.x_)*(look_ahead_distance/cur_pose.distanceTo(path[next_index]));
+//     local_goal.y_ = cur_pose.y_ + (path[next_index].y_ - cur_pose.y_)*(look_ahead_distance/cur_pose.distanceTo(path[next_index]));
+//     local_goal.theta_ = path[next_index].theta_;
 
-    if (cur_pose.distanceTo(path.back()) < look_ahead_distance + 0.01)
-        local_goal = path.back();
+//     if (cur_pose.distanceTo(path.back()) < look_ahead_distance + 0.01)
+//         local_goal = path.back();
 
-    if (local_goal.distanceTo(path.back()) < 0.005) {
-        local_goal = path.back();
-    }
+//     if (local_goal.distanceTo(path.back()) < 0.005) {
+//         local_goal = path.back();
+//     }
     
-    // for rviz visualization
-    geometry_msgs::msg::PoseStamped pos_msg;
-    pos_msg.header.frame_id = "map";
-    pos_msg.header.stamp = clock_->now();
-    pos_msg.pose.position.x = local_goal.x_;
-    pos_msg.pose.position.y = local_goal.y_;
+//     // for rviz visualization
+//     // geometry_msgs::msg::PoseStamped pos_msg;
+//     // pos_msg.header.frame_id = "map";
+//     // pos_msg.header.stamp = clock_->now();
+//     // pos_msg.pose.position.x = local_goal.x_;
+//     // pos_msg.pose.position.y = local_goal.y_;
 
-    tf2::Quaternion q;
-    q.setRPY(0, 0, local_goal.theta_);
-    pos_msg.pose.orientation.x = q.x();
-    pos_msg.pose.orientation.y = q.y();
-    pos_msg.pose.orientation.z = q.z();
-    pos_msg.pose.orientation.w = q.w();
-    local_goal_pub_->publish(pos_msg);
+//     // tf2::Quaternion q;
+//     // q.setRPY(0, 0, local_goal.theta_);
+//     // pos_msg.pose.orientation.x = q.x();
+//     // pos_msg.pose.orientation.y = q.y();
+//     // pos_msg.pose.orientation.z = q.z();
+//     // pos_msg.pose.orientation.w = q.w();
+//     // local_goal_pub_->publish(pos_msg);
     
-    return local_goal;
-}
+//     return local_goal;
+// }
 
 double Controller::getGoalAngle(double cur_angle, double goal_angle) {
     double ang_diff_ = goal_angle - cur_angle;
     double angular_max_vel_ = 2.0;
     double angle_vel_ = 0.0;
-    double angular_kp_ = 4.0;
 
     if(cur_angle >= 0 && goal_angle >= 0) {
         if(ang_diff_ >= 0) angle_vel_ = std::min((ang_diff_ * angular_kp_), angular_max_vel_);
@@ -211,41 +222,40 @@ double Controller::getGoalAngle(double cur_angle, double goal_angle) {
 
 bool Controller::computeVelocityCommand(
   const geometry_msgs::msg::Pose & target, geometry_msgs::msg::Twist & cmd, bool /*backward*/) {
-    dividePath(target);
+    //dividePath(target);
+    local_goal_.x_ = target.position.x;
+    local_goal_.y_ = target.position.y;
+    
 
-    // cmd_vel
-    cmd.header.frame_id = pose.header.frame_id;
-    cmd.header.stamp = clock_->now();
-
-    if(!isGoalReached(pose.pose, global_plan_.poses.back().pose, velocity)){
-        local_goal_ = getLookAheadPoint(robot_pose_, vector_global_path_, look_ahead_distance_);
+    if(!isGoalReached(robot_pose_, target, 0.02)){
+        //local_goal_ = getLookAheadPoint(robot_pose_, vector_global_path_, look_ahead_distance_);
         
-        double global_distance = sqrt(pow(global_plan_.poses.back().pose.position.x - robot_pose_.x_, 2) + pow(global_plan_.poses.back().pose.position.y - robot_pose_.y_, 2));
+        double global_distance = sqrt(pow(local_goal_.x_ - robot_pose_.x_, 2) + pow(local_goal_.y_ - robot_pose_.y_, 2));
         local_goal_ = globalTolocal(robot_pose_, local_goal_);
         double local_angle = atan2(local_goal_.y_, local_goal_.x_);
         
-        cmd.twist.linear.x = std::min(global_distance * 1.5, max_linear_vel_) * cos(local_angle);
-        cmd.twist.linear.y = std::min(global_distance * 1.5, max_linear_vel_) * sin(local_angle);
-        cmd.twist.angular.z = getGoalAngle(robot_pose_.theta_, final_goal_angle_);
+        cmd.linear.x = std::min(global_distance * 1.5, max_linear_vel_) * cos(local_angle);
+        cmd.linear.y = std::min(global_distance * 1.5, max_linear_vel_) * sin(local_angle);
+        cmd.angular.z = getGoalAngle(robot_pose_.theta_, final_goal_angle_);
         return true;
 
     } else if(fabs(final_goal_angle_ - robot_pose_.theta_) > 0.01) {
-        cmd.twist.linear.x = 0.0;
-        cmd.twist.linear.y = 0.0;
-        cmd.twist.angular.z = getGoalAngle(robot_pose_.theta_, final_goal_angle_);
+        cmd.linear.x = 0.0;
+        cmd.linear.y = 0.0;
+        cmd.angular.z = getGoalAngle(robot_pose_.theta_, final_goal_angle_);
         return true;
 
     } else {
         // RCLCPP_INFO(logger_, "[%s] Goal reached", plugin_name_.c_str());
-        cmd.twist.linear.x = 0.0;
-        cmd.twist.linear.y = 0.0;
-        cmd.twist.angular.z = 0.0;
+        cmd.linear.x = 0.0;
+        cmd.linear.y = 0.0;
+        cmd.angular.z = 0.0;
         return true;
     }
 }
 
 void Controller::robotPoseCallback(const nav_msgs::msg::Odometry::SharedPtr robot_pose) {
-    posetoRobotState(robot_pose.pose.pose, robot_pose_); 
+    posetoRobotState(robot_pose->pose.pose, robot_pose_); 
 }
 
 }  // namespace opennav_docking

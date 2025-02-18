@@ -15,11 +15,27 @@
 #ifndef OPENNAV_DOCKING__CONTROLLER_HPP_
 #define OPENNAV_DOCKING__CONTROLLER_HPP_
 
+
+#include <algorithm>
+#include <string>
 #include <memory>
 
 #include "geometry_msgs/msg/pose.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "nav2_util/lifecycle_node.hpp"
+#include "rclcpp/rclcpp.hpp"
+#include "opennav_docking/controller.hpp"
+#include "angles/angles.h"
+#include "pluginlib/class_list_macros.hpp"
+#include "nav2_core/exceptions.hpp"
+#include "nav2_util/node_utils.hpp"
+#include "nav2_util/geometry_utils.hpp"
+#include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
+#include "nav2_costmap_2d/costmap_2d_ros.hpp"
+#include "nav2_costmap_2d/costmap_2d.hpp"
+#include "nav_msgs/msg/occupancy_grid.hpp"
+#include "nav_msgs/msg/odometry.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
 
 namespace opennav_docking
 {
@@ -27,6 +43,7 @@ class RobotState {
   public:
     RobotState(double x, double y, double theta);
     RobotState() {}
+    RobotState(const RobotState & other) = default;
     double x_;
     double y_;
     double theta_;
@@ -67,9 +84,7 @@ class Controller
     double getGoalAngle(double cur_pose, double goal);
     RobotState getLookAheadPoint(RobotState cur_pose, std::vector<RobotState> &path, double look_ahead_distance);
     RobotState globalTolocal(RobotState cur_pose, RobotState goal);
-    bool isGoalReached(
-      const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
-      const geometry_msgs::msg::Twist &);
+    bool isGoalReached(RobotState& robot_pose_, const geometry_msgs::msg::Pose &target, double xy_goal_tolerance);
 
   protected:
     // Node configuration
@@ -89,6 +104,7 @@ class Controller
 
     // Variables
     std::vector<RobotState> global_path_;
+    std::vector<RobotState> vector_global_path_;
     RobotState robot_pose_;
     RobotState local_goal_;
 
