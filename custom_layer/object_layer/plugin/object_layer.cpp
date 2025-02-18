@@ -156,62 +156,26 @@ namespace Object_costmap_plugin {
         }
     }
 
-    void ObjectLayer::ExpandPointWithRectangle(double x, double y, double MaxCost, double InflationRadius, double CostScalingFactor, double InscribedRadius, geometry_msgs::msg::PoseStamped object)
+    void ObjectLayer::ExpandPointWithRectangle(double x, double y, double MaxCost, double InflationRadius, double CostScalingFactor, double InscribedRadius, 
+                                             geometry_msgs::msg::PoseStamped object)
     {
-        // Get the yaw from the object's orientation (adjust to get desired rectangle orientation).
-        double yaw = tf2::getYaw(object.pose.orientation);
-        
-        // Half dimensions of rectangle, as set in object_layer.hpp.
+        // Use board_width and board_height defined in your header.
         double halfWidth  = board_width / 2.0;
         double halfHeight = board_height / 2.0;
 
-        // Compute the 4 vertices of the rectangle around (x, y)
-        // The rectangle in its local frame has vertices at:
-        // (-halfWidth, -halfHeight), (-halfWidth, halfHeight), (halfWidth, halfHeight), (halfWidth, -halfHeight)
-        // Rotate them by yaw and translate by (x, y):
-        double cosYaw = cos(yaw);
-        double sinYaw = sin(yaw);
-        double vx[4], vy[4];
-        vx[0] = x + (-halfWidth * cosYaw - (-halfHeight) * sinYaw);
-        vy[0] = y + (-halfWidth * sinYaw + (-halfHeight) * cosYaw);
-        vx[1] = x + (-halfWidth * cosYaw - ( halfHeight) * sinYaw);
-        vy[1] = y + (-halfWidth * sinYaw + ( halfHeight) * cosYaw);
-        vx[2] = x + ( halfWidth * cosYaw - ( halfHeight) * sinYaw);
-        vy[2] = y + ( halfWidth * sinYaw + ( halfHeight) * cosYaw);
-        vx[3] = x + ( halfWidth * cosYaw - (-halfHeight) * sinYaw);
-        vy[3] = y + ( halfWidth * sinYaw + (-halfHeight) * cosYaw);
+        double start_x = x - halfWidth;
+        double end_x   = x + halfWidth;
+        double start_y = y - halfHeight;
+        double end_y   = y + halfHeight;
+
+        unsigned int mx, my;
         
-        // Determine bounding box of the rotated rectangle.
-        double min_tx = *std::min_element(vx, vx+4);
-        double max_tx = *std::max_element(vx, vx+4);
-        double min_ty = *std::min_element(vy, vy+4);
-        double max_ty = *std::max_element(vy, vy+4);
-
-        // Iterate over the bounding box and check if each world point is inside the rotated rectangle.
-        // Transform the point (px, py) into the rectangle's local coordinate frame.
-        for (double px = min_tx; px <= max_tx; px += resolution_) {
-            for (double py = min_ty; py += max_ty; py += resolution_) {
-                // Translate point relative to rectangle center (x,y)
-                double dx = px - x;
-                double dy = py - y;
-                // Rotate by -yaw: this aligns the rectangle with the axes.
-                double local_x = dx * cosYaw + dy * sinYaw;
-                double local_y = -dx * sinYaw + dy * cosYaw;
-
-                // Check if the local point is inside the axis-aligned rectangle.
-                if (std::abs(local_x) <= halfWidth && std::abs(local_y) <= halfHeight) {
-                    unsigned int mx, my;
-                    if (worldToMap(px, py, mx, my)) {
-                        // Compute distance from the center (x,y) - you may adjust this calculation if needed.
-                        double distance = std::sqrt((px - x) * (px - x) + (py - y) * (py - y));
-                        double cost = std::ceil(252 * std::exp(-CostScalingFactor * (distance - InscribedRadius)));
-                        cost = std::max(std::min(cost, MaxCost), 0.0);
-                        if (getCost(mx, my) != nav2_costmap_2d::NO_INFORMATION) {
-                            setCost(mx, my, std::max((unsigned char)cost, getCost(mx, my)));
-                        } else {
-                            setCost(mx, my, cost);
-                        }
-                    }
+        // Loop over the rectangle area at the defined resolution
+        for(double currentX = start_x; currentX <= end_x; currentX += resolution_){
+            for(double currentY = start_y; currentY <= end_y; currentY += resolution_){
+                if(worldToMap(currentX, currentY, mx, my)){
+                    // Simply set the cell cost to MaxCost, you can adjust if needed.
+                    setCost(mx, my, MaxCost);
                 }
             }
         }

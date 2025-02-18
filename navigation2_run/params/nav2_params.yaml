@@ -279,7 +279,6 @@ local_costmap:
       object_layer:
         plugin: "Object_costmap_plugin::ObjectLayer"
         enabled: True
-        enabled: True
         model_size: 22
         x_cov_threshold: 0.01
         y_cov_threshold: 0.01
@@ -348,7 +347,6 @@ global_costmap:
         debug_mode: 0                       # 0: off, 1: Print rival state change only, 2: Print rival state change and statistics, 3: Print everything continuously
       object_layer:
         plugin: "Object_costmap_plugin::ObjectLayer"
-        enabled: True
         enabled: True
         model_size: 22
         x_cov_threshold: 0.01
