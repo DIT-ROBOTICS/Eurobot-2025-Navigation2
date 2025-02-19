@@ -159,22 +159,26 @@ namespace Object_costmap_plugin {
     void ObjectLayer::ExpandPointWithRectangle(double x, double y, double MaxCost, double InflationRadius, double CostScalingFactor, double InscribedRadius, 
                                              geometry_msgs::msg::PoseStamped object)
     {
-        // Use board_width and board_height defined in your header.
         double halfWidth  = board_width / 2.0;
         double halfHeight = board_height / 2.0;
 
-        double start_x = x - halfWidth;
-        double end_x   = x + halfWidth;
-        double start_y = y - halfHeight;
-        double end_y   = y + halfHeight;
+        // Convert quaternion to yaw (orientation angle)
+        double siny_cosp = 2.0 * (object.pose.orientation.w * object.pose.orientation.z + object.pose.orientation.x * object.pose.orientation.y);
+        double cosy_cosp = 1.0 - 2.0 * (object.pose.orientation.y * object.pose.orientation.y + object.pose.orientation.z * object.pose.orientation.z);
+        double angle = std::atan2(siny_cosp, cosy_cosp); // yaw angle
 
         unsigned int mx, my;
-        
-        // Loop over the rectangle area at the defined resolution
-        for(double currentX = start_x; currentX <= end_x; currentX += resolution_){
-            for(double currentY = start_y; currentY <= end_y; currentY += resolution_){
-                if(worldToMap(currentX, currentY, mx, my)){
-                    // Simply set the cell cost to MaxCost, you can adjust if needed.
+        // Loop over the rectangle in the object's local frame
+        for(double local_x = -halfWidth; local_x <= halfWidth; local_x += resolution_){
+            for(double local_y = -halfHeight; local_y += halfHeight; local_y += resolution_){
+                // Rotate local coordinates by the object's yaw angle
+                double rotated_x = local_x * std::cos(angle) - local_y * std::sin(angle);
+                double rotated_y = local_x * std::sin(angle) + local_y * std::cos(angle);
+                // Translate to world coordinates
+                double world_x = x + rotated_x;
+                double world_y = y + rotated_y;
+                
+                if(worldToMap(world_x, world_y, mx, my)){
                     setCost(mx, my, MaxCost);
                 }
             }
