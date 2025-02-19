@@ -10,51 +10,25 @@ namespace Object_costmap_plugin {
         enabled_ = true;
         current_ = true;
 
-        declareParameter("enabled", rclcpp::ParameterValue(true));
-        declareParameter("model_size", rclcpp::ParameterValue(22));
-        declareParameter("x_cov_threshold", rclcpp::ParameterValue(0.01));
-        declareParameter("y_cov_threshold", rclcpp::ParameterValue(0.01));
-        declareParameter("R_sq_threshold", rclcpp::ParameterValue(0.85));
-        declareParameter("reset_timeout_threshold", rclcpp::ParameterValue(40));
-        declareParameter("object_inscribed_radius_", rclcpp::ParameterValue(0.22));
-        declareParameter("halted_inflation_radius_", rclcpp::ParameterValue(0.4));
-        declareParameter("wandering_inflation_radius_", rclcpp::ParameterValue(0.5));
-        declareParameter("moving_inflation_radius_", rclcpp::ParameterValue(0.43));
-        declareParameter("unknown_inflation_radius_", rclcpp::ParameterValue(0.55));
-        declareParameter("halted_cost_scaling_factor_", rclcpp::ParameterValue(10.0));
-        declareParameter("wandering_cost_scaling_factor_", rclcpp::ParameterValue(3.0));
-        declareParameter("moving_cost_scaling_factor_", rclcpp::ParameterValue(11.0));
-        declareParameter("unknown_cost_scaling_factor_", rclcpp::ParameterValue(3.0));
-        declareParameter("max_extend_length_", rclcpp::ParameterValue(0.5));
-        declareParameter("cov_range_max_", rclcpp::ParameterValue(sqrt(0.0029)));
-        declareParameter("cov_range_min_", rclcpp::ParameterValue(sqrt(0.0002)));
-        declareParameter("inscribed_radius_rate_", rclcpp::ParameterValue(0.99));
-        declareParameter("inflation_radius_rate_", rclcpp::ParameterValue(1.005));
-
         auto node = node_.lock();
         if(!node){
             throw std::runtime_error{"Failed to lock node"};
         }
+
+        declareParameter("enabled", rclcpp::ParameterValue(true));
+        declareParameter("column_inscribed_radius", rclcpp::ParameterValue(0.75));
+        declareParameter("board_inscribed_radius", rclcpp::ParameterValue(0.01));
+        declareParameter("column_inflation_radius", rclcpp::ParameterValue(0.22));
+        declareParameter("board_inflation_radius", rclcpp::ParameterValue(0.22));
+        declareParameter("cost_scaling_factor", rclcpp::ParameterValue(3.0));
+
+        
         node->get_parameter(name_ + "." + "enabled", enabled_);
-        node->get_parameter(name_ + "." + "model_size", model_size_);
-        node->get_parameter(name_ + "." + "x_cov_threshold", x_cov_threshold_);
-        node->get_parameter(name_ + "." + "y_cov_threshold", y_cov_threshold_);
-        node->get_parameter(name_ + "." + "R_sq_threshold", R_sq_threshold_);
-        node->get_parameter(name_ + "." + "reset_timeout_threshold", reset_timeout_threshold_);
-        node->get_parameter(name_ + "." + "object_inscribed_radius_", object_inscribed_radius_);
-        node->get_parameter(name_ + "." + "halted_inflation_radius_", halted_inflation_radius_);
-        node->get_parameter(name_ + "." + "wandering_inflation_radius_", wandering_inflation_radius_);
-        node->get_parameter(name_ + "." + "moving_inflation_radius_", moving_inflation_radius_);
-        node->get_parameter(name_ + "." + "unknown_inflation_radius_", unknown_inflation_radius_);
-        node->get_parameter(name_ + "." + "halted_cost_scaling_factor_", halted_cost_scaling_factor_);
-        node->get_parameter(name_ + "." + "wandering_cost_scaling_factor_", wandering_cost_scaling_factor_);
-        node->get_parameter(name_ + "." + "moving_cost_scaling_factor_", moving_cost_scaling_factor_);
-        node->get_parameter(name_ + "." + "unknown_cost_scaling_factor_", unknown_cost_scaling_factor_);
-        node->get_parameter(name_ + "." + "max_extend_length_", max_extend_length_);
-        node->get_parameter(name_ + "." + "cov_range_max_", cov_range_max_);
-        node->get_parameter(name_ + "." + "cov_range_min_", cov_range_min_);
-        node->get_parameter(name_ + "." + "inscribed_radius_rate_", inscribed_radius_rate_);
-        node->get_parameter(name_ + "." + "inflation_radius_rate_", inflation_radius_rate_);
+        node->get_parameter(name_ + "." + "column_inscribed_radius", column_inscribed_radius);
+        node->get_parameter(name_ + "." + "board_inscribed_radius", board_inscribed_radius);
+        node->get_parameter(name_ + "." + "column_inflation_radius", column_inflation_radius);
+        node->get_parameter(name_ + "." + "board_inflation_radius", board_inflation_radius);
+        node->get_parameter(name_ + "." + "cost_scaling_factor", cost_scaling_factor);
 
         column_poseArray_sub = node->create_subscription<geometry_msgs::msg::PoseArray>(
             "/column_pose_array", 100, std::bind(&ObjectLayer::columnPoseArrayCallback, this, std::placeholders::_1));
@@ -81,10 +55,10 @@ namespace Object_costmap_plugin {
         }
         resetMapToValue(0, 0, getSizeInCellsX(), getSizeInCellsY(), nav2_costmap_2d::FREE_SPACE);
         for(auto object : columnList){
-            ExpandPointWithCircle(object.pose.position.x, object.pose.position.y, nav2_costmap_2d::LETHAL_OBSTACLE, object_inscribed_radius_, 1.0, 0.0);
+            ExpandPointWithCircle(object.pose.position.x, object.pose.position.y, nav2_costmap_2d::LETHAL_OBSTACLE, column_inflation_radius, cost_scaling_factor, column_inscribed_radius);
         }
         for(auto object : boardList){
-            ExpandPointWithRectangle(object.pose.position.x, object.pose.position.y, nav2_costmap_2d::LETHAL_OBSTACLE, object_inscribed_radius_, 1.0, 0.0, object);
+            ExpandPointWithRectangle(object.pose.position.x, object.pose.position.y, nav2_costmap_2d::LETHAL_OBSTACLE, board_inflation_radius, cost_scaling_factor, board_inscribed_radius, object);
         }
         updateWithMax(master_grid, 0, 0, getSizeInCellsX(), getSizeInCellsY());
     }
@@ -98,7 +72,6 @@ namespace Object_costmap_plugin {
         current_ = true;
         columnList.clear();
         boardList.clear();
-        reset_timeout_ = 0;
         resetMapToValue(0, 0, getSizeInCellsX(), getSizeInCellsY(), nav2_costmap_2d::FREE_SPACE);
         RCLCPP_WARN(
             rclcpp::get_logger("ObjectLayer"), 
@@ -121,8 +94,8 @@ namespace Object_costmap_plugin {
             poseStamped.pose = pose;
             boardList.push_back(poseStamped);
         }
-    } 
-
+    }
+    // 0.22
     void ObjectLayer::ExpandPointWithCircle(double x, double y, double MaxCost, double InflationRadius, double CostScalingFactor, double InscribedRadius){
         double maxX = x + InflationRadius;
         double minX = x - InflationRadius;
@@ -156,33 +129,65 @@ namespace Object_costmap_plugin {
         }
     }
 
-    void ObjectLayer::ExpandPointWithRectangle(double x, double y, double MaxCost, double InflationRadius, double CostScalingFactor, double InscribedRadius, 
-                                             geometry_msgs::msg::PoseStamped object)
+    void ObjectLayer::ExpandPointWithRectangle(double x, double y, double MaxCost,
+                                         double InflationRadius, double CostScalingFactor, double InscribedRadius, 
+                                         geometry_msgs::msg::PoseStamped object)
     {
+        // Get rectangle half-dimensions from header-defined values.
         double halfWidth  = board_width / 2.0;
         double halfHeight = board_height / 2.0;
-
-        // Convert quaternion to yaw (orientation angle)
-        double siny_cosp = 2.0 * (object.pose.orientation.w * object.pose.orientation.z + object.pose.orientation.x * object.pose.orientation.y);
-        double cosy_cosp = 1.0 - 2.0 * (object.pose.orientation.y * object.pose.orientation.y + object.pose.orientation.z * object.pose.orientation.z);
-        double angle = std::atan2(siny_cosp, cosy_cosp); // yaw angle
-
+        
+        // Get the yaw (orientation) from the object's quaternion.
+        double siny_cosp = 2.0 * (object.pose.orientation.w * object.pose.orientation.z +
+                                  object.pose.orientation.x * object.pose.orientation.y);
+        double cosy_cosp = 1.0 - 2.0 * (object.pose.orientation.y * object.pose.orientation.y +
+                                        object.pose.orientation.z * object.pose.orientation.z);
+        double angle = std::atan2(siny_cosp, cosy_cosp);
+        
+        // Precompute sine and cosine of the angle.
+        double cosAngle = std::cos(angle);
+        double sinAngle = std::sin(angle);
+        
         unsigned int mx, my;
-        // Loop over the rectangle in the object's local frame
-        for(double local_x = -halfWidth; local_x <= halfWidth; local_x += resolution_){
-            for(double local_y = -halfHeight; local_y <= halfHeight; local_y += resolution_){
-                // Rotate local coordinates by the object's yaw angle
-                double rotated_x = local_x * std::cos(angle) - local_y * std::sin(angle);
-                double rotated_y = local_x * std::sin(angle) + local_y * std::cos(angle);
-                // Translate to world coordinates
+        double cost = 0.0;
+        
+        // Define the local bounds including the inflation region.
+        double localBoundX = halfWidth + InflationRadius;
+        double localBoundY = halfHeight + InflationRadius;
+        
+        // Use an epsilon so that the loop covers the entire region.
+        double epsilon = resolution_ * 0.5;
+        
+        // Iterate over the inflated local region in the object's frame.
+        for (double local_x = -localBoundX; local_x < localBoundX + epsilon; local_x += resolution_) {
+            for (double local_y = -localBoundY; local_y < localBoundY + epsilon; local_y += resolution_) {
+                // Transform the local point into world coordinates.
+                double rotated_x = local_x * cosAngle - local_y * sinAngle;
+                double rotated_y = local_x * sinAngle + local_y * cosAngle;
                 double world_x = x + rotated_x;
                 double world_y = y + rotated_y;
                 
-                if(worldToMap(world_x, world_y, mx, my)){
-                    double distance = std::sqrt(std::pow(std::fabs(x - world_x), 2) + std::pow(std::fabs(y - world_y), 2));
-                    double cost = std::ceil(252 * std::exp(-CostScalingFactor * (distance - InscribedRadius)));
-                    cost = std::max(std::min(cost, MaxCost), 0.0);
-                    if(getCost(mx, my) != nav2_costmap_2d::NO_INFORMATION){
+                if (worldToMap(world_x, world_y, mx, my)) {
+                    // If inside the base rectangle, assign maximum cost.
+                    if (std::fabs(local_x) <= halfWidth && std::fabs(local_y) <= halfHeight) {
+                        cost = MaxCost;
+                    } 
+                    else {
+                        // Outside the base rectangle: compute the distance from the nearest rectangle border.
+                        double overflow_x = std::max(0.0, std::fabs(local_x) - halfWidth);
+                        double overflow_y = std::max(0.0, std::fabs(local_y) - halfHeight);
+                        double border_distance = std::sqrt(overflow_x * overflow_x + overflow_y * overflow_y);
+                        
+                        // Only inflate if within the InflationRadius.
+                        if (border_distance <= InflationRadius) {
+                            cost = std::ceil(252 * std::exp(-CostScalingFactor * (border_distance - InscribedRadius)));
+                            cost = std::max(std::min(cost, MaxCost), 0.0);
+                        } else {
+                            cost = 0.0;
+                        }
+                    }
+                    // Update the costmap cell.
+                    if (getCost(mx, my) != nav2_costmap_2d::NO_INFORMATION) {
                         setCost(mx, my, std::max((unsigned char)cost, getCost(mx, my)));
                     } else {
                         setCost(mx, my, cost);

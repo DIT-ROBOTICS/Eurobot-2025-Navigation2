@@ -43,15 +43,9 @@ namespace Object_costmap_plugin {
             rclcpp::Subscription<geometry_msgs::msg::PoseArray>::SharedPtr column_poseArray_sub;
             rclcpp::Subscription<geometry_msgs::msg::PoseArray>::SharedPtr board_poseArray_sub;
 
-            int model_size_ = 22;
-            double x_cov_threshold_, y_cov_threshold_, R_sq_threshold_;
-            int reset_timeout_threshold_;
-            double object_inscribed_radius_;
-            double halted_inflation_radius_, wandering_inflation_radius_, moving_inflation_radius_, unknown_inflation_radius_;
-            double halted_cost_scaling_factor_, wandering_cost_scaling_factor_, moving_cost_scaling_factor_, unknown_cost_scaling_factor_;
-            double max_extend_length_, cov_range_max_, cov_range_min_;
-            double inscribed_radius_rate_, inflation_radius_rate_;
-            int reset_timeout_ = 0;
+            double column_inscribed_radius, board_inscribed_radius;
+            double column_inflation_radius, board_inflation_radius;
+            double cost_scaling_factor;
             double min_x_ = 0.0, min_y_ = 0.0, max_x_ = 3.0, max_y_ = 2.0;
             double board_width = 0.4, board_height = 0.1;
 

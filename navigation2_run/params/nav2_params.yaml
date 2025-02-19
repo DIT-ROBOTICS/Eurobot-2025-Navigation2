@@ -279,25 +279,11 @@ local_costmap:
       object_layer:
         plugin: "Object_costmap_plugin::ObjectLayer"
         enabled: True
-        model_size: 22
-        x_cov_threshold: 0.01
-        y_cov_threshold: 0.01
-        R_sq_threshold: 0.85
-        reset_timeout_threshold: 40
-        object_inscribed_radius: 0.22
-        halted_inflation_radius: 0.4
-        wandering_inflation_radius: 0.5
-        moving_inflation_radius: 0.43
-        unknown_inflation_radius: 0.55
-        halted_cost_scaling_factor: 10.0
-        wandering_cost_scaling_factor: 3.0
-        moving_cost_scaling_factor: 11.0
-        unknown_cost_scaling_factor: 3.0
-        max_extend_length: 0.6
-        cov_range_max: 0.05385164807134504  # sqrt(0.0029)
-        cov_range_min: 0.01414213562373095  # sqrt(0.0002)
-        inscribed_radius_rate: 0.99
-        inflation_radius_rate: 1.005
+        column_inscribed_radius: 0.075
+        board_inscribed_radius: 0.01
+        column_inflation_radius: 0.22
+        board_inflation_radius: 0.22
+        column_cost_scaling_factor: 3.0
       always_send_full_costmap: True
 
 global_costmap:
@@ -348,25 +334,11 @@ global_costmap:
       object_layer:
         plugin: "Object_costmap_plugin::ObjectLayer"
         enabled: True
-        model_size: 22
-        x_cov_threshold: 0.01
-        y_cov_threshold: 0.01
-        R_sq_threshold: 0.85
-        reset_timeout_threshold: 40
-        object_inscribed_radius: 0.22
-        halted_inflation_radius: 0.4
-        wandering_inflation_radius: 0.5
-        moving_inflation_radius: 0.43
-        unknown_inflation_radius: 0.55
-        halted_cost_scaling_factor: 10.0
-        wandering_cost_scaling_factor: 3.0
-        moving_cost_scaling_factor: 11.0
-        unknown_cost_scaling_factor: 3.0
-        max_extend_length: 0.6
-        cov_range_max: 0.05385164807134504  # sqrt(0.0029)
-        cov_range_min: 0.01414213562373095  # sqrt(0.0002)
-        inscribed_radius_rate: 0.99
-        inflation_radius_rate: 1.005
+        column_inscribed_radius: 0.075
+        board_inscribed_radius: 0.01
+        column_inflation_radius: 0.22
+        board_inflation_radius: 0.22
+        cost_scaling_factor: 3.0
       always_send_full_costmap: True
 
 map_server:

@@ -3,6 +3,7 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/pose_array.hpp"
 #include <random>
+#include <vector>
 
 class ObjectSimPub : public rclcpp::Node {
     public:
@@ -14,6 +15,12 @@ class ObjectSimPub : public rclcpp::Node {
         int change_position_board = 90;
         geometry_msgs::msg::PoseArray column_message;
         geometry_msgs::msg::PoseArray board_message;
+        int mode = 1;
+        std::vector<double> column_pos_x {0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 2.9, 2.9, 2.9, 2.9, 2.9, 2.9, 2.9, 2.9, 1.35, 1.3, 1.25, 1.2, 1.65, 1.7, 1.75, 1.8, 0.85, 0.8, 0.75, 0.7, 2.15, 2.2, 2.25, 2.3, 0.85, 0.8, 0.75, 0.7, 2.15, 2.2, 2.25, 2.3};
+        std::vector<double> column_pos_y {0.75, 0.7, 0.65, 0.6, 1.75, 1.7, 1.65, 1.6, 0.75, 0.7, 0.65, 0.6, 1.75, 1.7, 1.65, 1.6, 1, 1, 1, 1, 1, 1, 1, 1, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 1.8, 1.8, 1.8, 1.8, 1.8, 1.8, 1.8, 1.8};
+        std::vector<double> board_pos_x {};
+        std::vector<double> board_pos_y { /* fill with desired values */ };
+        std::vector<double> board_orientation { /* fill with desired values */ };
         ObjectSimPub() : Node("object_sim_pub") {
             column_pub_ = this->create_publisher<geometry_msgs::msg::PoseArray>("/column_pose_array", 100);
             board_pub_ = this->create_publisher<geometry_msgs::msg::PoseArray>("/board_pose_array", 100);
@@ -22,32 +29,51 @@ class ObjectSimPub : public rclcpp::Node {
         }
     private:
         void column_timer_callback() {
-            if(change_position_column == 0){
+            if(mode == 0){
+                if(change_position_column == 0){
+                    column_message = geometry_msgs::msg::PoseArray();
+                    column_message.header.stamp = this->now();
+                    column_message.header.frame_id = "column";
+                    for(int i = 0; i < 5; i++){
+                        auto column_pose = generate_random_pose();
+                        column_message.poses.push_back(column_pose);
+                    }
+                    column_pub_->publish(column_message);
+                    change_position_column = 50;
+                }
+                change_position_column--;
+            }
+            else if(mode == 1){
                 column_message = geometry_msgs::msg::PoseArray();
                 column_message.header.stamp = this->now();
                 column_message.header.frame_id = "column";
-                for(int i = 0; i < 5; i++){
-                    auto column_pose = generate_random_pose();
-                    column_message.poses.push_back(column_pose);
+                for(int i = 0; i < 40; i++){    
+                    geometry_msgs::msg::Pose pose;
+                    pose.position.x = column_pos_x[i];
+                    pose.position.y = column_pos_y[i];
+                    column_message.poses.push_back(pose);
                 }
                 column_pub_->publish(column_message);
-                change_position_column = 50;
             }
-            change_position_column--;
         }
         void board_timer_callback() {
-            if(change_position_board == 0){
-                board_message = geometry_msgs::msg::PoseArray();
-                board_message.header.stamp = this->now();
-                board_message.header.frame_id = "board";
-                for(int i = 0; i < 5; i++){
-                    auto board_pose = generate_random_pose();
-                    board_message.poses.push_back(board_pose);
+            if(mode == 0){
+                if(change_position_board == 0){
+                    board_message = geometry_msgs::msg::PoseArray();
+                    board_message.header.stamp = this->now();
+                    board_message.header.frame_id = "board";
+                    for(int i = 0; i < 5; i++){
+                        auto board_pose = generate_random_pose();
+                        board_message.poses.push_back(board_pose);
+                    }
+                    board_pub_->publish(board_message);
+                    change_position_board = 90;
                 }
-                board_pub_->publish(board_message);
-                change_position_board = 90;
+                change_position_board--;
             }
-            change_position_board--;
+            else if(mode == 1){
+
+            }
         }
 
         geometry_msgs::msg::Pose generate_random_pose(){
