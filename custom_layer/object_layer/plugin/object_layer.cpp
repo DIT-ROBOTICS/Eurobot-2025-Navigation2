@@ -170,7 +170,7 @@ namespace Object_costmap_plugin {
         unsigned int mx, my;
         // Loop over the rectangle in the object's local frame
         for(double local_x = -halfWidth; local_x <= halfWidth; local_x += resolution_){
-            for(double local_y = -halfHeight; local_y += halfHeight; local_y += resolution_){
+            for(double local_y = -halfHeight; local_y <= halfHeight; local_y += resolution_){
                 // Rotate local coordinates by the object's yaw angle
                 double rotated_x = local_x * std::cos(angle) - local_y * std::sin(angle);
                 double rotated_y = local_x * std::sin(angle) + local_y * std::cos(angle);
@@ -179,7 +179,14 @@ namespace Object_costmap_plugin {
                 double world_y = y + rotated_y;
                 
                 if(worldToMap(world_x, world_y, mx, my)){
-                    setCost(mx, my, MaxCost);
+                    double distance = std::sqrt(std::pow(std::fabs(x - world_x), 2) + std::pow(std::fabs(y - world_y), 2));
+                    double cost = std::ceil(252 * std::exp(-CostScalingFactor * (distance - InscribedRadius)));
+                    cost = std::max(std::min(cost, MaxCost), 0.0);
+                    if(getCost(mx, my) != nav2_costmap_2d::NO_INFORMATION){
+                        setCost(mx, my, std::max((unsigned char)cost, getCost(mx, my)));
+                    } else {
+                        setCost(mx, my, cost);
+                    }
                 }
             }
         }
