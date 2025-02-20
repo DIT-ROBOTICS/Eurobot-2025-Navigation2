@@ -245,7 +245,7 @@ local_costmap:
       resolution: 0.01
       robot_radius: 0.22
       # plugins: ["static_layer", "inflation_layer"]
-      plugins: ["static_layer", "rival_layer"]
+      plugins: ["static_layer", "rival_layer", "object_layer"]
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
         map_subscribe_transient_local: True
@@ -276,6 +276,14 @@ local_costmap:
         inscribed_radius_rate: 0.99
         inflation_radius_rate: 1.005
         debug_mode: 0                       # 0: off, 1: Print rival state change only, 2: Print rival state change and statistics, 3: Print everything continuously
+      object_layer:
+        plugin: "Object_costmap_plugin::ObjectLayer"
+        enabled: True
+        column_inscribed_radius: 0.075
+        board_inscribed_radius: 0.01
+        column_inflation_radius: 0.22
+        board_inflation_radius: 0.22
+        column_cost_scaling_factor: 3.0
       always_send_full_costmap: True
 
 global_costmap:
@@ -292,7 +300,7 @@ global_costmap:
       trinary_costmap: false
       lethal_cost_threshold: 10
       unknown_cost_value: 255
-      plugins: ["static_layer", "inflation_layer", "rival_layer"]
+      plugins: ["static_layer", "inflation_layer", "rival_layer", "object_layer"]
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
         map_subscribe_transient_local: True
@@ -323,6 +331,14 @@ global_costmap:
         inscribed_radius_rate: 0.99
         inflation_radius_rate: 1.005
         debug_mode: 0                       # 0: off, 1: Print rival state change only, 2: Print rival state change and statistics, 3: Print everything continuously
+      object_layer:
+        plugin: "Object_costmap_plugin::ObjectLayer"
+        enabled: True
+        column_inscribed_radius: 0.075
+        board_inscribed_radius: 0.01
+        column_inflation_radius: 0.22
+        board_inflation_radius: 0.22
+        cost_scaling_factor: 3.0
       always_send_full_costmap: True
 
 map_server:
