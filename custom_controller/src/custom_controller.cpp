@@ -58,7 +58,6 @@ void CustomController::configure(
         [this](const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg) {
             rival_pose_ = *msg;
         });
-
     global_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("received_global_plan", 5);
     check_goal_pub_ = node->create_publisher<geometry_msgs::msg::PoseStamped>("check_goal", 5);
 // =======
