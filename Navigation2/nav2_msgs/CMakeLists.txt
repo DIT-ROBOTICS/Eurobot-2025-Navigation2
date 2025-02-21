@@ -43,6 +43,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "action/NavigateThroughPoses.action"
   "action/Wait.action"
   "action/Spin.action"
+  "action/Escape.action"
+  "action/Shrink.action"
   "action/DummyBehavior.action"
   "action/FollowWaypoints.action"
   DEPENDENCIES builtin_interfaces geometry_msgs std_msgs action_msgs nav_msgs
