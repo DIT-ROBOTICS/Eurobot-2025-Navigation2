@@ -102,6 +102,7 @@ namespace nav2_behaviors
     Status Shrink::onCycleUpdate(){
         times++;
         if(isWork()){
+            setInflationRadius(0.1);
             return Status::SUCCEEDED;
         }
         else if(times > 10){

@@ -12,21 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""This is all-in-one launch script intended for use by nav2 developers."""
+
 import os
 
 from ament_index_python.packages import get_package_share_directory # type: ignore
 # from launch_ros.substitutions import FindPackageShare # type: ignore
 
 from launch import LaunchDescription
-from launch.actions import (DeclareLaunchArgument, GroupAction, # type: ignore
-                            IncludeLaunchDescription, SetEnvironmentVariable)
+from launch.actions import DeclareLaunchArgument, ExecuteProcess, IncludeLaunchDescription # type: ignore
 from launch.conditions import IfCondition # type: ignore
 from launch.launch_description_sources import PythonLaunchDescriptionSource # type: ignore
 from launch.substitutions import LaunchConfiguration, PythonExpression # type: ignore
 from launch_ros.actions import Node # type: ignore
-from launch_ros.actions import PushRosNamespace # type: ignore
-from launch_ros.descriptions import ParameterFile # type: ignore
-from nav2_common.launch import RewrittenYaml, ReplaceString # type: ignore
 
 
 def generate_launch_description():
@@ -35,17 +33,32 @@ def generate_launch_description():
     launch_dir = os.path.join(pkg_dir, 'launch')
 
     # Create the launch configuration variables
+    # slam = LaunchConfiguration('slam')
     namespace = LaunchConfiguration('namespace')
     use_namespace = LaunchConfiguration('use_namespace')
-    # slam = LaunchConfiguration('slam')
     map_yaml_file = LaunchConfiguration('map')
     use_sim_time = LaunchConfiguration('use_sim_time')
     params_file = LaunchConfiguration('params_file')
     autostart = LaunchConfiguration('autostart')
     use_composition = LaunchConfiguration('use_composition')
     use_respawn = LaunchConfiguration('use_respawn')
-    log_level = LaunchConfiguration('log_level')
     use_odometry_sim = LaunchConfiguration('use_odometry_sim')
+
+    # Launch configuration variables specific to simulation
+    rviz_config_file = LaunchConfiguration('rviz_config_file')
+    use_simulator = LaunchConfiguration('use_simulator')
+    use_robot_state_pub = LaunchConfiguration('use_robot_state_pub')
+    use_rviz = LaunchConfiguration('use_rviz')
+    headless = LaunchConfiguration('headless')
+    # world = LaunchConfiguration('world')
+    pose = {'x': LaunchConfiguration('x_pose', default='2.00'),
+            'y': LaunchConfiguration('y_pose', default='2.00'),
+            'z': LaunchConfiguration('z_pose', default='0.00'),
+            'R': LaunchConfiguration('roll', default='0.00'),
+            'P': LaunchConfiguration('pitch', default='0.00'),
+            'Y': LaunchConfiguration('yaw', default='0.00')}
+    # robot_name = LaunchConfiguration('robot_name')
+    # robot_sdf = LaunchConfiguration('robot_sdf')
 
     # Map fully qualified names to relative ones so the node's namespace can be prepended.
     # In case of the transforms (tf), currently, there doesn't seem to be a better alternative
@@ -56,31 +69,7 @@ def generate_launch_description():
     remappings = [('/tf', 'tf'),
                   ('/tf_static', 'tf_static')]
 
-    # Create our own temporary YAML files that include substitutions
-    param_substitutions = {
-        'use_sim_time': use_sim_time,
-        'yaml_filename': map_yaml_file}
-
-    # Only it applys when `use_namespace` is True.
-    # '<robot_namespace>' keyword shall be replaced by 'namespace' launch argument
-    # in config file 'nav2_multirobot_params.yaml' as a default & example.
-    # User defined config file should contain '<robot_namespace>' keyword for the replacements.
-    params_file = ReplaceString(
-        source_file=params_file,
-        replacements={'<robot_namespace>': ('/', namespace)},
-        condition=IfCondition(use_namespace))
-
-    configured_params = ParameterFile(
-        RewrittenYaml(
-            source_file=params_file,
-            root_key=namespace,
-            param_rewrites=param_substitutions,
-            convert_types=True),
-        allow_substs=True)
-
-    stdout_linebuf_envvar = SetEnvironmentVariable(
-        'RCUTILS_LOGGING_BUFFERED_STREAM', '1')
-
+    # Declare the launch arguments
     declare_namespace_cmd = DeclareLaunchArgument(
         'namespace',
         default_value='',
@@ -98,7 +87,9 @@ def generate_launch_description():
 
     declare_map_yaml_cmd = DeclareLaunchArgument(
         'map',
-        description='Full path to map yaml file to load')
+        default_value=os.path.join(
+            pkg_dir, 'maps', 'basic_map.yaml'),
+        description='Full path to map file to load')
 
     declare_use_sim_time_cmd = DeclareLaunchArgument(
         'use_sim_time',
@@ -122,65 +113,61 @@ def generate_launch_description():
         'use_respawn', default_value='False',
         description='Whether to respawn if a node crashes. Applied when composition is disabled.')
 
-    declare_log_level_cmd = DeclareLaunchArgument(
-        'log_level', default_value='info',
-        description='log level')
+    declare_rviz_config_file_cmd = DeclareLaunchArgument(
+        'rviz_config_file',
+        default_value=os.path.join(
+            pkg_dir, 'rviz', 'test.rviz'),
+        description='Full path to the RVIZ config file to use')
 
-    # Specify the actions
-    bringup_cmd_group = GroupAction([
-        PushRosNamespace(
-            condition=IfCondition(use_namespace),
-            namespace=namespace),
+    declare_use_simulator_cmd = DeclareLaunchArgument(
+        'use_simulator',
+        default_value='True',
+        description='Whether to start the simulator')
 
-        Node(
-            condition=IfCondition(use_composition),
-            name='nav2_container',
-            package='rclcpp_components',
-            executable='component_container_isolated',
-            parameters=[configured_params, {'autostart': autostart}],
-            arguments=['--ros-args', '--log-level', log_level],
-            remappings=remappings,
-            output='screen'),
+    declare_use_robot_state_pub_cmd = DeclareLaunchArgument(
+        'use_robot_state_pub',
+        default_value='True',
+        description='Whether to start the robot state publisher')
 
-        # IncludeLaunchDescription(
-        #     PythonLaunchDescriptionSource(os.path.join(launch_dir, 'slam_launch.py')),
-        #     condition=IfCondition(slam),
-        #     launch_arguments={'namespace': namespace,
-        #                       'use_sim_time': use_sim_time,
-        #                       'autostart': autostart,
-        #                       'use_respawn': use_respawn,
-        #                       'params_file': params_file}.items()),
+    declare_use_rviz_cmd = DeclareLaunchArgument(
+        'use_rviz',
+        default_value='False',
+        description='Whether to start RVIZ')
+    
+    declare_use_odometry_sim_cmd = DeclareLaunchArgument(
+        'use_odometry_sim',
+        default_value='False',
+        description='Whether to start odometry simulation')
 
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(os.path.join(launch_dir,
-                                                       'localization_launch.py')),
-            # condition=IfCondition(PythonExpression(['not ', slam])),
-            launch_arguments={'namespace': namespace,
-                              'map': map_yaml_file,                        
-                              'use_sim_time': use_sim_time,
-                              'autostart': autostart,
-                              'params_file': params_file,
-                              'use_composition': use_composition,
-                              'use_respawn': use_respawn,
-                              'use_odometry_sim': use_odometry_sim,
-                              'container_name': 'nav2_container'}.items()),
+    declare_simulator_cmd = DeclareLaunchArgument(
+        'headless',
+        default_value='True',
+        description='Whether to execute gzclient')
 
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(os.path.join(launch_dir, 'navigation_launch.py')),
-            launch_arguments={'namespace': namespace,
-                              'use_sim_time': use_sim_time,
-                              'autostart': autostart,
-                              'params_file': params_file,
-                              'use_composition': use_composition,
-                              'use_respawn': use_respawn,
-                              'container_name': 'nav2_container'}.items()),
-    ])
+    rviz_cmd = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(launch_dir, 'rviz_launch.py')),
+        condition=IfCondition(use_rviz),
+        launch_arguments={'namespace': namespace,
+                          'use_namespace': use_namespace,
+                          'rviz_config': rviz_config_file}.items())
+
+    bringup_cmd = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(launch_dir, 'bringup_launch.py')),
+        launch_arguments={'namespace': namespace,
+                          'use_namespace': use_namespace,
+                        #   'slam': slam,
+                          'map': map_yaml_file,
+                          'use_sim_time': use_sim_time,
+                          'params_file': params_file,
+                          'autostart': autostart,
+                          'use_composition': use_composition,
+                          'use_odometry_sim': use_odometry_sim,
+                          'use_respawn': use_respawn}.items())
 
     # Create the launch description and populate
     ld = LaunchDescription()
-
-    # Set environment variables
-    ld.add_action(stdout_linebuf_envvar)
 
     # Declare the launch options
     ld.add_action(declare_namespace_cmd)
@@ -191,10 +178,26 @@ def generate_launch_description():
     ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_autostart_cmd)
     ld.add_action(declare_use_composition_cmd)
+
+    ld.add_action(declare_rviz_config_file_cmd)
+    ld.add_action(declare_use_simulator_cmd)
+    ld.add_action(declare_use_robot_state_pub_cmd)
+    ld.add_action(declare_use_rviz_cmd)
+    ld.add_action(declare_use_odometry_sim_cmd)
+    ld.add_action(declare_simulator_cmd)
+    # ld.add_action(declare_world_cmd)
+    # ld.add_action(declare_robot_name_cmd)
+    # ld.add_action(declare_robot_sdf_cmd)
     ld.add_action(declare_use_respawn_cmd)
-    ld.add_action(declare_log_level_cmd)
+
+    # Add any conditioned actions
+    # ld.add_action(start_gazebo_server_cmd)
+    # ld.add_action(start_gazebo_client_cmd)
+    # ld.add_action(start_gazebo_spawner_cmd)
 
     # Add the actions to launch all of the navigation nodes
-    ld.add_action(bringup_cmd_group)
+    # ld.add_action(start_robot_state_publisher_cmd)
+    ld.add_action(rviz_cmd)
+    ld.add_action(bringup_cmd)
 
     return ld
