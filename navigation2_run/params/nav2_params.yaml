@@ -14,6 +14,7 @@ bt_navigator:
     default_nav_through_poses_bt_xml: "$(find-pkg-share custom_nav_thru_poses)/behavior_trees/navigate_through_poses_w_controller_selector.xml"
     default_nav_to_pose_bt_xml: "$(find-pkg-share nav2_bt_navigator)/behavior_trees/navigate_to_pose_w_replanning_and_recovery.xml"
     plugin_lib_names:
+      - nav2_stop_controller_bt_node
       - nav2_compute_path_to_pose_action_bt_node
       - nav2_compute_path_through_poses_action_bt_node
       - nav2_smooth_path_action_bt_node
