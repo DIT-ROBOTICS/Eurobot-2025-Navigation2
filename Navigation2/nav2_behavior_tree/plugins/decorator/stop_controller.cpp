@@ -13,13 +13,6 @@ namespace nav2_behavior_tree
         stop_sub = node_->create_subscription<std_msgs::msg::Bool>("stop", 10, std::bind(&StopController::stopCallback, this, std::placeholders::_1));
     }
 
-    BT::NodeStatus StopController::providedPorts()
-    {
-        return {
-            BT::InputPort<bool>("stop")
-        };
-    }
-
     BT::NodeStatus StopController::tick()
     {
         if (stop_robot)

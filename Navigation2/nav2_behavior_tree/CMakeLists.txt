@@ -207,7 +207,7 @@ list(APPEND plugin_libs nav2_progress_checker_selector_bt_node)
 add_library(nav2_goal_updated_controller_bt_node SHARED plugins/decorator/goal_updated_controller.cpp)
 list(APPEND plugin_libs nav2_goal_updated_controller_bt_node)
 
-add_library(nav2_stop_controller_bt_node SHARED plugins/decorator/stop_conrtoller.cpp)
+add_library(nav2_stop_controller_bt_node SHARED plugins/decorator/stop_controller.cpp)
 list(APPEND plugin_libs nav2_stop_controller_bt_node)
 
 foreach(bt_plugin ${plugin_libs})
