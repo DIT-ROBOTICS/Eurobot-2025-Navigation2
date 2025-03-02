@@ -24,7 +24,10 @@ Navigator::Navigator(const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent)
 : node_(parent)
 {
   auto node = node_.lock();
+  node->declare_parameter("velocity_smoother_wait", 0.1);
   node->declare_parameter("navigator_bt_xml", std::string(""));
+  node->get_parameter("velocity_smoother_wait", velocity_smoother_wait_dbl_);
+  velocity_smoother_wait_ = rclcpp::Duration::from_seconds(velocity_smoother_wait_dbl_);
   node->get_parameter("navigator_bt_xml", navigator_bt_xml_);
 }
 
@@ -71,6 +74,8 @@ void Navigator::goToPose(
     {
       auto result = future_result.get();
       if (result.code == rclcpp_action::ResultCode::SUCCEEDED) {
+        // Wait for velocity_smoother to stop publishing zero velocity
+        rclcpp::sleep_for(velocity_smoother_wait_.to_chrono<std::chrono::nanoseconds>());
         return;  // Success!
       }
     }
