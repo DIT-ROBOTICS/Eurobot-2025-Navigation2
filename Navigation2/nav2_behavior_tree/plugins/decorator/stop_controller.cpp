@@ -6,16 +6,27 @@ namespace nav2_behavior_tree
         const std::string & name,
         const BT::NodeConfiguration & conf)
     : BT::DecoratorNode(name, conf),
-      stop_robot(true)
+      stop_robot(false)
     {
         node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
-        RCLCPP_INFO(node_->get_logger(), "Creating StopController BT node");
         cmd_vel_pub = node_->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 10);
-        stop_sub = node_->create_subscription<std_msgs::msg::Bool>("/stopRobot", 10, std::bind(&StopController::stopCallback, this, std::placeholders::_1));
+        callback_group_ = node_->create_callback_group(
+            rclcpp::CallbackGroupType::MutuallyExclusive,
+            false);
+        callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
+        
+        rclcpp::SubscriptionOptions sub_option;
+        sub_option.callback_group = callback_group_;
+        stop_sub = node_->create_subscription<std_msgs::msg::Bool>(
+            "/stopRobot",
+            rclcpp::SystemDefaultsQoS(),
+            std::bind(&StopController::stopCallback, this, std::placeholders::_1),
+            sub_option);
     }
 
-    BT::NodeStatus StopController::tick()
+    inline BT::NodeStatus StopController::tick()
     {
+        callback_group_executor_.spin_some();
         if (stop_robot)
         {
             geometry_msgs::msg::Twist cmd_vel;
@@ -26,13 +37,12 @@ namespace nav2_behavior_tree
             RCLCPP_INFO(node_->get_logger(), "Robot stopped");
             return BT::NodeStatus::FAILURE;
         }
-        RCLCPP_INFO(node_->get_logger(), "StopController ticking");
         return child_node_->executeTick();
     }
 
     void StopController::stopCallback(const std_msgs::msg::Bool::SharedPtr msg)
     {
-        RCLCPP_INFO(node_->get_logger(), "In call back");
+        RCLCPP_INFO(node_->get_logger(), "In call back %s" , msg->data ? "true" : "false");
         stop_robot = msg->data;
         RCLCPP_INFO(node_->get_logger(), "Stop signal received");
     }

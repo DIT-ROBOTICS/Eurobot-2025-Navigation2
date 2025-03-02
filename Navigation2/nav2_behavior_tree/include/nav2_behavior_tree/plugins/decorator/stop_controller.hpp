@@ -23,9 +23,12 @@ namespace nav2_behavior_tree
         private:
             void stopCallback(const std_msgs::msg::Bool::SharedPtr msg);
             rclcpp::Node::SharedPtr node_;
+            rclcpp::CallbackGroup::SharedPtr callback_group_;
+            rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
             rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr stop_sub;
             rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub;
             bool stop_robot;
+
     };
 }
 
