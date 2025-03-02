@@ -113,6 +113,7 @@ protected:
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr staging_pose_pub_;
   // If subscribed to a detected pose topic, will contain latest message
   geometry_msgs::msg::PoseStamped detected_dock_pose_;
+  geometry_msgs::msg::PoseStamped detected_dock_pose_prev_;
   // This is the actual dock pose once it has the specified translation/rotation applied
   // If not subscribed to a topic, this is simply the database dock pose
   geometry_msgs::msg::PoseStamped dock_pose_;
@@ -129,7 +130,7 @@ protected:
   bool is_stalled_;
 
   // An external reference (such as image_proc::TrackMarkerNode) can be used to detect dock
-  bool use_external_detection_pose_;
+  bool use_external_detection_pose_ = false;
   double external_detection_timeout_;
   tf2::Quaternion external_detection_rotation_;
   double external_detection_translation_x_;
@@ -144,6 +145,7 @@ protected:
   double docking_threshold_;
   // Offset for staging pose relative to dock pose
   double staging_x_offset_;
+  double staging_y_offset_;
   double staging_yaw_offset_;
 
   rclcpp_lifecycle::LifecycleNode::SharedPtr node_;

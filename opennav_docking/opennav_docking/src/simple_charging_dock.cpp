@@ -37,8 +37,8 @@ void SimpleChargingDock::configure(
     node_, name + ".use_battery_status", rclcpp::ParameterValue(true));
 
   // Parameters for optional external detection of dock pose
-  nav2_util::declare_parameter_if_not_declared(
-    node_, name + ".use_external_detection_pose", rclcpp::ParameterValue(false));
+  // nav2_util::declare_parameter_if_not_declared(
+  //   node_, name + ".use_external_detection_pose", rclcpp::ParameterValue(false));
   nav2_util::declare_parameter_if_not_declared(
     node_, name + ".external_detection_timeout", rclcpp::ParameterValue(1.0));
   nav2_util::declare_parameter_if_not_declared(
@@ -74,12 +74,14 @@ void SimpleChargingDock::configure(
 
   // Staging pose configuration
   nav2_util::declare_parameter_if_not_declared(
-    node_, name + ".staging_x_offset", rclcpp::ParameterValue(-0.7));
+    node_, name + ".staging_x_offset", rclcpp::ParameterValue(-0.35));
+  nav2_util::declare_parameter_if_not_declared(
+    node_, name + ".staging_y_offset", rclcpp::ParameterValue(-0.0));
   nav2_util::declare_parameter_if_not_declared(
     node_, name + ".staging_yaw_offset", rclcpp::ParameterValue(0.0));
 
   node_->get_parameter(name + ".use_battery_status", use_battery_status_);
-  node_->get_parameter(name + ".use_external_detection_pose", use_external_detection_pose_);
+  // node_->get_parameter(name + ".use_external_detection_pose", use_external_detection_pose_);
   node_->get_parameter(name + ".external_detection_timeout", external_detection_timeout_);
   node_->get_parameter(
     name + ".external_detection_translation_x", external_detection_translation_x_);
@@ -95,6 +97,7 @@ void SimpleChargingDock::configure(
   node_->get_parameter(name + ".stall_effort_threshold", stall_effort_threshold_);
   node_->get_parameter(name + ".docking_threshold", docking_threshold_);
   node_->get_parameter(name + ".staging_x_offset", staging_x_offset_);
+  node_->get_parameter(name + ".staging_y_offset", staging_y_offset_);
   node_->get_parameter(name + ".staging_yaw_offset", staging_yaw_offset_);
 
   // Setup filter
@@ -110,14 +113,15 @@ void SimpleChargingDock::configure(
       });
   }
 
-  if (use_external_detection_pose_) {
-    dock_pose_.header.stamp = rclcpp::Time(0);
-    dock_pose_sub_ = node_->create_subscription<geometry_msgs::msg::PoseStamped>(
-      "detected_dock_pose", 1,
-      [this](const geometry_msgs::msg::PoseStamped::SharedPtr pose) {
-        detected_dock_pose_ = *pose;
-      });
-  }
+  dock_pose_.header.stamp = rclcpp::Time(0);
+  dock_pose_sub_ = node_->create_subscription<geometry_msgs::msg::PoseStamped>(
+    "detected_dock_pose", 1,
+    [this](const geometry_msgs::msg::PoseStamped::SharedPtr pose) {
+      detected_dock_pose_ = *pose;
+      // RCLCPP_INFO(node_->get_logger(), "Detected dock pose");
+      detected_dock_pose_prev_ = detected_dock_pose_;
+      use_external_detection_pose_ = true;
+  });
 
   bool use_stall_detection;
   node_->get_parameter(name + ".use_stall_detection", use_stall_detection);
@@ -141,48 +145,61 @@ void SimpleChargingDock::configure(
 geometry_msgs::msg::PoseStamped SimpleChargingDock::getStagingPose(
   const geometry_msgs::msg::Pose & pose, const std::string & frame)
 {
-  // If not using detection, set the dock pose as the given dock pose estimate
+  // ** If not using detection, set the dock pose as the given dock pose estimate
   if (!use_external_detection_pose_) {
     // This gets called at the start of docking
     // Reset our internally tracked dock pose
-    dock_pose_.header.frame_id = frame;
-    dock_pose_.pose = pose;
+    // dock_pose_.header.frame_id = frame;
+    // dock_pose_.pose = pose;
+    detected_dock_pose_prev_.header.frame_id = frame;
+    detected_dock_pose_prev_.pose = pose;
   }
 
   // Compute the staging pose with given offsets
+  // ** Added staging_y_offset_
   const double yaw = tf2::getYaw(pose.orientation);
   geometry_msgs::msg::PoseStamped staging_pose;
   staging_pose.header.frame_id = frame;
   staging_pose.header.stamp = node_->now();
   staging_pose.pose = pose;
-  staging_pose.pose.position.x += cos(yaw) * staging_x_offset_;
-  staging_pose.pose.position.y += sin(yaw) * staging_x_offset_;
+
+  // Apply x and y offsets
+  staging_pose.pose.position.x += cos(yaw) * staging_x_offset_ - sin(yaw) * staging_y_offset_;
+  staging_pose.pose.position.y += sin(yaw) * staging_x_offset_ + cos(yaw) * staging_y_offset_;
+
   tf2::Quaternion orientation;
   orientation.setEuler(0.0, 0.0, yaw + staging_yaw_offset_);
   staging_pose.pose.orientation = tf2::toMsg(orientation);
 
   // Publish staging pose for debugging purposes
   staging_pose_pub_->publish(staging_pose);
-  return staging_pose;
+
+return staging_pose;
+
 }
 
 bool SimpleChargingDock::getRefinedPose(geometry_msgs::msg::PoseStamped & pose)
 {
-  // If using not detection, set the dock pose to the static fixed-frame version
+  // ** If using not detection, set the dock pose to the static fixed-frame version
   if (!use_external_detection_pose_) {
-    dock_pose_pub_->publish(pose);
-    dock_pose_ = pose;
+    if(detected_dock_pose_prev_.header.frame_id.empty()) {
+      RCLCPP_WARN(node_->get_logger(), "No frame for detected dock pose");
+    }
+    dock_pose_pub_->publish(detected_dock_pose_prev_);
+    dock_pose_ = detected_dock_pose_prev_;
     return true;
   }
 
   // If using detections, get current detections, transform to frame, and apply offsets
   geometry_msgs::msg::PoseStamped detected = detected_dock_pose_;
 
-  // Validate that external pose is new enough
+  // ** Validate that external pose is new enough
   auto timeout = rclcpp::Duration::from_seconds(external_detection_timeout_);
   if (node_->now() - detected.header.stamp > timeout) {
     RCLCPP_WARN(node_->get_logger(), "Lost detection or did not detect: timeout exceeded");
-    // ! return false;
+    dock_pose_pub_->publish(detected_dock_pose_prev_);
+    dock_pose_ = detected_dock_pose_prev_;
+    return true;
   }
 
   // Transform detected pose into fixed frame. Note that the argument pose
@@ -232,6 +249,7 @@ bool SimpleChargingDock::getRefinedPose(geometry_msgs::msg::PoseStamped & pose)
   // Publish & return dock pose for debugging purposes
   dock_pose_pub_->publish(dock_pose_);
   pose = dock_pose_;
+  use_external_detection_pose_ = false;
   return true;
 }
 
