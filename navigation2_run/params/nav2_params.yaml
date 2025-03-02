@@ -90,7 +90,7 @@ controller_server:
     progress_checker_plugin: "progress_checker"
     current_goal_checker: "percise_goal_checker"
     goal_checker_plugins: ["percise_goal_checker"]
-    controller_plugins: ["FollowPath", "DockMission", "MPPI"]
+    controller_plugins: ["FollowPath", "DockMission", "Graceful", "MPPI"]
 
     # Progress checker parameters
     progress_checker:
@@ -128,6 +128,25 @@ controller_server:
       use_fixed_curvature_lookahead: false
       curvature_lookahead_dist: 0.25
       
+    Graceful:
+      plugin: nav2_graceful_controller::GracefulController
+      transform_tolerance: 0.1
+      min_lookahead: 0.25
+      max_lookahead: 1.0
+      initial_rotation: true
+      initial_rotation_threshold: 0.75
+      prefer_final_rotation: true
+      allow_backward: false
+      k_phi: 2.0
+      k_delta: 1.0
+      beta: 0.4
+      lambda: 2.0
+      v_linear_min: 0.1
+      v_linear_max: 0.5
+      v_angular_max: 5.0
+      v_angular_min_in_place: 0.25
+      slowdown_radius: 1.5
+
     MPPI:
       plugin: "nav2_mppi_controller::MPPIController"
       time_steps: 56
@@ -306,8 +325,8 @@ global_costmap:
         map_subscribe_transient_local: True
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 7.0
-        inflation_radius: 0.1
+        cost_scaling_factor: 5.0
+        inflation_radius: 0.15
       rival_layer:
         plugin: "custom_path_costmap_plugin::RivalLayer"
         enabled: True
@@ -363,7 +382,6 @@ planner_server:
 smoother_server:
   ros__parameters:
     use_sim_time: False
-    # smoother_plugins: [""]
     smoother_plugins: ["simple_smoother"]
     simple_smoother:
       plugin: "nav2_smoother::SimpleSmoother"
@@ -421,11 +439,62 @@ velocity_smoother:
     smoothing_frequency: 20.0
     scale_velocities: False
     feedback: "OPEN_LOOP"
-    max_velocity: [0.5, 0.5, 0.75]
-    min_velocity: [-0.5, -0.5, -0.75]
+    max_velocity: [1.0, 1.0, 0.75]
+    min_velocity: [-1.0, -1.0, -0.75]
     max_accel: [1.0, 1.0, 3.0]
     max_decel: [-1.0, -1.0, -3.0]  
     odom_topic: "odom"
     odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]
-    velocity_timeout: 1.0
+    velocity_timeout: 0.1 # must be less than velocity_smoother_wait in docking_server
+
+docking_server:
+  ros__parameters:
+    controller_frequency: 20.0
+    initial_perception_timeout: 5.0
+    wait_charge_timeout: 5.0
+    dock_approach_timeout: 30.0
+    max_retries: 3
+    base_frame: "base_link"
+    fixed_frame: "map"
+    dock_backwards: false
+    dock_prestaging_tolerance: 0.02
+    velocity_smoother_wait: 0.12
+
+    # Types of docks
+    dock_plugins: ['mission_dock']
+    mission_dock:
+      plugin: 'opennav_docking::SimpleChargingDock'
+      docking_threshold: 0.01
+      staging_x_offset: 0.35
+      staging_y_offset: 0.0
+      staging_yaw_offset: 0.0
+      use_battery_status: false
+      use_stall_detection: false
+
+      external_detection_timeout: 1.0
+      external_detection_translation_x: 0.0
+      external_detection_translation_y: 0.0
+      external_detection_rotation_roll: 0.0
+      external_detection_rotation_pitch: 0.0
+      external_detection_rotation_yaw: 0.0
+      filter_coef: 0.1
+
+    docks: ['home_dock', 'flex_dock1', 'flex_dock2']
+    home_dock:
+      type: 'mission_dock'
+      frame: map
+      pose: [0.0, 0.0, 0.0]
+    flex_dock1:
+      type: 'mission_dock'
+      frame: map
+      pose: [2.2, 1.4, 0.0]
+    flex_dock2:
+      type: 'mission_dock'
+      frame: map
+      pose: [1.5, 1.0, 0.0]
+    
+    # dock_database: /my/path/to/dock_database.yaml
+
+    controller:
+      max_linear_vel: 0.5
