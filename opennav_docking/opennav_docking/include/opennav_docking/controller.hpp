@@ -111,6 +111,10 @@ class Controller
     // Robot pose subscibtion
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr robot_pose_sub_;
     void robotPoseCallback(const nav_msgs::msg::Odometry::SharedPtr robot_pose);
+
+    // Local goal publisher
+    rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr local_goal_pub_;
+    void publishLocalGoal();
 };
 
 }  // namespace opennav_docking
