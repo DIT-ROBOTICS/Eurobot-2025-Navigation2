@@ -29,7 +29,7 @@ DockingServer::DockingServer(const rclcpp::NodeOptions & options)
 {
   RCLCPP_INFO(get_logger(), "Creating %s", get_name());
 
-  declare_parameter("controller_frequency", 50.0);
+  declare_parameter("controller_frequency", 20.0);
   declare_parameter("initial_perception_timeout", 5.0);
   declare_parameter("wait_charge_timeout", 5.0);
   declare_parameter("dock_approach_timeout", 30.0);
@@ -40,7 +40,7 @@ DockingServer::DockingServer(const rclcpp::NodeOptions & options)
   declare_parameter("fixed_frame", "odom");
   declare_parameter("dock_backwards", false);
   declare_parameter("dock_prestaging_tolerance", 0.5);
-  declare_parameter("backward_projection", 0.03);
+  declare_parameter("backward_projection", 0.00);
 }
 
 nav2_util::CallbackReturn
@@ -237,7 +237,7 @@ void DockingServer::dockRobot()
       dock = generateGoalDock(goal);
     }
 
-    // Send robot to its staging pose
+    // ** Send robot to its staging pose
     publishDockingFeedback(DockRobot::Feedback::NAV_TO_STAGING_POSE);
     const auto initial_staging_pose = dock->getStagingPose();
     const auto robot_pose = getRobotPoseInFrame(
@@ -260,7 +260,7 @@ void DockingServer::dockRobot()
     doInitialPerception(dock, dock_pose);
     RCLCPP_INFO(get_logger(), "Successful initial dock detection");
 
-    // Docking control loop: while not docked, run controller
+    // ** Docking control loop: while not docked, run controller
     rclcpp::Time dock_contact_time;
     while (rclcpp::ok()) {
       try {
@@ -406,17 +406,10 @@ bool DockingServer::approachDock(Dock * dock, geometry_msgs::msg::PoseStamped & 
       throw opennav_docking_core::FailedToDetectDock("Failed dock detection");
     }
 
-    // Transform target_pose into base_link frame
+    // ! Transform target_pose into base_link frame
     geometry_msgs::msg::PoseStamped target_pose = dock_pose;
     target_pose.header.stamp = rclcpp::Time(0);
 
-    // The control law can get jittery when close to the end when atan2's can explode.
-    // Thus, we backward project the controller's target pose a little bit after the
-    // dock so that the robot never gets to the end of the spiral before its in contact
-    // with the dock to stop the docking procedure.
-    const double yaw = tf2::getYaw(target_pose.pose.orientation);
-    target_pose.pose.position.x += cos(yaw) * backward_projection_;
-    target_pose.pose.position.y += sin(yaw) * backward_projection_;
     tf2_buffer_->transform(target_pose, target_pose, base_frame_);
 
     // Compute and publish controls
