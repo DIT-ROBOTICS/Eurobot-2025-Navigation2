@@ -44,7 +44,7 @@ namespace opennav_docking
 
 Controller::Controller(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node) {
     // Declare parameters if not declared
-    declare_parameter_if_not_declared(node, "max_linear_vel", rclcpp::ParameterValue(0.7));
+    declare_parameter_if_not_declared(node, "max_linear_vel", rclcpp::ParameterValue(0.5));
     declare_parameter_if_not_declared(node, "min_linear_vel", rclcpp::ParameterValue(0.0));
     declare_parameter_if_not_declared(node, "max_angular_vel", rclcpp::ParameterValue(3.0));
     declare_parameter_if_not_declared(node, "min_angular_vel", rclcpp::ParameterValue(0.0));
@@ -52,8 +52,6 @@ Controller::Controller(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node) 
     declare_parameter_if_not_declared(node, "max_angular_acc", rclcpp::ParameterValue(1.0));
     declare_parameter_if_not_declared(node, "angular_kp", rclcpp::ParameterValue(4.0));
     declare_parameter_if_not_declared(node, "look_ahead_distance", rclcpp::ParameterValue(1.0));
-    declare_parameter_if_not_declared(node, "yaw_goal_tolerance", rclcpp::ParameterValue(0.01));
-    declare_parameter_if_not_declared(node, "xy_goal_tolerance_sq", rclcpp::ParameterValue(0.004));
 
     // Get parameters from the config file
     node->get_parameter("max_linear_vel", max_linear_vel_);
@@ -64,22 +62,23 @@ Controller::Controller(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node) 
     node->get_parameter("max_angular_acc", max_angular_acc_);
     node->get_parameter("angular_kp", angular_kp_);
     node->get_parameter("look_ahead_distance", look_ahead_distance_);
-    node->get_parameter("yaw_goal_tolerance", yaw_goal_tolerance_);
-    node->get_parameter("xy_goal_tolerance_sq", xy_goal_tolerance_sq_);
 
     logger_ = node->get_logger();
     clock_ = node->get_clock();
 
-    // Subscribe to the rival's pose
-    // robot_pose_sub_ = node->create_subscription<nav_msgs::msg::Odometry>(
-    //     "/odom", 100, std::bind(&Controller::robotPoseCallback, this, std::placeholders::_1));
+    // Subscribe to the robot's pose
     robot_pose_sub_ = node->create_subscription<nav_msgs::msg::Odometry>(
-        "/odom",  // Replace with your actual rival pose topic
-        rclcpp::QoS(10),
+        "/odom",
+        rclcpp::QoS(10).durability_volatile(),
         [this](const nav_msgs::msg::Odometry::SharedPtr msg) {
             robot_pose_.x_ = (*msg).pose.pose.position.x;
             robot_pose_.y_ = (*msg).pose.pose.position.y;
         });
+
+    // Publish the local goal
+    local_goal_pub_ = node->create_publisher<geometry_msgs::msg::PoseStamped>(
+        "local_goal",
+        rclcpp::QoS(10));
 }
 
 RobotState::RobotState(double x, double y, double theta) {
@@ -92,41 +91,10 @@ double RobotState::distanceTo(RobotState pos) {
     return sqrt(pow(x_ - pos.x_, 2) + pow(y_ - pos.y_, 2));
 }
 
-bool Controller::isGoalReached(RobotState& robot_pose, const geometry_msgs::msg::Pose &target, double xy_goal_tolerance) {
-    double xy_goal_tolerance_sq = xy_goal_tolerance;
-    double dx = robot_pose.x_ - target.position.x;
-    double dy = robot_pose.y_ - target.position.y;
-
-    if(dx * dx + dy * dy > xy_goal_tolerance_sq) {
-        return false;
-    }
-
-    return true;
-}
-
-// void Controller::dividePath(const geometry_msgs::msg::Pose& target) {
-//     // Divide the path into segments
-//     // Pose -> Segment -> Target
-//     RobotState point_buffer;
-//     global_path_.clear();
-//     int distance = hypot(target.position.x - robot_pose_.x_, target.position.y - robot_pose_.y_);
-//     if(distance < 1) {
-//         posetoRobotState(target, point_buffer);
-//         global_path_.push_back(point_buffer);
-//         return;
-//     } 
-//     for(int i=0; i<=distance; i++) {
-//         point_buffer.x_ = robot_pose_.x_ + i * (target.position.x - robot_pose_.x_) / distance;
-//         point_buffer.y_ = robot_pose_.y_ + i * (target.position.y - robot_pose_.y_) / distance;
-//         point_buffer.theta_ = tf2::getYaw(target.orientation);
-
-//         global_path_.push_back(point_buffer);
-//     }
-// }
-
 void Controller::posetoRobotState(geometry_msgs::msg::Pose pose, RobotState &state) {
     state.x_ = pose.position.x;
     state.y_ = pose.position.y;
+
     tf2::Quaternion q;
     tf2::fromMsg(pose.orientation, q);
     tf2::Matrix3x3 qt(q);
@@ -143,60 +111,6 @@ RobotState Controller::globalTolocal(RobotState cur_pose, RobotState goal) {
 
     return local_goal;
 }
-
-// RobotState Controller::getLookAheadPoint(
-//   RobotState cur_pose, std::vector<RobotState> &path, double look_ahead_distance) {
-//     if(path.empty()) {
-//         // RCLCPP_INFO(logger_, "[%s] Path is empty", plugin_name_.c_str());
-//         return cur_pose;
-//     }
-    
-//     RobotState local_goal;
-    
-//     int nearest_index = 0;
-//     int next_index = 0;
-
-//     for(int i=path.size()-1; i>=0; --i) {
-//         if(cur_pose.distanceTo(path[i]) <= look_ahead_distance) {
-//             next_index = i;
-//             break;
-//         }
-//     }
-
-//     if (next_index == 0) next_index = path.size()-1;
-
-//     if (next_index < path.size()-1) {
-//         next_index = next_index+1;
-//     }
-
-//     local_goal.x_ = cur_pose.x_ + (path[next_index].x_ - cur_pose.x_)*(look_ahead_distance/cur_pose.distanceTo(path[next_index]));
-//     local_goal.y_ = cur_pose.y_ + (path[next_index].y_ - cur_pose.y_)*(look_ahead_distance/cur_pose.distanceTo(path[next_index]));
-//     local_goal.theta_ = path[next_index].theta_;
-
-//     if (cur_pose.distanceTo(path.back()) < look_ahead_distance + 0.01)
-//         local_goal = path.back();
-
-//     if (local_goal.distanceTo(path.back()) < 0.005) {
-//         local_goal = path.back();
-//     }
-    
-//     // for rviz visualization
-//     // geometry_msgs::msg::PoseStamped pos_msg;
-//     // pos_msg.header.frame_id = "map";
-//     // pos_msg.header.stamp = clock_->now();
-//     // pos_msg.pose.position.x = local_goal.x_;
-//     // pos_msg.pose.position.y = local_goal.y_;
-
-//     // tf2::Quaternion q;
-//     // q.setRPY(0, 0, local_goal.theta_);
-//     // pos_msg.pose.orientation.x = q.x();
-//     // pos_msg.pose.orientation.y = q.y();
-//     // pos_msg.pose.orientation.z = q.z();
-//     // pos_msg.pose.orientation.w = q.w();
-//     // local_goal_pub_->publish(pos_msg);
-    
-//     return local_goal;
-// }
 
 double Controller::getGoalAngle(double cur_angle, double goal_angle) {
     double ang_diff_ = goal_angle - cur_angle;
@@ -222,40 +136,38 @@ double Controller::getGoalAngle(double cur_angle, double goal_angle) {
 
 bool Controller::computeVelocityCommand(
   const geometry_msgs::msg::Pose & target, geometry_msgs::msg::Twist & cmd, bool /*backward*/) {
-    //dividePath(target);
-    local_goal_.x_ = target.position.x;
-    local_goal_.y_ = target.position.y;
+        
+    double global_distance = sqrt(pow(target.position.x, 2) + pow(target.position.y, 2));
+    // ? Why
+    // local_goal_ = globalTolocal(robot_pose_, local_goal_);
+    double local_angle = atan2(target.position.y, target.position.x);
     
+    publishLocalGoal();
 
-    if(!isGoalReached(robot_pose_, target, 0.02)){
-        //local_goal_ = getLookAheadPoint(robot_pose_, vector_global_path_, look_ahead_distance_);
-        
-        double global_distance = sqrt(pow(local_goal_.x_ - robot_pose_.x_, 2) + pow(local_goal_.y_ - robot_pose_.y_, 2));
-        local_goal_ = globalTolocal(robot_pose_, local_goal_);
-        double local_angle = atan2(local_goal_.y_, local_goal_.x_);
-        
-        cmd.linear.x = std::min(global_distance * 1.5, max_linear_vel_) * cos(local_angle);
-        cmd.linear.y = std::min(global_distance * 1.5, max_linear_vel_) * sin(local_angle);
-        cmd.angular.z = getGoalAngle(robot_pose_.theta_, final_goal_angle_);
-        return true;
-
-    } else if(fabs(final_goal_angle_ - robot_pose_.theta_) > 0.01) {
-        cmd.linear.x = 0.0;
-        cmd.linear.y = 0.0;
-        cmd.angular.z = getGoalAngle(robot_pose_.theta_, final_goal_angle_);
-        return true;
-
-    } else {
-        // RCLCPP_INFO(logger_, "[%s] Goal reached", plugin_name_.c_str());
-        cmd.linear.x = 0.0;
-        cmd.linear.y = 0.0;
-        cmd.angular.z = 0.0;
-        return true;
-    }
+    cmd.linear.x = std::min(global_distance * 1.5, max_linear_vel_) * cos(local_angle);
+    cmd.linear.y = std::min(global_distance * 1.5, max_linear_vel_) * sin(local_angle);
+    cmd.angular.z = getGoalAngle(robot_pose_.theta_, final_goal_angle_);
+    return true;
 }
 
 void Controller::robotPoseCallback(const nav_msgs::msg::Odometry::SharedPtr robot_pose) {
     posetoRobotState(robot_pose->pose.pose, robot_pose_); 
+}
+
+void Controller::publishLocalGoal() {
+    geometry_msgs::msg::PoseStamped local_goal;
+    local_goal.header.frame_id = "map";
+    local_goal.header.stamp = clock_->now();
+    local_goal.pose.position.x = robot_pose_.x_;
+    local_goal.pose.position.y = robot_pose_.y_;
+
+    tf2::Quaternion q;
+    q.setRPY(0, 0, local_goal_.theta_);
+    local_goal.pose.orientation.x = q.x();
+    local_goal.pose.orientation.y = q.y();
+    local_goal.pose.orientation.z = q.z();
+    local_goal.pose.orientation.w = q.w();
+    local_goal_pub_->publish(local_goal);
 }
 
 }  // namespace opennav_docking
