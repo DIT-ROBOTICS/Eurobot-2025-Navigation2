@@ -80,6 +80,8 @@ protected:
   rclcpp::executors::SingleThreadedExecutor executor_;
   ActionClient::SharedPtr nav_to_pose_client_;
   std::string navigator_bt_xml_;
+  double velocity_smoother_wait_dbl_;
+  rclcpp::Duration velocity_smoother_wait_{0, 0};
 };
 
 }  // namespace opennav_docking
