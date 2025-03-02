@@ -6,11 +6,12 @@ namespace nav2_behavior_tree
         const std::string & name,
         const BT::NodeConfiguration & conf)
     : BT::DecoratorNode(name, conf),
-      stop_robot(false)
+      stop_robot(true)
     {
         node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
-        cmd_vel_pub = node_->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
-        stop_sub = node_->create_subscription<std_msgs::msg::Bool>("stop", 10, std::bind(&StopController::stopCallback, this, std::placeholders::_1));
+        RCLCPP_INFO(node_->get_logger(), "Creating StopController BT node");
+        cmd_vel_pub = node_->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 10);
+        stop_sub = node_->create_subscription<std_msgs::msg::Bool>("/stopRobot", 10, std::bind(&StopController::stopCallback, this, std::placeholders::_1));
     }
 
     BT::NodeStatus StopController::tick()
@@ -21,15 +22,19 @@ namespace nav2_behavior_tree
             cmd_vel.linear.x = 0.0;
             cmd_vel.angular.z = 0.0;
             cmd_vel_pub->publish(cmd_vel);
-            stop_robot = false;
+            stop_robot = true;
+            RCLCPP_INFO(node_->get_logger(), "Robot stopped");
             return BT::NodeStatus::FAILURE;
         }
+        RCLCPP_INFO(node_->get_logger(), "StopController ticking");
         return child_node_->executeTick();
     }
 
     void StopController::stopCallback(const std_msgs::msg::Bool::SharedPtr msg)
     {
+        RCLCPP_INFO(node_->get_logger(), "In call back");
         stop_robot = msg->data;
+        RCLCPP_INFO(node_->get_logger(), "Stop signal received");
     }
 } // namespace nav2_behavior_tree
 
