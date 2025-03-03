@@ -34,7 +34,6 @@ namespace nav2_behavior_tree
             cmd_vel.angular.z = 0.0;
             cmd_vel_pub->publish(cmd_vel);
             stop_robot = true;
-            RCLCPP_INFO(node_->get_logger(), "Robot stopped");
             return BT::NodeStatus::FAILURE;
         }
         return child_node_->executeTick();
@@ -42,9 +41,7 @@ namespace nav2_behavior_tree
 
     void StopController::stopCallback(const std_msgs::msg::Bool::SharedPtr msg)
     {
-        RCLCPP_INFO(node_->get_logger(), "In call back %s" , msg->data ? "true" : "false");
         stop_robot = msg->data;
-        RCLCPP_INFO(node_->get_logger(), "Stop signal received");
     }
 } // namespace nav2_behavior_tree
 
