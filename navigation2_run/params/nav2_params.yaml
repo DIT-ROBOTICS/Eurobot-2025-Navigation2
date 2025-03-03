@@ -90,7 +90,7 @@ controller_server:
     progress_checker_plugin: "progress_checker"
     current_goal_checker: "percise_goal_checker"
     goal_checker_plugins: ["percise_goal_checker"]
-    controller_plugins: ["FollowPath", "DockMission", "Graceful", "MPPI"]
+    controller_plugins: ["FollowPath", "DockMission"]
 
     # Progress checker parameters
     progress_checker:
