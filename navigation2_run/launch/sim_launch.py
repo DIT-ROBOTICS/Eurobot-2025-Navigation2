@@ -17,7 +17,6 @@
 import os
 
 from ament_index_python.packages import get_package_share_directory # type: ignore
-# from launch_ros.substitutions import FindPackageShare # type: ignore
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, ExecuteProcess, IncludeLaunchDescription # type: ignore
@@ -32,8 +31,6 @@ def generate_launch_description():
     pkg_dir = get_package_share_directory('navigation2_run')
     launch_dir = os.path.join(pkg_dir, 'launch')
 
-    # Create the launch configuration variables
-    # slam = LaunchConfiguration('slam')
     namespace = LaunchConfiguration('namespace')
     use_namespace = LaunchConfiguration('use_namespace')
     map_yaml_file = LaunchConfiguration('map')
@@ -46,28 +43,7 @@ def generate_launch_description():
 
     # Launch configuration variables specific to simulation
     rviz_config_file = LaunchConfiguration('rviz_config_file')
-    use_simulator = LaunchConfiguration('use_simulator')
-    use_robot_state_pub = LaunchConfiguration('use_robot_state_pub')
     use_rviz = LaunchConfiguration('use_rviz')
-    headless = LaunchConfiguration('headless')
-    # world = LaunchConfiguration('world')
-    pose = {'x': LaunchConfiguration('x_pose', default='2.00'),
-            'y': LaunchConfiguration('y_pose', default='2.00'),
-            'z': LaunchConfiguration('z_pose', default='0.00'),
-            'R': LaunchConfiguration('roll', default='0.00'),
-            'P': LaunchConfiguration('pitch', default='0.00'),
-            'Y': LaunchConfiguration('yaw', default='0.00')}
-    # robot_name = LaunchConfiguration('robot_name')
-    # robot_sdf = LaunchConfiguration('robot_sdf')
-
-    # Map fully qualified names to relative ones so the node's namespace can be prepended.
-    # In case of the transforms (tf), currently, there doesn't seem to be a better alternative
-    # https://github.com/ros/geometry2/issues/32
-    # https://github.com/ros/robot_state_publisher/pull/30
-    # TODO(orduno) Substitute with `PushNodeRemapping`
-    #              https://github.com/ros2/launch_ros/issues/56
-    remappings = [('/tf', 'tf'),
-                  ('/tf_static', 'tf_static')]
 
     # Declare the launch arguments
     declare_namespace_cmd = DeclareLaunchArgument(
@@ -79,11 +55,6 @@ def generate_launch_description():
         'use_namespace',
         default_value='false',
         description='Whether to apply a namespace to the navigation stack')
-
-    # declare_slam_cmd = DeclareLaunchArgument(
-    #     'slam',
-    #     default_value='False',
-    #     description='Whether run a SLAM')
 
     declare_map_yaml_cmd = DeclareLaunchArgument(
         'map',
@@ -119,16 +90,6 @@ def generate_launch_description():
             pkg_dir, 'rviz', 'test.rviz'),
         description='Full path to the RVIZ config file to use')
 
-    declare_use_simulator_cmd = DeclareLaunchArgument(
-        'use_simulator',
-        default_value='True',
-        description='Whether to start the simulator')
-
-    declare_use_robot_state_pub_cmd = DeclareLaunchArgument(
-        'use_robot_state_pub',
-        default_value='True',
-        description='Whether to start the robot state publisher')
-
     declare_use_rviz_cmd = DeclareLaunchArgument(
         'use_rviz',
         default_value='True',
@@ -138,11 +99,6 @@ def generate_launch_description():
         'use_odometry_sim',
         default_value='True',
         description='Whether to start odometry simulation')
-
-    declare_simulator_cmd = DeclareLaunchArgument(
-        'headless',
-        default_value='True',
-        description='Whether to execute gzclient)')
 
     rviz_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -157,7 +113,6 @@ def generate_launch_description():
             os.path.join(launch_dir, 'bringup_launch.py')),
         launch_arguments={'namespace': namespace,
                           'use_namespace': use_namespace,
-                        #   'slam': slam,
                           'map': map_yaml_file,
                           'use_sim_time': use_sim_time,
                           'params_file': params_file,
@@ -172,7 +127,6 @@ def generate_launch_description():
     # Declare the launch options
     ld.add_action(declare_namespace_cmd)
     ld.add_action(declare_use_namespace_cmd)
-    # ld.add_action(declare_slam_cmd)
     ld.add_action(declare_map_yaml_cmd)
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_params_file_cmd)
@@ -180,23 +134,11 @@ def generate_launch_description():
     ld.add_action(declare_use_composition_cmd)
 
     ld.add_action(declare_rviz_config_file_cmd)
-    ld.add_action(declare_use_simulator_cmd)
-    ld.add_action(declare_use_robot_state_pub_cmd)
     ld.add_action(declare_use_rviz_cmd)
     ld.add_action(declare_use_odometry_sim_cmd)
-    ld.add_action(declare_simulator_cmd)
-    # ld.add_action(declare_world_cmd)
-    # ld.add_action(declare_robot_name_cmd)
-    # ld.add_action(declare_robot_sdf_cmd)
     ld.add_action(declare_use_respawn_cmd)
 
-    # Add any conditioned actions
-    # ld.add_action(start_gazebo_server_cmd)
-    # ld.add_action(start_gazebo_client_cmd)
-    # ld.add_action(start_gazebo_spawner_cmd)
-
     # Add the actions to launch all of the navigation nodes
-    # ld.add_action(start_robot_state_publisher_cmd)
     ld.add_action(rviz_cmd)
     ld.add_action(bringup_cmd)
 
