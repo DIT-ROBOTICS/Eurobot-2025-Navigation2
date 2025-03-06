@@ -15,7 +15,7 @@
   <depend>rclcpp</depend>
   <depend>nav2_costmap_2d</depend>
   <depend>pluginlib</depend>
-  <depend>geometry_msgs</depend>
+  <depend>nav_msgs</depend>
 
   <export>
     <costmap_2d plugin="${prefix}/rival_layer.xml"/>

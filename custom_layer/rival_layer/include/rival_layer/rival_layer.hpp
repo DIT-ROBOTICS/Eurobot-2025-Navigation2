@@ -6,7 +6,7 @@
 #include "nav2_costmap_2d/layer.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_util/node_utils.hpp"
-#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
+#include "nav_msgs/msg/odometry.hpp"
 
 // Circular Queue for rival's path      |front| ____ <--- ____ |rear|
 class CircularQueue {
@@ -138,8 +138,8 @@ namespace custom_path_costmap_plugin {
             void FieldExpansion(double x, double y);
 
             // Rival pose subscibtion
-            rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr rival_pose_sub_;
-            void rivalPoseCallback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr rival_pose);
+            rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr rival_pose_sub_;
+            void rivalPoseCallback(const nav_msgs::msg::Odometry::SharedPtr rival_pose);
             bool rival_pose_received_ = false;
 
             // Timeout for reset the costmap
