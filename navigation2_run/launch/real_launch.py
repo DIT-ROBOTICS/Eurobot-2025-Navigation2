@@ -106,7 +106,7 @@ def generate_launch_description():
     
     declare_robot_pose_remap_cmd = DeclareLaunchArgument(
         'robot_pose_remap',
-        default_value='final_pose',
+        default_value='final_pose_nav',
         description='Remapping for robot pose topic')
     
     declare_rival_pose_remap_cmd = DeclareLaunchArgument(
@@ -136,6 +136,14 @@ def generate_launch_description():
                           'use_respawn': use_respawn,
                           'robot_pose_remap': robot_pose_remap,
                           'rival_pose_remap': rival_pose_remap}.items())
+    
+    final_pose_bridge_cmd = Node(
+        package='navigation2_run',
+        executable='final_pose_bridge',
+        name='final_pose_bridge',
+        output='screen',
+        parameters=[params_file]
+    )
 
     # Create the launch description and populate
     ld = LaunchDescription()
@@ -162,5 +170,8 @@ def generate_launch_description():
     # Add the actions to launch all of the navigation nodes
     ld.add_action(rviz_cmd)
     ld.add_action(bringup_cmd)
+
+    # Add the final pose bridge node
+    ld.add_action(final_pose_bridge_cmd)
 
     return ld
