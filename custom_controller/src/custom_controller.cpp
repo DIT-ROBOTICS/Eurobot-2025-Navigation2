@@ -53,10 +53,10 @@ void CustomController::configure(
             // RCLCPP_INFO(logger_, "Received costmap data.");
         });
 
-    rival_pose_subscription_ = node->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
+    rival_pose_subscription_ = node->create_subscription<nav_msgs::msg::Odometry>(
         "/rival_pose",  // Replace with your actual rival pose topic
         rclcpp::QoS(10),
-        [this](const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg) {
+        [this](const nav_msgs::msg::Odometry::SharedPtr msg) {
             rival_pose_ = *msg;
         });
 

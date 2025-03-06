@@ -9,6 +9,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
+#include "nav_msgs/msg/odometry.hpp"
 
 namespace custom_controller{
 class RobotState {
@@ -65,9 +66,9 @@ class CustomController : public nav2_core::Controller{
         
         rclcpp::Clock::SharedPtr clock_;
         rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr costmap_subscription_;
-        rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr rival_pose_subscription_;
+        rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr rival_pose_subscription_;
         nav_msgs::msg::OccupancyGrid::SharedPtr latest_costmap_; // Store the received costmap
-        geometry_msgs::msg::PoseWithCovarianceStamped rival_pose_; // Store the received rival pose
+        nav_msgs::msg::Odometry rival_pose_; // Store the received rival pose
         rclcpp::Logger logger_{rclcpp::get_logger("CustomController")};
 
         rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr local_goal_pub_;
