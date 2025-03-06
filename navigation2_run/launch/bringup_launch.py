@@ -15,7 +15,6 @@
 import os
 
 from ament_index_python.packages import get_package_share_directory # type: ignore
-# from launch_ros.substitutions import FindPackageShare # type: ignore
 
 from launch import LaunchDescription
 from launch.actions import (DeclareLaunchArgument, GroupAction, # type: ignore
@@ -37,7 +36,6 @@ def generate_launch_description():
     # Create the launch configuration variables
     namespace = LaunchConfiguration('namespace')
     use_namespace = LaunchConfiguration('use_namespace')
-    # slam = LaunchConfiguration('slam')
     map_yaml_file = LaunchConfiguration('map')
     use_sim_time = LaunchConfiguration('use_sim_time')
     params_file = LaunchConfiguration('params_file')
@@ -47,12 +45,6 @@ def generate_launch_description():
     log_level = LaunchConfiguration('log_level')
     use_odometry_sim = LaunchConfiguration('use_odometry_sim')
 
-    # Map fully qualified names to relative ones so the node's namespace can be prepended.
-    # In case of the transforms (tf), currently, there doesn't seem to be a better alternative
-    # https://github.com/ros/geometry2/issues/32
-    # https://github.com/ros/robot_state_publisher/pull/30
-    # TODO(orduno) Substitute with `PushNodeRemapping`
-    #              https://github.com/ros2/launch_ros/issues/56
     remappings = [('/tf', 'tf'),
                   ('/tf_static', 'tf_static')]
 
@@ -90,11 +82,6 @@ def generate_launch_description():
         'use_namespace',
         default_value='false',
         description='Whether to apply a namespace to the navigation stack')
-
-    # declare_slam_cmd = DeclareLaunchArgument(
-    #     'slam',
-    #     default_value='False',
-    #     description='Whether run a SLAM')
 
     declare_map_yaml_cmd = DeclareLaunchArgument(
         'map',
@@ -145,7 +132,6 @@ def generate_launch_description():
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(os.path.join(launch_dir,
                                                        'localization_launch.py')),
-            # condition=IfCondition(PythonExpression(['not ', slam])),
             launch_arguments={'namespace': namespace,
                               'map': map_yaml_file,                        
                               'use_sim_time': use_sim_time,
@@ -176,7 +162,6 @@ def generate_launch_description():
     # Declare the launch options
     ld.add_action(declare_namespace_cmd)
     ld.add_action(declare_use_namespace_cmd)
-    # ld.add_action(declare_slam_cmd)
     ld.add_action(declare_map_yaml_cmd)
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_params_file_cmd)

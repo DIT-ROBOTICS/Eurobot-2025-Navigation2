@@ -15,7 +15,6 @@
 import os
 
 from ament_index_python.packages import get_package_share_directory # type: ignore
-# from launch_ros.substitutions import FindPackageShare # type: ignore
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, GroupAction, SetEnvironmentVariable # type: ignore

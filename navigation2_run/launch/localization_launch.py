@@ -22,7 +22,6 @@ def generate_launch_description():
     autostart = LaunchConfiguration('autostart')
     params_file = LaunchConfiguration('params_file')
     use_composition = LaunchConfiguration('use_composition')
-    container_name = LaunchConfiguration('container_name')
     use_respawn = LaunchConfiguration('use_respawn')
     log_level = LaunchConfiguration('log_level')
     use_odometry_sim = LaunchConfiguration('use_odometry_sim')

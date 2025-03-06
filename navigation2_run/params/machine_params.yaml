@@ -308,7 +308,7 @@ velocity_smoother:
     min_velocity: [-1.0, -1.0, -0.75]
     max_accel: [1.0, 1.0, 3.0]
     max_decel: [-1.0, -1.0, -3.0]  
-    odom_topic: "final_pose"
+    odom_topic: "/final_pose"
     odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]
     velocity_timeout: 0.1 # must be less than velocity_smoother_wait in docking_server
