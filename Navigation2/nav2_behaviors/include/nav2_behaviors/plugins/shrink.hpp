@@ -34,6 +34,9 @@ namespace nav2_behaviors
         rclcpp::AsyncParametersClient::SharedPtr param_client;
         rclcpp::Duration command_time_allowance{0,0};
         rclcpp::Time end_time;
+        void changeInflationLayer(double radius);
+        void changeRivalLayer(double radius);
+        void changeObjectLayer(double radius);
     };
 }
 
