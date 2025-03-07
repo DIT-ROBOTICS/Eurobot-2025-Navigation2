@@ -9,6 +9,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
+#include "std_msgs/msg/float64.hpp"
 
 namespace custom_controller{
 class RobotState {
@@ -71,7 +72,8 @@ class CustomController : public nav2_core::Controller{
         rclcpp::Logger logger_{rclcpp::get_logger("CustomController")};
 
         rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr local_goal_pub_;
-
+        rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr rival_distance_pub_;
+        
         rcl_interfaces::msg::SetParametersResult
         dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
 
@@ -104,6 +106,7 @@ class CustomController : public nav2_core::Controller{
         RobotState cur_odom_;
         RobotState velocity_state_;
         RobotState local_rival_pose_;
+        RobotState cur_goal_pose_;
         bool update_plan_;
         double check_distance_;
         int check_index_;

@@ -264,7 +264,7 @@ local_costmap:
         rival_inscribed_radius: 0.22
         halted_inflation_radius: 0.4
         wandering_inflation_radius: 0.5
-        moving_inflation_radius: 0.43
+        moving_inflation_radius: 0.3
         unknown_inflation_radius: 0.55
         halted_cost_scaling_factor: 10.0
         wandering_cost_scaling_factor: 3.0
