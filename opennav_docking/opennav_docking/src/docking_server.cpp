@@ -568,7 +568,7 @@ void DockingServer::undockRobot()
 
     // Get staging pose (in fixed frame)
     geometry_msgs::msg::PoseStamped staging_pose =
-      dock->getStagingPose(dock_pose.pose, dock_pose.header.frame_id);
+      dock->getStagingPose(dock_pose.pose, dock_pose.header.frame_id, dock_type);
 
     // Control robot to staging pose
     rclcpp::Time loop_start = this->now();

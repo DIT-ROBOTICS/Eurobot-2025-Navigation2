@@ -74,7 +74,7 @@ public:
    * @return PoseStamped of staging pose in the specified frame
    */
   virtual geometry_msgs::msg::PoseStamped getStagingPose(
-    const geometry_msgs::msg::Pose & pose, const std::string & frame);
+    const geometry_msgs::msg::Pose & pose, const std::string & frame, const std::string & dock_type);
 
   /**
    * @brief Method to obtain the refined pose of the dock, usually based on sensors
@@ -148,6 +148,7 @@ protected:
   int xy_debounce_threshold_, yaw_debounce_threshold_;
   bool use_debounce_;
   // Offset for staging pose relative to dock pose
+  bool use_dynamic_offset_;
   double staging_x_offset_;
   double staging_y_offset_;
   double staging_yaw_offset_;

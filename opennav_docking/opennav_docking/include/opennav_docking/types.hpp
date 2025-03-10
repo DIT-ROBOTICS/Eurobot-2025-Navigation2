@@ -33,7 +33,7 @@ struct Dock
 {
   geometry_msgs::msg::PoseStamped getStagingPose()
   {
-    return this->plugin->getStagingPose(this->pose, this->frame);
+    return this->plugin->getStagingPose(this->pose, this->frame, this->type);
   }
 
   geometry_msgs::msg::Pose pose;

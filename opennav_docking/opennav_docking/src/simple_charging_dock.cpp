@@ -80,6 +80,8 @@ void SimpleChargingDock::configure(
 
   // Staging pose configuration
   nav2_util::declare_parameter_if_not_declared(
+    node_, name + ".use_dynamic_offset", rclcpp::ParameterValue(false));
+  nav2_util::declare_parameter_if_not_declared(
     node_, name + ".staging_x_offset", rclcpp::ParameterValue(-0.35));
   nav2_util::declare_parameter_if_not_declared(
     node_, name + ".staging_y_offset", rclcpp::ParameterValue(-0.0));
@@ -109,6 +111,7 @@ void SimpleChargingDock::configure(
   node_->get_parameter(name + ".use_debounce", use_debounce_);
   node_->get_parameter(name + ".xy_debounce_threshold", xy_debounce_threshold_);
   node_->get_parameter(name + ".yaw_debounce_threshold", yaw_debounce_threshold_);
+  node_->get_parameter(name + ".use_dynamic_offset", use_dynamic_offset_);
   node_->get_parameter(name + ".staging_x_offset", staging_x_offset_);
   node_->get_parameter(name + ".staging_y_offset", staging_y_offset_);
   node_->get_parameter(name + ".staging_yaw_offset", staging_yaw_offset_);
@@ -157,7 +160,7 @@ void SimpleChargingDock::configure(
 }
 
 geometry_msgs::msg::PoseStamped SimpleChargingDock::getStagingPose(
-  const geometry_msgs::msg::Pose & pose, const std::string & frame)
+  const geometry_msgs::msg::Pose & pose, const std::string & frame, const std::string & dock_type)
 {
   // ** If not using detection, set the dock pose as the given dock pose estimate
   if (!use_external_detection_pose_) {
@@ -175,14 +178,25 @@ geometry_msgs::msg::PoseStamped SimpleChargingDock::getStagingPose(
   staging_pose.header.frame_id = frame;
   staging_pose.header.stamp = node_->now();
   staging_pose.pose = pose;
+  staging_pose.pose.orientation = pose.orientation;
 
   // Apply x and y offsets
-  staging_pose.pose.position.x += cos(yaw) * staging_x_offset_ - sin(yaw) * staging_y_offset_;
-  staging_pose.pose.position.y += sin(yaw) * staging_x_offset_ + cos(yaw) * staging_y_offset_;
+  if(use_dynamic_offset_) {
+    if(dock_type == "mission_dock_x") {
+      staging_pose.pose.position.x += pose.position.z;
+    } else if(dock_type == "mission_dock_y") {
+      staging_pose.pose.position.y += pose.position.z;
+    } else {
+      RCLCPP_WARN(node_->get_logger(), "Unknown dock type: %s", dock_type.c_str());
+    }
+  } else {
+    staging_pose.pose.position.x += cos(yaw) * staging_x_offset_ - sin(yaw) * staging_y_offset_;
+    staging_pose.pose.position.y += sin(yaw) * staging_x_offset_ + cos(yaw) * staging_y_offset_;
 
-  tf2::Quaternion orientation;
-  orientation.setEuler(0.0, 0.0, yaw + staging_yaw_offset_);
-  staging_pose.pose.orientation = tf2::toMsg(orientation);
+    tf2::Quaternion orientation;
+    orientation.setEuler(0.0, 0.0, yaw + staging_yaw_offset_);
+    staging_pose.pose.orientation = tf2::toMsg(orientation);
+  }
 
   // Publish staging pose for debugging purposes
   staging_pose_pub_->publish(staging_pose);
