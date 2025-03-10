@@ -31,6 +31,7 @@
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
+#include "tf2/utils.h"
 
 namespace opennav_docking
 {
@@ -51,6 +52,14 @@ class RobotState {
         this->theta_ = rhs.theta_;
   }
 };
+
+// State machine for velocity control
+enum class VelocityState {
+  ACCELERATION,
+  CONSTANT,
+  DECELERATION
+};
+
 /**
  * @class opennav_docking::Controller
  * @brief Custom controller for approaching a dock target
@@ -74,12 +83,17 @@ class Controller
       const geometry_msgs::msg::Pose & target, geometry_msgs::msg::Twist & cmd,
       bool backward = false);
 
-    void dividePath(const geometry_msgs::msg::Pose & target);
+    /**
+     * @brief Set the total distance for velocity control & Set velocity state to acceleration.
+     * @param target Target pose, in robot centric coordinates.
+     * @note Please call this function before calling loop for computeVelocityCommand.
+     */
+    void velocityInit(const geometry_msgs::msg::Pose & target);
+
     void posetoRobotState(geometry_msgs::msg::Pose pose, RobotState &state);
-    double getGoalAngle(double cur_pose, double goal);
+    double getGoalAngle(double ang_diff);
     RobotState getLookAheadPoint(RobotState cur_pose, std::vector<RobotState> &path, double look_ahead_distance);
     RobotState globalTolocal(RobotState cur_pose, RobotState goal);
-    bool isGoalReached(RobotState& robot_pose_, const geometry_msgs::msg::Pose &target, double xy_goal_tolerance);
 
   protected:
     // Node configuration
@@ -91,17 +105,20 @@ class Controller
     double max_angular_vel_, min_angular_vel_;
     double max_linear_acc_, max_angular_acc_;
 
+    double linear_kp_accel_dis_, linear_kp_accel_vel_;
+    double linear_kp_decel_dis_, linear_kp_decel_vel_;
     double angular_kp_;
     double look_ahead_distance_;
     double final_goal_angle_;
-
-    double xy_goal_tolerance_sq_, yaw_goal_tolerance_;
 
     // Variables
     std::vector<RobotState> global_path_;
     std::vector<RobotState> vector_global_path_;
     RobotState robot_pose_;
     RobotState local_goal_;
+    double total_distance_;
+    double deceleration_distance_;
+    double reserved_distance_;
 
     // Robot pose subscibtion
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr robot_pose_sub_;
@@ -110,6 +127,30 @@ class Controller
     // Local goal publisher
     rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr local_goal_pub_;
     void publishLocalGoal();
+
+    /** 
+    * @brief Reset the state of the controller to acceleration 
+    */
+    void ResetState() { 
+      state_x_ = VelocityState::ACCELERATION; 
+      state_y_ = VelocityState::ACCELERATION;
+    }
+
+    /**
+     * @brief Genarate linear velocity command with speed control
+     * @param vel velocity
+     * @param remaining_distance remaining distance to the goal
+     * @param total_distance total distance to the goal
+     */
+    double ExtractVelocity(const double & velocity, const double & remaining_distance, VelocityState & state);
+
+    // Velocity control functions
+    void Acceleration(double & vel, const double & remaining_distance, VelocityState & state);
+    void ConstantVelocity(double & vel, const double & remaining_distance, VelocityState & state);
+    void Deceleration(double & vel, const double & remaining_distance, VelocityState & state);
+
+    VelocityState state_x_;
+    VelocityState state_y_;
 };
 
 }  // namespace opennav_docking

@@ -68,7 +68,7 @@ bt_navigator:
 ControllerSelector:
   ros__parameters:
     Path_controller: "FollowPath"
-    Dock_controller: "DockMission"
+    Dock_controller: "Cautious"
 
 bt_navigator_navigate_through_poses_rclcpp_node:
   ros__parameters:
@@ -91,7 +91,7 @@ controller_server:
     progress_checker_plugin: "progress_checker"
     current_goal_checker: "percise_goal_checker"
     goal_checker_plugins: ["percise_goal_checker"]
-    controller_plugins: ["FollowPath", "DockMission"]
+    controller_plugins: ["FollowPath", "Cautious"]
 
     # Progress checker parameters
     progress_checker:
@@ -102,7 +102,7 @@ controller_server:
     percise_goal_checker:
       stateful: True
       plugin: "nav2_controller::SimpleGoalChecker"
-      xy_goal_tolerance: 0.02
+      xy_goal_tolerance: 0.01
       yaw_goal_tolerance: 0.05
     # Controller parameters
     FollowPath:
@@ -111,7 +111,7 @@ controller_server:
       transform_tolerance: 0.1
       look_ahead_distance: 0.2
       
-    DockMission:
+    Cautious:
       plugin: "custom_controller::CustomController"
       max_linear_vel: 0.5
       transform_tolerance: 0.1
@@ -124,7 +124,6 @@ local_costmap:
       publish_frequency: 20.0
       global_frame: odom
       robot_base_frame: base_link
-      use_sim_time: False
       rolling_window: False
       width: 3
       height: 2
@@ -306,10 +305,10 @@ velocity_smoother:
     smoothing_frequency: 20.0
     scale_velocities: False
     feedback: "OPEN_LOOP"
-    max_velocity: [1.0, 1.0, 0.75]
-    min_velocity: [-1.0, -1.0, -0.75]
-    max_accel: [1.0, 1.0, 3.0]
-    max_decel: [-1.0, -1.0, -3.0]  
+    max_velocity: [1.0, 1.0, 1.0]
+    min_velocity: [-1.0, -1.0, -1.0]
+    max_accel: [0.7, 0.7, 1.0]
+    max_decel: [-1.0, -1.0, -2.0]  
     odom_topic: "odom"
     odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]
@@ -329,15 +328,19 @@ docking_server:
     velocity_smoother_wait: 0.12
 
     # Types of docks
-    dock_plugins: ['mission_dock']
-    mission_dock:
+    dock_plugins: ["mission_dock_x", "mission_dock_y"]
+    mission_dock_x:
       plugin: 'opennav_docking::SimpleChargingDock'
       docking_threshold: 0.01
+      use_debounce: true
+      xy_debounce_threshold: 5
+      yaw_debounce_threshold: 5
       staging_x_offset: 0.35
       staging_y_offset: 0.0
       staging_yaw_offset: 0.0
       use_battery_status: false
       use_stall_detection: false
+      base_frame: "base_link"
 
       external_detection_timeout: 1.0
       external_detection_translation_x: 0.0
@@ -345,23 +348,52 @@ docking_server:
       external_detection_rotation_roll: 0.0
       external_detection_rotation_pitch: 0.0
       external_detection_rotation_yaw: 0.0
-      filter_coef: 0.1
+      filter_coef: 0.0
+
+    mission_dock_y:
+      plugin: 'opennav_docking::SimpleChargingDock'
+      docking_threshold: 0.01
+      use_debounce: true
+      xy_debounce_threshold: 5
+      yaw_debounce_threshold: 5
+      staging_x_offset: 0.0
+      staging_y_offset: 0.35
+      staging_yaw_offset: 0.0
+      use_battery_status: false
+      use_stall_detection: false
+      base_frame: "base_link"
+
+      external_detection_timeout: 1.0
+      external_detection_translation_x: 0.0
+      external_detection_translation_y: 0.0
+      external_detection_rotation_roll: 0.0
+      external_detection_rotation_pitch: 0.0
+      external_detection_rotation_yaw: 0.0
+      filter_coef: 0.0
 
     docks: ['home_dock', 'flex_dock1', 'flex_dock2']
     home_dock:
-      type: 'mission_dock'
+      type: 'mission_dock_x'
       frame: map
       pose: [0.0, 0.0, 0.0]
     flex_dock1:
-      type: 'mission_dock'
+      type: 'mission_dock_x'
       frame: map
       pose: [2.2, 1.4, 0.0]
     flex_dock2:
-      type: 'mission_dock'
+      type: 'mission_dock_x'
       frame: map
-      pose: [1.5, 1.0, 0.0]
+      pose: [1.5, 1.0, 1.57]
     
     # dock_database: /my/path/to/dock_database.yaml
 
     controller:
       max_linear_vel: 0.5
+      min_linear_vel: 0.07
+      # linear_kp_accel_dis: 0.89
+      linear_kp_accel_vel: 0.9
+      linear_kp_decel_dis: 5.0
+      # linear_kp_decel_vel: 0.6
+      angular_kp: 4.0
+      deceleration_distance: 0.1
+      reserved_distance: 0.03

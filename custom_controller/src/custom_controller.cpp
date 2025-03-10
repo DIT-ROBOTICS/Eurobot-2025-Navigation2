@@ -433,12 +433,12 @@ geometry_msgs::msg::TwistStamped CustomController::computeVelocityCommands(
 
         // //rival_to_move_angle = atan2(rival_pose_.pose.pose.position.y - cur_pose_.y_, rival_pose_.pose.pose.position.x - cur_pose_.x_);
         // RCLCPP_INFO(logger_, "rival to move angle = [%lf]", rival_to_move_angle);
-        if(rival_distance_ < 1){
+        // if(rival_distance_ < 1){
             //RCLCPP_INFO(logger_, "Rival is too close");
-            max_linear_vel_ = 0.2;
-        }else{
-            max_linear_vel_ = 0.4;
-        }
+            // max_linear_vel_ = 0.2;
+        // }else{
+            // max_linear_vel_ = 0.4;
+        // }
         double local_distance = sqrt(pow(local_goal_.x_ - cur_pose_.x_, 2) + pow(local_goal_.y_ - cur_pose_.y_, 2));
         //RCLCPP_INFO(logger_, "final goal angle is [%lf]", vector_global_path_[vector_global_path_.size()-1].theta_);
         //RCLCPP_INFO(logger_, "cur_pose angle is [%lf]", cur_pose_.theta_);

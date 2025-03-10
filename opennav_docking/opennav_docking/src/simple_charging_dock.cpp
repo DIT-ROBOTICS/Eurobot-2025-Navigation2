@@ -71,6 +71,12 @@ void SimpleChargingDock::configure(
   // If not using stall detection, this is how close robot should get to pose
   nav2_util::declare_parameter_if_not_declared(
     node_, name + ".docking_threshold", rclcpp::ParameterValue(0.05));
+  nav2_util::declare_parameter_if_not_declared(
+    node_, name + ".use_debounce", rclcpp::ParameterValue(true));
+  nav2_util::declare_parameter_if_not_declared(
+    node_, name + ".xy_debounce_threshold", rclcpp::ParameterValue(5));
+  nav2_util::declare_parameter_if_not_declared(
+    node_, name + ".yaw_debounce_threshold", rclcpp::ParameterValue(5));
 
   // Staging pose configuration
   nav2_util::declare_parameter_if_not_declared(
@@ -79,6 +85,10 @@ void SimpleChargingDock::configure(
     node_, name + ".staging_y_offset", rclcpp::ParameterValue(-0.0));
   nav2_util::declare_parameter_if_not_declared(
     node_, name + ".staging_yaw_offset", rclcpp::ParameterValue(0.0));
+
+  // Base frame for docking
+  nav2_util::declare_parameter_if_not_declared(
+    node_, name + ".base_frame", rclcpp::ParameterValue("base_link"));
 
   node_->get_parameter(name + ".use_battery_status", use_battery_status_);
   // node_->get_parameter(name + ".use_external_detection_pose", use_external_detection_pose_);
@@ -96,9 +106,13 @@ void SimpleChargingDock::configure(
   node_->get_parameter(name + ".stall_velocity_threshold", stall_velocity_threshold_);
   node_->get_parameter(name + ".stall_effort_threshold", stall_effort_threshold_);
   node_->get_parameter(name + ".docking_threshold", docking_threshold_);
+  node_->get_parameter(name + ".use_debounce", use_debounce_);
+  node_->get_parameter(name + ".xy_debounce_threshold", xy_debounce_threshold_);
+  node_->get_parameter(name + ".yaw_debounce_threshold", yaw_debounce_threshold_);
   node_->get_parameter(name + ".staging_x_offset", staging_x_offset_);
   node_->get_parameter(name + ".staging_y_offset", staging_y_offset_);
   node_->get_parameter(name + ".staging_yaw_offset", staging_yaw_offset_);
+  node_->get_parameter(name + ".base_frame", base_frame_);
 
   // Setup filter
   double filter_coef;
@@ -156,7 +170,6 @@ geometry_msgs::msg::PoseStamped SimpleChargingDock::getStagingPose(
   }
 
   // Compute the staging pose with given offsets
-  // ** Added staging_y_offset_
   const double yaw = tf2::getYaw(pose.orientation);
   geometry_msgs::msg::PoseStamped staging_pose;
   staging_pose.header.frame_id = frame;
@@ -268,7 +281,7 @@ bool SimpleChargingDock::isDocked()
   // Find base pose in target frame
   geometry_msgs::msg::PoseStamped base_pose;
   base_pose.header.stamp = rclcpp::Time(0);
-  base_pose.header.frame_id = "base_link";
+  base_pose.header.frame_id = base_frame_;
   base_pose.pose.orientation.w = 1.0;
   try {
     tf2_buffer_->transform(base_pose, base_pose, dock_pose_.header.frame_id);
@@ -280,7 +293,15 @@ bool SimpleChargingDock::isDocked()
   double d = std::hypot(
     base_pose.pose.position.x - dock_pose_.pose.position.x,
     base_pose.pose.position.y - dock_pose_.pose.position.y);
-  return d < docking_threshold_;
+
+  if(use_debounce_) {
+    if (d < docking_threshold_) {
+      xy_debounce_counter_++;
+    } else {
+      xy_debounce_counter_ = 0;
+    }
+    return xy_debounce_counter_ > xy_debounce_threshold_;
+  } else  return d < docking_threshold_;
 }
 
 bool SimpleChargingDock::isCharging()
