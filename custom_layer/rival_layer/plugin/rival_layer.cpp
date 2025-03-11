@@ -86,7 +86,8 @@ namespace custom_path_costmap_plugin {
         // Subscribe to the rival's pose
         rival_pose_sub_ = node->create_subscription<nav_msgs::msg::Odometry>(
             "/rival_pose", 100, std::bind(&RivalLayer::rivalPoseCallback, this, std::placeholders::_1));
-
+        rival_distance_sub_ = node->create_subscription<std_msgs::msg::Float64>(
+            "/rival_distance", 100, std::bind(&RivalLayer::rivalDistanceCallback, this, std::placeholders::_1));
         // Initialize the queue
         rival_path_.init(model_size_);
     }
@@ -117,6 +118,24 @@ namespace custom_path_costmap_plugin {
         if(rival_pose_received_) {
             if(reset_timeout_ >= reset_timeout_threshold_)  reset();
             
+            // FieldExpansion(rival_x_, rival_y_);
+            // updateWithMax(master_grid, 0, 0, getSizeInCellsX(), getSizeInCellsY());
+            
+        // if (rival_distance_ > 0.75 && rival_state_ == RivalState::MOVING) {
+            
+        //     double prediction_offset = 0.4;
+        //     // cos_theta_ 與 sin_theta_ 是透過統計計算或回歸得到 rival 移動方向
+        //     double predicted_x = rival_x_ + prediction_offset * cos_theta_ * direction_;
+        //     double predicted_y = rival_y_ + prediction_offset * sin_theta_ * direction_;
+            
+        //     // 僅更新預測位置附近的 cost，而不在 rival 當前位置產生成本
+        //     FieldExpansion(predicted_x, predicted_y);
+        //     updateWithMax(master_grid, 0, 0, getSizeInCellsX(), getSizeInCellsY());
+        // } else {
+        //     // 當 rival_distance_ <= 0.75 時，維持原先邏輯，更新 rival 當前位置及周邊 cost
+        //     FieldExpansion(rival_x_, rival_y_);
+        //     updateWithMax(master_grid, 0, 0, getSizeInCellsX(), getSizeInCellsY());
+        // }
             FieldExpansion(rival_x_, rival_y_);
             updateWithMax(master_grid, 0, 0, getSizeInCellsX(), getSizeInCellsY());
             
@@ -262,6 +281,13 @@ namespace custom_path_costmap_plugin {
     }
 
     void RivalLayer::ExpandPointWithCircle(double x, double y, double MaxCost, double InflationRadius, double CostScalingFactor, double InscribedRadius) {
+        
+        //RCLCPP_INFO(logger_,"vel_factor is [%lf]", vel_factor);
+        if(rival_state_ == RivalState::MOVING){
+            x += position_offset_ * cos_theta_ * direction_;
+            y += position_offset_ * sin_theta_ * direction_;
+        }
+        
         double MaxX = x + InflationRadius;
         double MinX = x - InflationRadius;
         double MaxY;
@@ -299,11 +325,13 @@ namespace custom_path_costmap_plugin {
     }
 
     void RivalLayer::ExpandLine(double x, double y, double MaxCost, double InflationRadius, double CostScalingFactor, double InscribedRadius, double ExtendLength) {
-        double mark_x = 0, mark_y = 0;
+        double mark_x = 0/*position_offset_ * cos_theta_ * direction_*/;
+        double mark_y = 0/*position_offset_ * sin_theta_ * direction_*/;
         unsigned int mx, my;
         int goal_steps = ExtendLength / resolution_;
-
-        if(goal_steps == 0 && worldToMap(x, y, mx, my)) {
+        
+        
+        if(goal_steps == 0 && worldToMap(x, y, mx, my) && rival_distance_ < 0.75) {
             ExpandPointWithCircle(x, y, MaxCost, InflationRadius, CostScalingFactor, InscribedRadius);
         }
 
@@ -336,8 +364,17 @@ namespace custom_path_costmap_plugin {
                 break;
 
             case RivalState::MOVING:
-                ExpandLine(x, y, nav2_costmap_2d::LETHAL_OBSTACLE, moving_inflation_radius_, moving_cost_scaling_factor_, rival_inscribed_radius_, 
-                    max_extend_length_*std::min(1.0, hypot(rival_x_cov_, rival_y_cov_)/(cov_range_max_-cov_range_min_)));
+                
+                safe_distance_ = 0.5;
+                vel_factor_ = max_extend_length_*std::min(1.0, hypot(rival_x_cov_, rival_y_cov_)/(cov_range_max_-cov_range_min_)) * 0.7;//max = 0.35
+                position_offset_ = std::max((rival_distance_ - safe_distance_) * 1, 0.0) * vel_factor_;
+                ExpandPointWithCircle(x, y, nav2_costmap_2d::LETHAL_OBSTACLE, halted_inflation_radius_, halted_cost_scaling_factor_, rival_inscribed_radius_);
+                
+                
+                ExpandLine(x, y, nav2_costmap_2d::LETHAL_OBSTACLE, moving_inflation_radius_ * 0.7, moving_cost_scaling_factor_, 0, 
+                    max_extend_length_*std::min(1.0, hypot(rival_x_cov_, rival_y_cov_)/(cov_range_max_-cov_range_min_)) / std::max(rival_distance_, 1.0));
+                
+                
                 break;
             
             case RivalState::UNKNOWN:
@@ -394,6 +431,12 @@ namespace custom_path_costmap_plugin {
                 "Statistics: x_mean=%f, y_mean=%f, x_cov=%f, y_cov=%f, R_sq=%f", rival_x_mean_, rival_y_mean_, rival_x_cov_, rival_y_cov_, R_sq_);
         }
     }
+    void RivalLayer::rivalDistanceCallback(const std_msgs::msg::Float64::SharedPtr msg)
+    {
+        rival_distance_ = msg->data;
+        RCLCPP_INFO(logger_, "rival_distance is : %f", msg->data);
+    }
+    
 
     void RivalLayer::PrintRivalState() {
         if(rival_state_ != rival_state_prev_) {
