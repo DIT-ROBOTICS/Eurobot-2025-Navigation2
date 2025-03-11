@@ -54,10 +54,10 @@ void CustomController::configure(
             // RCLCPP_INFO(logger_, "Received costmap data.");
         });
 
-    rival_pose_subscription_ = node->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
+    rival_pose_subscription_ = node->create_subscription<nav_msgs::msg::Odometry>(
         "/rival_pose",  // Replace with your actual rival pose topic
         rclcpp::QoS(10),
-        [this](const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg) {
+        [this](const nav_msgs::msg::Odometry::SharedPtr msg) {
             rival_pose_ = *msg;
             rival_distance_ = sqrt(pow(rival_pose_.pose.pose.position.x - cur_pose_.x_, 2) + pow(rival_pose_.pose.pose.position.y - cur_pose_.y_, 2));
             //RCLCPP_INFO(logger_, "Rival distance is [%lf]", rival_distance_);
@@ -445,13 +445,15 @@ geometry_msgs::msg::TwistStamped CustomController::computeVelocityCommands(
 
         // //rival_to_move_angle = atan2(rival_pose_.pose.pose.position.y - cur_pose_.y_, rival_pose_.pose.pose.position.x - cur_pose_.x_);
         // RCLCPP_INFO(logger_, "rival to move angle = [%lf]", rival_to_move_angle);
-        if(rival_distance_ < 1){
+      
+        // if(rival_distance_ < 1){
             //RCLCPP_INFO(logger_, "Rival is too close");
-            max_linear_vel_ = 0.5;
+            // max_linear_vel_ = 0.5;
             // update_plan_ = true;
-        }else{
-            max_linear_vel_ = 0.7;
-        }
+        // }else{
+            // max_linear_vel_ = 0.7;
+        // }
+      
         double local_distance = sqrt(pow(local_goal_.x_ - cur_pose_.x_, 2) + pow(local_goal_.y_ - cur_pose_.y_, 2));
         
         //RCLCPP_INFO(logger_, "final goal angle is [%lf]", vector_global_path_[vector_global_path_.size()-1].theta_);
