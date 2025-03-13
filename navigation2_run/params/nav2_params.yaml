@@ -131,45 +131,10 @@ local_costmap:
       resolution: 0.01
       robot_radius: 0.22
       # plugins: ["static_layer", "inflation_layer"]
-      plugins: ["static_layer", "rival_layer", "object_layer"]
+      plugins: ["static_layer"]
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
         map_subscribe_transient_local: True
-      inflation_layer:
-        plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 0.03
-        inflation_radius: 0.1
-      rival_layer:
-        plugin: "custom_path_costmap_plugin::RivalLayer"
-        enabled: True
-        model_size: 22
-        x_cov_threshold: 0.01
-        y_cov_threshold: 0.01
-        R_sq_threshold: 0.85
-        reset_timeout_threshold: 40
-        rival_inscribed_radius: 0.22
-        halted_inflation_radius: 0.4
-        wandering_inflation_radius: 0.5
-        moving_inflation_radius: 0.43
-        unknown_inflation_radius: 0.55
-        halted_cost_scaling_factor: 10.0
-        wandering_cost_scaling_factor: 3.0
-        moving_cost_scaling_factor: 11.0
-        unknown_cost_scaling_factor: 3.0
-        max_extend_length: 0.6
-        cov_range_max: 0.05385164807134504  # sqrt(0.0029)
-        cov_range_min: 0.01414213562373095  # sqrt(0.0002)
-        inscribed_radius_rate: 0.99
-        inflation_radius_rate: 1.005
-        debug_mode: 0                       # 0: off, 1: Print rival state change only, 2: Print rival state change and statistics, 3: Print everything continuously
-      object_layer:
-        plugin: "Object_costmap_plugin::ObjectLayer"
-        enabled: True
-        column_inscribed_radius: 0.075
-        board_inscribed_radius: 0.01
-        column_inflation_radius: 0.22
-        board_inflation_radius: 0.22
-        column_cost_scaling_factor: 3.0
       always_send_full_costmap: True
 
 global_costmap:
