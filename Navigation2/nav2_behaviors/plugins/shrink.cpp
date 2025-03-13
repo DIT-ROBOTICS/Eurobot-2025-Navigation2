@@ -147,7 +147,9 @@ namespace nav2_behaviors
                     RCLCPP_ERROR(logger_, "Failed to set board_inflation_radius to %f", radius);
                 }
             });
+        }
 
+        if(param_client->service_is_ready()){
             // object_layer.column_inflation_radius
             param_client->set_parameters({rclcpp::Parameter("object_layer.column_inflation_radius", radius)},[this, radius](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future){
                 future.wait();
@@ -160,9 +162,6 @@ namespace nav2_behaviors
                 }
             });
         }
-        else{
-            RCLCPP_ERROR(logger_, "Service is not ready");
-        }
     }
 
     void Shrink::setInflationRadius(double radius){
@@ -172,7 +171,7 @@ namespace nav2_behaviors
         // rival_layer
         changeRivalLayer(inflation_radius);
         // object_layer.board_inflation_radius
-        changeObjectLayer(inflation_radius);
+        changeObjectLayer(0);
     }
 
     bool Shrink::isWork(){
@@ -182,7 +181,6 @@ namespace nav2_behaviors
             return false;
         }
         else{
-            RCLCPP_INFO(logger_, "no obstacle detected at the center of the robot: the center %f, %f; the cost: %d", robotPose.pose.position.x, robotPose.pose.position.y, cost);
             return true;
         }
     }

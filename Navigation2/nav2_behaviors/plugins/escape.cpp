@@ -38,7 +38,6 @@ namespace nav2_behaviors
 
     Status Escape::onRun(const std::shared_ptr<const EscapeAction::Goal> command){
         if(!nav2_util::getCurrentPose(robotPose, *tf_, global_frame_, robot_base_frame_, transform_tolerance_)){
-            RCLCPP_ERROR(logger_, "Current robot pose is not available.");
             return Status::FAILED;
         }
         map_x = robotPose.pose.position.x * 100;
@@ -71,12 +70,9 @@ namespace nav2_behaviors
         // If we get here, all circles were clear
         int cost = getOneGridCost(robotPose.pose.position.x, robotPose.pose.position.y);
         if(cost > 50){
-            RCLCPP_INFO(logger_, "Obstacle detected at the center of the robot: the center %f, %f; the cost: %d", robotPose.pose.position.x, robotPose.pose.position.y, cost);
             return false;
         }
         else {
-            RCLCPP_INFO(logger_, "cost of the center of the robot:%f", getOneGridCost(robotPose.pose.position.x, robotPose.pose.position.y));
-            RCLCPP_INFO(logger_, "Path is clear for straight motion");
             return true;
         }
     }
@@ -113,16 +109,12 @@ namespace nav2_behaviors
                         
                         // If we find a very good point, return immediately
                         if (cost == 0) {
-                            RCLCPP_INFO(logger_, "Found good target point at (%f, %f) with cost %f",
-                                      world_x, world_y, cost);
                             return best_point;
                         }
                     }
                 }
             }
             if(lowest_cost < robot_cost){
-                RCLCPP_INFO(logger_, "Found target point at (%f, %f) with cost %f",
-                        best_point.position.x, best_point.position.y, lowest_cost);
                 return best_point;
             }
         }
@@ -181,15 +173,12 @@ namespace nav2_behaviors
    
     Status Escape::onCycleUpdate(){
         rclcpp::Duration time_remaining = end_time - this->clock_->now();
-        RCLCPP_INFO(logger_, "robotPose, current position: %f, %f; robot cost %f", robotPose.pose.position.x, robotPose.pose.position.y, getOneGridCost(robotPose.pose.position.x, robotPose.pose.position.y));
         if(!nav2_util::getCurrentPose(robotPose, *tf_, global_frame_, robot_base_frame_, transform_tolerance_)){
-            RCLCPP_ERROR(logger_, "Current robot pose is not available.");
             stopRobot();
             return Status::FAILED;
         }
         else {
             // output the current robot pose in original pose value
-            RCLCPP_INFO(logger_, "Current robot pose: %f, %f", robotPose.pose.position.x, robotPose.pose.position.y);
         }
         if(isEscape() || outOfBound(robotPose.pose.position.x, robotPose.pose.position.y)){
             stopRobot();
@@ -200,7 +189,6 @@ namespace nav2_behaviors
         target_point = findTargetPoint();
         if(target_point.position.x == robotPose.pose.position.x && target_point.position.y == robotPose.pose.position.y){
             stopRobot();
-            RCLCPP_INFO(logger_, "target point equals to the current robot position");
             return Status::FAILED;
         }
 
