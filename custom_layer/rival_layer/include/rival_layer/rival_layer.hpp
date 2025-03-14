@@ -6,8 +6,8 @@
 #include "nav2_costmap_2d/layer.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_util/node_utils.hpp"
-#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 #include "std_msgs/msg/float64.hpp"
+#include "nav_msgs/msg/odometry.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 
 // Circular Queue for rival's path      |front| ____ <--- ____ |rear|
@@ -145,12 +145,14 @@ namespace custom_path_costmap_plugin {
             void FieldExpansion(double x, double y);
 
             // Rival pose subscibtion
-            rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr rival_pose_sub_;
             rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr rival_distance_sub_;
             rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr rival_direction_sub_;
-            void rivalPoseCallback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr rival_pose);
             void rivalDistanceCallback(const std_msgs::msg::Float64::SharedPtr msg);
             void rivalDirectionCallback(const nav_msgs::msg::Odometry::SharedPtr msg);
+      
+            rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr rival_pose_sub_;
+            void rivalPoseCallback(const nav_msgs::msg::Odometry::SharedPtr rival_pose);
+ 
             bool rival_pose_received_ = false;
 
             // Timeout for reset the costmap

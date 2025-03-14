@@ -10,7 +10,7 @@
 #include "geometry_msgs/msg/quaternion.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
-#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
+#include "nav_msgs/msg/odometry.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 
 namespace nav2_behaviors
@@ -40,9 +40,9 @@ namespace nav2_behaviors
         double** scanSquard;
         std::unique_ptr<geometry_msgs::msg::Twist> makeMove(double x, double y);
         void costmapCallback(const nav_msgs::msg::OccupancyGrid& msg);
-        void rivalCallback(const geometry_msgs::msg::PoseWithCovarianceStamped& msg);
+        void rivalCallback(const nav_msgs::msg::Odometry& msg);
         geometry_msgs::msg::PoseStamped robotPose;
-        geometry_msgs::msg::PoseWithCovarianceStamped rivalPose;
+        nav_msgs::msg::Odometry rivalPose;
 
 
         EscapeAction::Feedback::SharedPtr feedback;
@@ -52,7 +52,7 @@ namespace nav2_behaviors
         double prev_yaw;
         double relative_yaw;
         rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr sub_costmap;
-        rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr sub_rival;
+        rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr sub_rival;
         nav_msgs::msg::OccupancyGrid costmap;
         rclcpp::Duration command_time_allowance{0,0};
         rclcpp::Time end_time;

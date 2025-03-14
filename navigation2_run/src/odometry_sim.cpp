@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
     auto sub = node->create_subscription<geometry_msgs::msg::Twist>(
         cmd_cb_name, 1000, vel_callback);
     auto sub_initial_pose = node->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-        "initialpose", 1000, initial_pose_callback);
+        "initial_pose", 1000, initial_pose_callback);
 
     tf2_ros::TransformBroadcaster odom_broadcaster(node);
     
