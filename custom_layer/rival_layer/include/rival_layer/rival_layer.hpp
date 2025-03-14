@@ -8,6 +8,7 @@
 #include "nav2_util/node_utils.hpp"
 #include "std_msgs/msg/float64.hpp"
 #include "nav_msgs/msg/odometry.hpp"
+#include "nav_msgs/msg/odometry.hpp"
 
 // Circular Queue for rival's path      |front| ____ <--- ____ |rear|
 class CircularQueue {
@@ -115,6 +116,8 @@ namespace custom_path_costmap_plugin {
             double rival_x_ = 0.0, rival_y_ = 0.0;
             CircularQueue rival_path_;
             double cos_theta_ = 0.0, sin_theta_ = 0.0;
+            double v_from_localization_x_;
+            double v_from_localization_y_;
             int direction_ = 1;
             double rival_distance_;
             double vel_factor_;
@@ -143,7 +146,9 @@ namespace custom_path_costmap_plugin {
 
             // Rival pose subscibtion
             rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr rival_distance_sub_;
+            rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr rival_direction_sub_;
             void rivalDistanceCallback(const std_msgs::msg::Float64::SharedPtr msg);
+            void rivalDirectionCallback(const nav_msgs::msg::Odometry::SharedPtr msg);
       
             rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr rival_pose_sub_;
             void rivalPoseCallback(const nav_msgs::msg::Odometry::SharedPtr rival_pose);

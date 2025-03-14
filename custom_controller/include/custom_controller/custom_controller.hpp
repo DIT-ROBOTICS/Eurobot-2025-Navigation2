@@ -79,7 +79,9 @@ class CustomController : public nav2_core::Controller{
         dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
 
         // Parameters from the config file
+        double control_frequency_;
         double max_linear_vel_, min_linear_vel_;
+        double linear_acceleration_;
         double max_angular_vel_, min_angular_vel_;
         double max_linear_acc_, max_angular_acc_;
         double yaw_goal_tolerance_;
@@ -91,6 +93,8 @@ class CustomController : public nav2_core::Controller{
         double rival_to_move_angle;
         double last_vel_x_;
         double last_vel_y_;
+        double target_vel_x_;
+        double target_vel_y_;
         rclcpp::Duration transform_tolerance_ {0, 0};
 
         // Variables

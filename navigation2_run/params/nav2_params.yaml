@@ -109,7 +109,7 @@ controller_server:
       plugin: "custom_controller::CustomController"
       max_linear_vel: 1.0
       transform_tolerance: 0.1
-      look_ahead_distance: 0.2
+      look_ahead_distance: 0.25
       
     Cautious:
       plugin: "custom_controller::CustomController"
