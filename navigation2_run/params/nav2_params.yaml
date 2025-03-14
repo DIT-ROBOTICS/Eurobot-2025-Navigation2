@@ -108,7 +108,7 @@ controller_server:
       plugin: "custom_controller::CustomController"
       max_linear_vel: 0.4
       transform_tolerance: 0.1
-      look_ahead_distance: 0.2
+      look_ahead_distance: 0.25
       
     DockMission:
       plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
@@ -429,3 +429,6 @@ velocity_smoother:
     odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]
     velocity_timeout: 1.0
+    # int *a;
+    # fun (const int & a,0)
+    # fun()

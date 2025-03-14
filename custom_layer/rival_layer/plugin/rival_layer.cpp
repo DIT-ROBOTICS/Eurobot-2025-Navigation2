@@ -88,7 +88,10 @@ namespace custom_path_costmap_plugin {
             "/rival_pose", 100, std::bind(&RivalLayer::rivalPoseCallback, this, std::placeholders::_1));
         rival_distance_sub_ = node->create_subscription<std_msgs::msg::Float64>(
             "/rival_distance", 100, std::bind(&RivalLayer::rivalDistanceCallback, this, std::placeholders::_1));
-        // Initialize the queue
+        rival_direction_sub_ = node->create_subscription<nav_msgs::msg::Odometry>(
+            "/rival_direction", 100, std::bind(&RivalLayer::rivalDirectionCallback, this, std::placeholders::_1));
+        
+            // Initialize the queue
         rival_path_.init(model_size_);
     }
 
@@ -118,24 +121,6 @@ namespace custom_path_costmap_plugin {
         if(rival_pose_received_) {
             if(reset_timeout_ >= reset_timeout_threshold_)  reset();
             
-            // FieldExpansion(rival_x_, rival_y_);
-            // updateWithMax(master_grid, 0, 0, getSizeInCellsX(), getSizeInCellsY());
-            
-        // if (rival_distance_ > 0.75 && rival_state_ == RivalState::MOVING) {
-            
-        //     double prediction_offset = 0.4;
-        //     // cos_theta_ 與 sin_theta_ 是透過統計計算或回歸得到 rival 移動方向
-        //     double predicted_x = rival_x_ + prediction_offset * cos_theta_ * direction_;
-        //     double predicted_y = rival_y_ + prediction_offset * sin_theta_ * direction_;
-            
-        //     // 僅更新預測位置附近的 cost，而不在 rival 當前位置產生成本
-        //     FieldExpansion(predicted_x, predicted_y);
-        //     updateWithMax(master_grid, 0, 0, getSizeInCellsX(), getSizeInCellsY());
-        // } else {
-        //     // 當 rival_distance_ <= 0.75 時，維持原先邏輯，更新 rival 當前位置及周邊 cost
-        //     FieldExpansion(rival_x_, rival_y_);
-        //     updateWithMax(master_grid, 0, 0, getSizeInCellsX(), getSizeInCellsY());
-        // }
             FieldExpansion(rival_x_, rival_y_);
             updateWithMax(master_grid, 0, 0, getSizeInCellsX(), getSizeInCellsY());
             
@@ -256,6 +241,7 @@ namespace custom_path_costmap_plugin {
             }
 
             // Calculate the regression line
+            //regression_slope = v_from_localization_y_ / v_from_localization_x_;
             regression_slope_ = (model_size_ * rival_xy_sum_ - rival_x_sum_ * rival_y_sum_) / (model_size_ * rival_x_sq_sum_ - rival_x_sum_ * rival_x_sum_);
             regression_intercept_ = (rival_y_sum_ - regression_slope_ * rival_x_sum_) / model_size_;
 
@@ -435,6 +421,11 @@ namespace custom_path_costmap_plugin {
     {
         rival_distance_ = msg->data;
         RCLCPP_INFO(logger_, "rival_distance is : %f", msg->data);
+    }
+
+    void RivalLayer::rivalDirectionCallback(const nav_msgs::msg::Odometry::SharedPtr msg){
+        v_from_localization_x_ = msg->twist.twist.linear.x;
+        v_from_localization_y_ = msg->twist.twist.linear.y;
     }
     
 
