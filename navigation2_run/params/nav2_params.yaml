@@ -307,8 +307,8 @@ velocity_smoother:
     feedback: "OPEN_LOOP"
     max_velocity: [1.0, 1.0, 1.0]
     min_velocity: [-1.0, -1.0, -1.0]
-    max_accel: [0.7, 0.7, 1.0]
-    max_decel: [-1.0, -1.0, -2.0]  
+    max_accel: [2.0, 2.0, 3.0]
+    max_decel: [-2.0, -2.0, -3.0]  
     odom_topic: "odom"
     odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]
@@ -390,12 +390,12 @@ docking_server:
     # dock_database: /my/path/to/dock_database.yaml
 
     controller:
-      max_linear_vel: 0.5
+      max_linear_vel: 0.3
       min_linear_vel: 0.07
-      # linear_kp_accel_dis: 0.89
-      linear_kp_accel_vel: 0.9
-      linear_kp_decel_dis: 5.0
+      linear_kp_accel_vel: 0.1
+      linear_ki_accel_vel: 0.1
+      linear_kp_decel_dis: 3.0
       # linear_kp_decel_vel: 0.6
       angular_kp: 4.0
       deceleration_distance: 0.1
-      reserved_distance: 0.03
+      reserved_distance: 0.0

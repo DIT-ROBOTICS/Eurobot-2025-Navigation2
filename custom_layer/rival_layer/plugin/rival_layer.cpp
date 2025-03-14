@@ -85,7 +85,7 @@ namespace custom_path_costmap_plugin {
 
         // Subscribe to the rival's pose
         rival_pose_sub_ = node->create_subscription<nav_msgs::msg::Odometry>(
-            "/rival_pose", 100, std::bind(&RivalLayer::rivalPoseCallback, this, std::placeholders::_1));
+            "/rival/final_pose", 100, std::bind(&RivalLayer::rivalPoseCallback, this, std::placeholders::_1));
         rival_distance_sub_ = node->create_subscription<std_msgs::msg::Float64>(
             "/rival_distance", 100, std::bind(&RivalLayer::rivalDistanceCallback, this, std::placeholders::_1));
         // Initialize the queue
@@ -434,7 +434,7 @@ namespace custom_path_costmap_plugin {
     void RivalLayer::rivalDistanceCallback(const std_msgs::msg::Float64::SharedPtr msg)
     {
         rival_distance_ = msg->data;
-        RCLCPP_INFO(logger_, "rival_distance is : %f", msg->data);
+        // RCLCPP_INFO(logger_, "rival_distance is : %f", msg->data);
     }
     
 
