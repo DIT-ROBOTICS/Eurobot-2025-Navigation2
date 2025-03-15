@@ -74,7 +74,7 @@ public:
    * @return PoseStamped of staging pose in the specified frame
    */
   virtual geometry_msgs::msg::PoseStamped getStagingPose(
-    const geometry_msgs::msg::Pose & pose, const std::string & frame);
+    const geometry_msgs::msg::Pose & pose, const std::string & frame, const std::string & dock_type);
 
   /**
    * @brief Method to obtain the refined pose of the dock, usually based on sensors
@@ -128,6 +128,7 @@ protected:
   std::vector<std::string> stall_joint_names_;
   double stall_velocity_threshold_, stall_effort_threshold_;
   bool is_stalled_;
+  std::string base_frame_;
 
   // An external reference (such as image_proc::TrackMarkerNode) can be used to detect dock
   bool use_external_detection_pose_ = false;
@@ -143,7 +144,11 @@ protected:
   double charging_threshold_;
   // If not using an external pose reference, this is the distance threshold
   double docking_threshold_;
+  int xy_debounce_counter_, yaw_debounce_counter_;
+  int xy_debounce_threshold_, yaw_debounce_threshold_;
+  bool use_debounce_;
   // Offset for staging pose relative to dock pose
+  bool use_dynamic_offset_;
   double staging_x_offset_;
   double staging_y_offset_;
   double staging_yaw_offset_;
