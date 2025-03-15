@@ -44,7 +44,7 @@ Controller::Controller(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node) 
     declare_parameter_if_not_declared(node, "controller.min_angular_vel", rclcpp::ParameterValue(0.0));
     declare_parameter_if_not_declared(node, "controller.max_linear_acc", rclcpp::ParameterValue(0.3));
     declare_parameter_if_not_declared(node, "controller.max_angular_acc", rclcpp::ParameterValue(1.0));
-    declare_parameter_if_not_declared(node, "controller.linear_kp_accel_dis", rclcpp::ParameterValue(0.7));
+    declare_parameter_if_not_declared(node, "controller.linear_ki_accel_vel", rclcpp::ParameterValue(0.7));
     declare_parameter_if_not_declared(node, "controller.linear_kp_accel_vel", rclcpp::ParameterValue(0.5));
     declare_parameter_if_not_declared(node, "controller.linear_kp_decel_dis", rclcpp::ParameterValue(3.0));
     declare_parameter_if_not_declared(node, "controller.linear_kp_decel_vel", rclcpp::ParameterValue(0.9));
@@ -60,7 +60,7 @@ Controller::Controller(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node) 
     node->get_parameter("controller.min_angular_vel", min_angular_vel_);
     node->get_parameter("controller.max_linear_acc", max_linear_acc_);
     node->get_parameter("controller.max_angular_acc", max_angular_acc_);
-    node->get_parameter("controller.linear_kp_accel_dis", linear_kp_accel_dis_);
+    node->get_parameter("controller.linear_ki_accel_vel", linear_ki_accel_vel_);
     node->get_parameter("controller.linear_kp_accel_vel", linear_kp_accel_vel_);
     node->get_parameter("controller.linear_kp_decel_dis", linear_kp_decel_dis_);
     node->get_parameter("controller.linear_kp_decel_vel", linear_kp_decel_vel_);
@@ -180,13 +180,17 @@ double Controller::ExtractVelocity(const double & velocity, const double & remai
 }
 
 void Controller::Acceleration(double & vel, const double & remaining_distance, VelocityState & state) {
-    vel += linear_kp_accel_vel_ * fabs(vel - max_linear_vel_);
+    vel += linear_kp_accel_vel_ * fabs(vel - max_linear_vel_) + linear_ki_accel_vel_ * vel_error_sum_;
     vel = std::min(vel, max_linear_vel_);
-    vel = std::max(vel, min_linear_vel_);
+    // vel = std::max(vel, min_linear_vel_);
+
+    vel_error_sum_ += fabs(vel - max_linear_vel_);
+    vel_error_sum_ = std::min(vel_error_sum_, 3.0);
 
     if(vel >= max_linear_vel_) {
         state = VelocityState::CONSTANT;
     } else if(remaining_distance < deceleration_distance_) {
+        initial_decel_speed_ = vel;
         state = VelocityState::DECELERATION;
     }
 }
@@ -195,12 +199,13 @@ void Controller::ConstantVelocity(double & vel, const double & remaining_distanc
     vel = max_linear_vel_;
 
     if(remaining_distance < deceleration_distance_) {
+        initial_decel_speed_ = vel;
         state = VelocityState::DECELERATION;
     }
 }
 
 void Controller::Deceleration(double & vel, const double & remaining_distance, VelocityState & /*state*/) {
-    vel = std::min(linear_kp_decel_dis_ * remaining_distance, vel);
+    vel = std::min(linear_kp_decel_dis_ * remaining_distance, initial_decel_speed_);
     vel = std::min(vel, max_linear_vel_);
     vel = std::max(vel, min_linear_vel_);
     if(remaining_distance < reserved_distance_) {

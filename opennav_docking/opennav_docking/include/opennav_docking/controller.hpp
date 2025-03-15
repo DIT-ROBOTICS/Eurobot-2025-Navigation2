@@ -105,7 +105,9 @@ class Controller
     double max_angular_vel_, min_angular_vel_;
     double max_linear_acc_, max_angular_acc_;
 
-    double linear_kp_accel_dis_, linear_kp_accel_vel_;
+    double initial_decel_speed_;
+    double vel_error_sum_;
+    double linear_ki_accel_vel_, linear_kp_accel_vel_;
     double linear_kp_decel_dis_, linear_kp_decel_vel_;
     double angular_kp_;
     double look_ahead_distance_;
@@ -134,6 +136,7 @@ class Controller
     void ResetState() { 
       state_x_ = VelocityState::ACCELERATION; 
       state_y_ = VelocityState::ACCELERATION;
+      vel_error_sum_ = 0.0;
     }
 
     /**
