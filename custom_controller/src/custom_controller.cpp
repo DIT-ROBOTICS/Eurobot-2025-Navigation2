@@ -435,7 +435,7 @@ geometry_msgs::msg::TwistStamped CustomController::computeVelocityCommands(
         
         check_index_ = 0;
         current_index_ = 0;
-        
+
         //RCLCPP_INFO(logger_, "last_vel = []")
         //RCLCPP_INFO(logger_, "vector_global_path_ final goal angle after get LAD is = [%lf]", vector_global_path_[vector_global_path_.size()-1].theta_);
         //final_goal_angle_ = vector_global_path_[vector_global_path_.size()-1].theta_;
@@ -452,35 +452,37 @@ geometry_msgs::msg::TwistStamped CustomController::computeVelocityCommands(
         // if(rival_distance_ < 0.75){
             //RCLCPP_INFO(logger_, "Rival is too close");
             // max_linear_vel_ = 0.5;
-            update_plan_ = true;
+            // update_plan_ = true;
         // }else{
-            // max_linear_vel_ = 0.7;
+        //     max_linear_vel_ = 0.7;
         // }
       
         double local_distance = sqrt(pow(local_goal_.x_ - cur_pose_.x_, 2) + pow(local_goal_.y_ - cur_pose_.y_, 2));
         
         //RCLCPP_INFO(logger_, "final goal angle is [%lf]", vector_global_path_[vector_global_path_.size()-1].theta_);
         //RCLCPP_INFO(logger_, "cur_pose angle is [%lf]", cur_pose_.theta_);
-        target_vel_x_ = std::min(global_distance * 1.5, max_linear_vel_) * cos(local_angle);
-        target_vel_y_ = std::min(global_distance * 1.5, max_linear_vel_) * sin(local_angle);
-        cmd_vel.twist.linear.x = last_vel_x_;
-        cmd_vel.twist.linear.y = last_vel_y_;
-        if(target_vel_x_ > 0){
-            cmd_vel.twist.linear.x += linear_acceleration_ / control_frequency_ * cos(local_angle);
-            cmd_vel.twist.linear.x = std::min(cmd_vel.twist.linear.x, target_vel_x_);
-        }else{
-            cmd_vel.twist.linear.x += linear_acceleration_ / control_frequency_ * cos(local_angle);
-            cmd_vel.twist.linear.x = std::max(cmd_vel.twist.linear.x, target_vel_x_);
-        }
-        if(target_vel_y_ > 0){
-            cmd_vel.twist.linear.y += linear_acceleration_ / control_frequency_ * sin(local_angle);
-            cmd_vel.twist.linear.y = std::min(cmd_vel.twist.linear.y, target_vel_y_);
-        }else{
-            cmd_vel.twist.linear.y += linear_acceleration_ / control_frequency_ * sin(local_angle);
-            cmd_vel.twist.linear.y = std::max(cmd_vel.twist.linear.y, target_vel_y_);
-        }
-        last_vel_x_ = cmd_vel.twist.linear.x;
-        last_vel_y_ = cmd_vel.twist.linear.y;
+        cmd_vel.twist.linear.x = std::min(global_distance * 1.5, max_linear_vel_) * cos(local_angle);
+        cmd_vel.twist.linear.y = std::min(global_distance * 1.5, max_linear_vel_) * sin(local_angle);
+        // target_vel_x_ = std::min(global_distance * 1.5, max_linear_vel_) * cos(local_angle);
+        // target_vel_y_ = std::min(global_distance * 1.5, max_linear_vel_) * sin(local_angle);
+        // cmd_vel.twist.linear.x = last_vel_x_;
+        // cmd_vel.twist.linear.y = last_vel_y_;
+        // if(target_vel_x_ > 0){
+        //     cmd_vel.twist.linear.x += linear_acceleration_ / control_frequency_ * cos(local_angle);
+        //     cmd_vel.twist.linear.x = std::min(cmd_vel.twist.linear.x, target_vel_x_);
+        // }else{
+        //     cmd_vel.twist.linear.x += linear_acceleration_ / control_frequency_ * cos(local_angle);
+        //     cmd_vel.twist.linear.x = std::max(cmd_vel.twist.linear.x, target_vel_x_);
+        // }
+        // if(target_vel_y_ > 0){
+        //     cmd_vel.twist.linear.y += linear_acceleration_ / control_frequency_ * sin(local_angle);
+        //     cmd_vel.twist.linear.y = std::min(cmd_vel.twist.linear.y, target_vel_y_);
+        // }else{
+        //     cmd_vel.twist.linear.y += linear_acceleration_ / control_frequency_ * sin(local_angle);
+        //     cmd_vel.twist.linear.y = std::max(cmd_vel.twist.linear.y, target_vel_y_);
+        // }
+        // last_vel_x_ = cmd_vel.twist.linear.x;
+        // last_vel_y_ = cmd_vel.twist.linear.y;
         // RCLCPP_INFO(logger_, "vel_target_x_ = [%lf] vel_target_y_ = [%lf]",target_vel_x_ ,target_vel_y_);
         // RCLCPP_INFO(logger_, "vel_x_ = [%lf] vel_y_ = [%lf]",cmd_vel.twist.linear.x ,cmd_vel.twist.linear.y);
         cmd_vel.twist.angular.z = getGoalAngle(cur_pose_.theta_, final_goal_angle_);
