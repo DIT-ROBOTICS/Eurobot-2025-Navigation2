@@ -45,12 +45,10 @@ def generate_launch_description():
     log_level = LaunchConfiguration('log_level')
     use_odometry_sim = LaunchConfiguration('use_odometry_sim')
     robot_pose_remap = LaunchConfiguration('robot_pose_remap')
-    rival_pose_remap = LaunchConfiguration('rival_pose_remap')
 
     remappings = [('/tf', 'tf'),
                   ('/tf_static', 'tf_static'),
-                  ('odom', robot_pose_remap),
-                  ('/rival_pose', rival_pose_remap)]
+                  ('odom', robot_pose_remap)]
 
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {
@@ -120,10 +118,6 @@ def generate_launch_description():
     declare_robot_remap_cmd = DeclareLaunchArgument(
         'robot_pose_remap', default_value='odom',
         description='Remapping for robot pose topic')
-    
-    declare_rival_remap_cmd = DeclareLaunchArgument(
-        'rival_pose_remap', default_value='/rival_pose',
-        description='Remapping for rival pose topic')
 
     # Specify the actions
     bringup_cmd_group = GroupAction([
@@ -182,7 +176,6 @@ def generate_launch_description():
     ld.add_action(declare_use_respawn_cmd)
     ld.add_action(declare_log_level_cmd)
     ld.add_action(declare_robot_remap_cmd)
-    ld.add_action(declare_rival_remap_cmd)
 
     # Add the actions to launch all of the navigation nodes
     ld.add_action(bringup_cmd_group)

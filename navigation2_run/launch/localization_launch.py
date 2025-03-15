@@ -26,15 +26,13 @@ def generate_launch_description():
     log_level = LaunchConfiguration('log_level')
     use_odometry_sim = LaunchConfiguration('use_odometry_sim')
     robot_pose_remap = LaunchConfiguration('robot_pose_remap')
-    rival_pose_remap = LaunchConfiguration('rival_pose_remap')
 
     lifecycle_nodes = ['map_server']
 
     # Remappings
     remappings = [('/tf', 'tf'),
                   ('/tf_static', 'tf_static'),
-                  ('odom', robot_pose_remap),
-                  ('/rival_pose', rival_pose_remap)]
+                  ('odom', robot_pose_remap)]
 
     # Parameter substitution
     param_substitutions = {
