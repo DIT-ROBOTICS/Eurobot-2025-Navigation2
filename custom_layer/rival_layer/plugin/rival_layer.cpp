@@ -44,6 +44,8 @@ namespace custom_path_costmap_plugin {
 
         declareParameter("debug_mode", rclcpp::ParameterValue(0));
 
+        declareParameter("use_statistic_method", rclcpp::ParameterValue(false));
+
         // Get the node
         auto node = node_.lock();
         if (!node) {
@@ -83,13 +85,13 @@ namespace custom_path_costmap_plugin {
 
         node->get_parameter(name_ + "." + "debug_mode", debug_mode_);
 
+        node->get_parameter(name_ + "." + "use_statistic_method", use_statistic_method_);
+
         // Subscribe to the rival's pose
         rival_pose_sub_ = node->create_subscription<nav_msgs::msg::Odometry>(
             "/rival/final_pose", 100, std::bind(&RivalLayer::rivalPoseCallback, this, std::placeholders::_1));
         rival_distance_sub_ = node->create_subscription<std_msgs::msg::Float64>(
             "/rival_distance", 100, std::bind(&RivalLayer::rivalDistanceCallback, this, std::placeholders::_1));
-        rival_direction_sub_ = node->create_subscription<nav_msgs::msg::Odometry>(
-            "/rival_direction", 100, std::bind(&RivalLayer::rivalDirectionCallback, this, std::placeholders::_1));
         
             // Initialize the queue
         rival_path_.init(model_size_);
@@ -181,20 +183,28 @@ namespace custom_path_costmap_plugin {
         // Pedict the rival's state
         UpdateStatistics();
 
-        if(rival_path_.isFull()) {
-            if(rival_x_cov_ < x_cov_threshold_ && rival_y_cov_ < y_cov_threshold_) {
-                rival_state_ = RivalState::HALTED;
-
-            } else if(R_sq_ < R_sq_threshold_) {
-                rival_state_ = RivalState::WANDERING;
-
+        if(use_statistic_method_) {
+            if(rival_path_.isFull()) {
+                if(rival_x_cov_ < x_cov_threshold_ && rival_y_cov_ < y_cov_threshold_) {
+                    rival_state_ = RivalState::HALTED;
+    
+                } else if(R_sq_ < R_sq_threshold_) {
+                    rival_state_ = RivalState::WANDERING;
+    
+                } else {
+                    rival_state_ = RivalState::MOVING;
+    
+                }
             } else {
-                rival_state_ = RivalState::MOVING;
-
+                rival_state_ = RivalState::UNKNOWN;
+                return;
             }
         } else {
-            rival_state_ = RivalState::UNKNOWN;
-            return;
+            if(v_from_localization_x_ < 0.05 && v_from_localization_y_ < 0.05) {
+                rival_state_ = RivalState::HALTED;
+            } else {
+                rival_state_ = RivalState::MOVING;
+            }
         }
     }
 
@@ -241,8 +251,12 @@ namespace custom_path_costmap_plugin {
             }
 
             // Calculate the regression line
-            //regression_slope = v_from_localization_y_ / v_from_localization_x_;
-            regression_slope_ = (model_size_ * rival_xy_sum_ - rival_x_sum_ * rival_y_sum_) / (model_size_ * rival_x_sq_sum_ - rival_x_sum_ * rival_x_sum_);
+            if(use_statistic_method_) {
+                regression_slope_ = (model_size_ * rival_xy_sum_ - rival_x_sum_ * rival_y_sum_) / (model_size_ * rival_x_sq_sum_ - rival_x_sum_ * rival_x_sum_);
+            } else {
+                if(v_from_localization_x_)  regression_slope_ = v_from_localization_y_ / v_from_localization_x_;
+                else regression_slope_ = 1e6;
+            }
             regression_intercept_ = (rival_y_sum_ - regression_slope_ * rival_x_sum_) / model_size_;
 
             cos_theta_ = 1 / sqrt(1 + pow(regression_slope_, 2));
@@ -392,8 +406,10 @@ namespace custom_path_costmap_plugin {
         // Store the rival's pose
         rival_x_ = rival_pose->pose.pose.position.x;
         rival_y_ = rival_pose->pose.pose.position.y;
+        v_from_localization_x_ = rival_pose->twist.twist.linear.x;
+        v_from_localization_y_ = rival_pose->twist.twist.linear.y;
         rival_pose_received_ = true;
-
+        
         // Pop the oldest pose if the queue is full
         if(rival_path_.isFull()) { 
             rival_x_sum_ -= rival_path_.get(0).first;
@@ -422,12 +438,6 @@ namespace custom_path_costmap_plugin {
         rival_distance_ = msg->data;
         // RCLCPP_INFO(logger_, "rival_distance is : %f", msg->data);
     }
-
-    void RivalLayer::rivalDirectionCallback(const nav_msgs::msg::Odometry::SharedPtr msg){
-        v_from_localization_x_ = msg->twist.twist.linear.x;
-        v_from_localization_y_ = msg->twist.twist.linear.y;
-    }
-    
 
     void RivalLayer::PrintRivalState() {
         if(rival_state_ != rival_state_prev_) {
