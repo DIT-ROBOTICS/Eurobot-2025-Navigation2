@@ -83,6 +83,7 @@ class CustomController : public nav2_core::Controller{
         double max_linear_acc_, max_angular_acc_;
         double yaw_goal_tolerance_;
         double angular_kp_;
+        double linear_kp_;
         double look_ahead_distance_;
         double speed_test;
         double final_goal_angle_;
@@ -90,6 +91,8 @@ class CustomController : public nav2_core::Controller{
         double rival_to_move_angle;
         double last_vel_x_;
         double last_vel_y_;
+        double speed_decade_;
+        int costmap_tolerance_;
         rclcpp::Duration transform_tolerance_ {0, 0};
 
         // Variables
@@ -112,6 +115,7 @@ class CustomController : public nav2_core::Controller{
         int check_index_;
         int current_index_;
         bool isObstacleExist_;
+        bool keep_palnning_;
         
 };
 
