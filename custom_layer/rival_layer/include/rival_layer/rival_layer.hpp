@@ -146,9 +146,7 @@ namespace custom_path_costmap_plugin {
 
             // Rival pose subscibtion
             rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr rival_distance_sub_;
-            rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr rival_direction_sub_;
             void rivalDistanceCallback(const std_msgs::msg::Float64::SharedPtr msg);
-            void rivalDirectionCallback(const nav_msgs::msg::Odometry::SharedPtr msg);
       
             rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr rival_pose_sub_;
             void rivalPoseCallback(const nav_msgs::msg::Odometry::SharedPtr rival_pose);
@@ -157,6 +155,9 @@ namespace custom_path_costmap_plugin {
 
             // Timeout for reset the costmap
             int reset_timeout_ = 0;
+
+            // Use stastistics method or not
+            bool use_statistic_method_ = false;
 
             // DEBUG
             RivalState rival_state_prev_ = RivalState::UNKNOWN;
