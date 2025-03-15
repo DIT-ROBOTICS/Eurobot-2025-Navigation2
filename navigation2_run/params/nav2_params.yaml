@@ -109,7 +109,7 @@ controller_server:
       plugin: "custom_controller::CustomController"
       max_linear_vel: 1.0
       transform_tolerance: 0.1
-      look_ahead_distance: 0.25
+      look_ahead_distance: 0.2
       
     Cautious:
       plugin: "custom_controller::CustomController"
@@ -145,7 +145,7 @@ local_costmap:
         x_cov_threshold: 0.01
         y_cov_threshold: 0.01
         R_sq_threshold: 0.85
-        reset_timeout_threshold: 40
+        reset_timeout_threshold: 70
         rival_inscribed_radius: 0.22
         halted_inflation_radius: 0.4
         wandering_inflation_radius: 0.5
@@ -200,11 +200,11 @@ global_costmap:
         x_cov_threshold: 0.01
         y_cov_threshold: 0.01
         R_sq_threshold: 0.85
-        reset_timeout_threshold: 40
+        reset_timeout_threshold: 70
         rival_inscribed_radius: 0.22
         halted_inflation_radius: 0.4
         wandering_inflation_radius: 0.5
-        moving_inflation_radius: 0.43
+        moving_inflation_radius: 0.3
         unknown_inflation_radius: 0.55
         halted_cost_scaling_factor: 10.0
         wandering_cost_scaling_factor: 3.0
@@ -305,8 +305,8 @@ velocity_smoother:
     smoothing_frequency: 20.0
     scale_velocities: False
     feedback: "OPEN_LOOP"
-    max_velocity: [1.0, 1.0, 1.0]
-    min_velocity: [-1.0, -1.0, -1.0]
+    max_velocity: [1.0, 1.0, 0.7]
+    min_velocity: [-1.0, -1.0, -0.7]
     max_accel: [2.0, 2.0, 3.0]
     max_decel: [-2.0, -2.0, -3.0]  
     odom_topic: "odom"
@@ -337,8 +337,8 @@ docking_server:
       yaw_debounce_threshold: 5
       use_dynamic_offset: true
       staging_x_offset: 0.35
-      staging_y_offset: 0.0
-      staging_yaw_offset: 0.0
+      staging_y_offset: 0.35
+      staging_yaw_offset: 1.57
       use_battery_status: false
       use_stall_detection: false
       base_frame: "base_link"
@@ -390,12 +390,12 @@ docking_server:
     # dock_database: /my/path/to/dock_database.yaml
 
     controller:
-      max_linear_vel: 0.3
+      max_linear_vel: 0.15
       min_linear_vel: 0.07
-      linear_kp_accel_vel: 0.1
+      linear_kp_accel_vel: 0.5
       linear_ki_accel_vel: 0.1
       linear_kp_decel_dis: 3.0
       # linear_kp_decel_vel: 0.6
       angular_kp: 4.0
       deceleration_distance: 0.1
-      reserved_distance: 0.0
+      reserved_distance: 0.03
