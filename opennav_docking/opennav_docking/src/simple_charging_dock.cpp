@@ -183,9 +183,9 @@ geometry_msgs::msg::PoseStamped SimpleChargingDock::getStagingPose(
   // Apply x and y offsets
   if(use_dynamic_offset_) {
     if(dock_type == "mission_dock_x") {
-      staging_pose.pose.position.x += pose.position.z;
+      staging_pose.pose.position.x -= pose.position.z;
     } else if(dock_type == "mission_dock_y") {
-      staging_pose.pose.position.y += pose.position.z;
+      staging_pose.pose.position.y -= pose.position.z;
     } else {
       RCLCPP_WARN(node_->get_logger(), "Unknown dock type: %s", dock_type.c_str());
     }
