@@ -84,7 +84,7 @@ namespace custom_path_costmap_plugin {
         node->get_parameter(name_ + "." + "debug_mode", debug_mode_);
 
         // Subscribe to the rival's pose
-        rival_pose_sub_ = node->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
+        rival_pose_sub_ = node->create_subscription<nav_msgs::msg::Odometry>(
             "/rival_pose", 100, std::bind(&RivalLayer::rivalPoseCallback, this, std::placeholders::_1));
 
         // Initialize the queue
@@ -365,7 +365,7 @@ namespace custom_path_costmap_plugin {
             "Deactivating RivalLayer");
     }
 
-    void RivalLayer::rivalPoseCallback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr rival_pose) {
+    void RivalLayer::rivalPoseCallback(const nav_msgs::msg::Odometry::SharedPtr rival_pose) {
         // Store the rival's pose
         rival_x_ = rival_pose->pose.pose.position.x;
         rival_y_ = rival_pose->pose.pose.position.y;
