@@ -31,9 +31,9 @@ namespace Object_costmap_plugin {
         node->get_parameter(name_ + "." + "cost_scaling_factor", cost_scaling_factor);
 
         column_poseArray_sub = node->create_subscription<geometry_msgs::msg::PoseArray>(
-            "/column_pose_array", 100, std::bind(&ObjectLayer::columnPoseArrayCallback, this, std::placeholders::_1));
+            "/detected/global_center_poses/column", 100, std::bind(&ObjectLayer::columnPoseArrayCallback, this, std::placeholders::_1));
         board_poseArray_sub = node->create_subscription<geometry_msgs::msg::PoseArray>(
-            "/board_pose_array", 100, std::bind(&ObjectLayer::boardPoseArrayCallback, this, std::placeholders::_1));
+            "/detected/global_center_poses/platform", 100, std::bind(&ObjectLayer::boardPoseArrayCallback, this, std::placeholders::_1));
         
         columnList.clear();
         boardList.clear();
