@@ -10,7 +10,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(nav2_costmap_2d REQUIRED)
 find_package(pluginlib REQUIRED)
-find_package(geometry_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
 
 set(lib_dep_pkgs
 rclcpp
@@ -19,7 +19,7 @@ pluginlib)
 
 set(sim_dep_pkgs
 rclcpp
-geometry_msgs)  
+nav_msgs)  
 
 add_executable(RivalSim 
   src/RivalSim.cpp)

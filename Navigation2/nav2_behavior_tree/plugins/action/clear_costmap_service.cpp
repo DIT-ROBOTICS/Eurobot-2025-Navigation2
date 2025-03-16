@@ -29,7 +29,7 @@ ClearEntireCostmapService::ClearEntireCostmapService(
 
 void ClearEntireCostmapService::on_tick()
 {
-  increment_recovery_count();
+  // increment_recovery_count();
 }
 
 ClearCostmapExceptRegionService::ClearCostmapExceptRegionService(
@@ -42,7 +42,7 @@ ClearCostmapExceptRegionService::ClearCostmapExceptRegionService(
 void ClearCostmapExceptRegionService::on_tick()
 {
   getInput("reset_distance", request_->reset_distance);
-  increment_recovery_count();
+  // increment_recovery_count();
 }
 
 ClearCostmapAroundRobotService::ClearCostmapAroundRobotService(
@@ -55,7 +55,7 @@ ClearCostmapAroundRobotService::ClearCostmapAroundRobotService(
 void ClearCostmapAroundRobotService::on_tick()
 {
   getInput("reset_distance", request_->reset_distance);
-  increment_recovery_count();
+  // increment_recovery_count();
 }
 
 }  // namespace nav2_behavior_tree
