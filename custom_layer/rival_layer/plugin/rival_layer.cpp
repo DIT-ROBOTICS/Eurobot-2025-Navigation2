@@ -24,9 +24,9 @@ namespace custom_path_costmap_plugin {
 
         declareParameter("rival_inscribed_radius_", rclcpp::ParameterValue(0.22));
 
-        declareParameter("halted_inflation_radius_", rclcpp::ParameterValue(0.4));
+        declareParameter("halted_inflation_radius_", rclcpp::ParameterValue(0.5));
         declareParameter("wandering_inflation_radius_", rclcpp::ParameterValue(0.5));
-        declareParameter("moving_inflation_radius_", rclcpp::ParameterValue(0.43));
+        declareParameter("moving_inflation_radius_", rclcpp::ParameterValue(0.2));
         declareParameter("unknown_inflation_radius_", rclcpp::ParameterValue(0.55));
 
         declareParameter("halted_cost_scaling_factor_", rclcpp::ParameterValue(10.0));
@@ -34,7 +34,7 @@ namespace custom_path_costmap_plugin {
         declareParameter("moving_cost_scaling_factor_", rclcpp::ParameterValue(11.0));
         declareParameter("unknown_cost_scaling_factor_", rclcpp::ParameterValue(3.0));
 
-        declareParameter("max_extend_length_", rclcpp::ParameterValue(0.5));
+        declareParameter("max_extend_length_", rclcpp::ParameterValue(0.6));
 
         declareParameter("cov_range_max_", rclcpp::ParameterValue(sqrt(0.0029)));
         declareParameter("cov_range_min_", rclcpp::ParameterValue(sqrt(0.0002)));
@@ -44,6 +44,11 @@ namespace custom_path_costmap_plugin {
 
         declareParameter("debug_mode", rclcpp::ParameterValue(0));
 
+        declareParameter("vel_factor_weight", rclcpp::ParameterValue(0.42));
+        declareParameter("safe_distance", rclcpp::ParameterValue(0.5));
+
+        declareParameter("use_statistic_method", rclcpp::ParameterValue(false));
+      
         // Get the node
         auto node = node_.lock();
         if (!node) {
@@ -83,9 +88,16 @@ namespace custom_path_costmap_plugin {
 
         node->get_parameter(name_ + "." + "debug_mode", debug_mode_);
 
+        node->get_parameter(name_ + "." + "vel_factor_weight", vel_factor_weight_);
+        node->get_parameter(name_ + "." + "safe_distance", safe_distance_);
+
+        node->get_parameter(name_ + "." + "use_statistic_method", use_statistic_method_);
+
         // Subscribe to the rival's pose
-        rival_pose_sub_ = node->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-            "/rival_pose", 100, std::bind(&RivalLayer::rivalPoseCallback, this, std::placeholders::_1));
+        rival_pose_sub_ = node->create_subscription<nav_msgs::msg::Odometry>(
+            "/rival/final_pose", 100, std::bind(&RivalLayer::rivalPoseCallback, this, std::placeholders::_1));
+        rival_distance_sub_ = node->create_subscription<std_msgs::msg::Float64>(
+            "/rival_distance", 100, std::bind(&RivalLayer::rivalDistanceCallback, this, std::placeholders::_1));
 
         // Initialize the queue
         rival_path_.init(model_size_);
@@ -183,20 +195,28 @@ namespace custom_path_costmap_plugin {
         // Pedict the rival's state
         UpdateStatistics();
 
-        if(rival_path_.isFull()) {
-            if(rival_x_cov_ < x_cov_threshold_ && rival_y_cov_ < y_cov_threshold_) {
-                rival_state_ = RivalState::HALTED;
-
-            } else if(R_sq_ < R_sq_threshold_) {
-                rival_state_ = RivalState::WANDERING;
-
+        if(use_statistic_method_) {
+            if(rival_path_.isFull()) {
+                if(rival_x_cov_ < x_cov_threshold_ && rival_y_cov_ < y_cov_threshold_) {
+                    rival_state_ = RivalState::HALTED;
+    
+                } else if(R_sq_ < R_sq_threshold_) {
+                    rival_state_ = RivalState::WANDERING;
+    
+                } else {
+                    rival_state_ = RivalState::MOVING;
+    
+                }
             } else {
-                rival_state_ = RivalState::MOVING;
-
+                rival_state_ = RivalState::UNKNOWN;
+                return;
             }
         } else {
-            rival_state_ = RivalState::UNKNOWN;
-            return;
+            if(v_from_localization_x_ < 0.05 && v_from_localization_y_ < 0.05) {
+                rival_state_ = RivalState::HALTED;
+            } else {
+                rival_state_ = RivalState::MOVING;
+            }
         }
     }
 
@@ -243,7 +263,14 @@ namespace custom_path_costmap_plugin {
             }
 
             // Calculate the regression line
-            regression_slope_ = (model_size_ * rival_xy_sum_ - rival_x_sum_ * rival_y_sum_) / (model_size_ * rival_x_sq_sum_ - rival_x_sum_ * rival_x_sum_);
+
+            if(use_statistic_method_) {
+                regression_slope_ = (model_size_ * rival_xy_sum_ - rival_x_sum_ * rival_y_sum_) / (model_size_ * rival_x_sq_sum_ - rival_x_sum_ * rival_x_sum_);
+            } else {
+                if(v_from_localization_x_)  regression_slope_ = v_from_localization_y_ / v_from_localization_x_;
+                else regression_slope_ = 1e6;
+            }
+          
             regression_intercept_ = (rival_y_sum_ - regression_slope_ * rival_x_sum_) / model_size_;
 
             cos_theta_ = 1 / sqrt(1 + pow(regression_slope_, 2));
@@ -268,6 +295,13 @@ namespace custom_path_costmap_plugin {
     }
 
     void RivalLayer::ExpandPointWithCircle(double x, double y, double MaxCost, double InflationRadius, double CostScalingFactor, double InscribedRadius) {
+        
+        //RCLCPP_INFO(logger_,"vel_factor is [%lf]", vel_factor);
+        if(rival_state_ == RivalState::MOVING){
+            x += position_offset_ * cos_theta_ * direction_;
+            y += position_offset_ * sin_theta_ * direction_;
+        }
+        
         double MaxX = x + InflationRadius;
         double MinX = x - InflationRadius;
         double MaxY;
@@ -305,11 +339,13 @@ namespace custom_path_costmap_plugin {
     }
 
     void RivalLayer::ExpandLine(double x, double y, double MaxCost, double InflationRadius, double CostScalingFactor, double InscribedRadius, double ExtendLength) {
-        double mark_x = 0, mark_y = 0;
+        double mark_x = 0/*position_offset_ * cos_theta_ * direction_*/;
+        double mark_y = 0/*position_offset_ * sin_theta_ * direction_*/;
         unsigned int mx, my;
         int goal_steps = ExtendLength / resolution_;
-
-        if(goal_steps == 0 && worldToMap(x, y, mx, my)) {
+        
+        
+        if(goal_steps == 0 && worldToMap(x, y, mx, my) && rival_distance_ < 0.75) {
             ExpandPointWithCircle(x, y, MaxCost, InflationRadius, CostScalingFactor, InscribedRadius);
         }
 
@@ -342,8 +378,15 @@ namespace custom_path_costmap_plugin {
                 break;
 
             case RivalState::MOVING:
-                ExpandLine(x, y, nav2_costmap_2d::LETHAL_OBSTACLE, moving_inflation_radius_, moving_cost_scaling_factor_, rival_inscribed_radius_, 
-                    max_extend_length_*std::min(1.0, hypot(rival_x_cov_, rival_y_cov_)/(cov_range_max_-cov_range_min_)));
+                
+                
+                vel_factor_ = std::min(1.0, hypot(rival_x_cov_, rival_y_cov_)/(cov_range_max_-cov_range_min_)) * vel_factor_weight_;//max = 0.35
+                position_offset_ = std::max((rival_distance_ - safe_distance_), 0.0) * vel_factor_;
+                ExpandPointWithCircle(x, y, nav2_costmap_2d::LETHAL_OBSTACLE, halted_inflation_radius_, halted_cost_scaling_factor_, rival_inscribed_radius_);
+                ExpandLine(x, y, nav2_costmap_2d::LETHAL_OBSTACLE, moving_inflation_radius_, moving_cost_scaling_factor_, 0, 
+                    max_extend_length_*std::min(1.0, hypot(rival_x_cov_, rival_y_cov_)/(cov_range_max_-cov_range_min_)) / std::max(rival_distance_, 1.0));
+                
+                
                 break;
             
             case RivalState::UNKNOWN:
@@ -371,12 +414,14 @@ namespace custom_path_costmap_plugin {
             "Deactivating RivalLayer");
     }
 
-    void RivalLayer::rivalPoseCallback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr rival_pose) {
+    void RivalLayer::rivalPoseCallback(const nav_msgs::msg::Odometry::SharedPtr rival_pose) {
         // Store the rival's pose
         rival_x_ = rival_pose->pose.pose.position.x;
         rival_y_ = rival_pose->pose.pose.position.y;
+        v_from_localization_x_ = rival_pose->twist.twist.linear.x;
+        v_from_localization_y_ = rival_pose->twist.twist.linear.y;
         rival_pose_received_ = true;
-
+        
         // Pop the oldest pose if the queue is full
         if(rival_path_.isFull()) { 
             rival_x_sum_ -= rival_path_.get(0).first;
@@ -399,6 +444,11 @@ namespace custom_path_costmap_plugin {
                 rclcpp::get_logger("RivalLayer"), 
                 "Statistics: x_mean=%f, y_mean=%f, x_cov=%f, y_cov=%f, R_sq=%f", rival_x_mean_, rival_y_mean_, rival_x_cov_, rival_y_cov_, R_sq_);
         }
+    }
+    void RivalLayer::rivalDistanceCallback(const std_msgs::msg::Float64::SharedPtr msg)
+    {
+        rival_distance_ = msg->data;
+        // RCLCPP_INFO(logger_, "rival_distance is : %f", msg->data);
     }
 
     void RivalLayer::PrintRivalState() {

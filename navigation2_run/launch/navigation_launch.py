@@ -15,7 +15,6 @@
 import os
 
 from ament_index_python.packages import get_package_share_directory # type: ignore
-# from launch_ros.substitutions import FindPackageShare # type: ignore
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, GroupAction, SetEnvironmentVariable # type: ignore
@@ -40,6 +39,7 @@ def generate_launch_description():
     container_name_full = (namespace, '/', container_name)
     use_respawn = LaunchConfiguration('use_respawn')
     log_level = LaunchConfiguration('log_level')
+    robot_pose_remap = LaunchConfiguration('robot_pose_remap')
 
     lifecycle_nodes = ['controller_server',
                        'smoother_server',
@@ -57,7 +57,8 @@ def generate_launch_description():
     # TODO(orduno) Substitute with `PushNodeRemapping`
     #              https://github.com/ros2/launch_ros/issues/56
     remappings = [('/tf', 'tf'),
-                  ('/tf_static', 'tf_static')]
+                  ('/tf_static', 'tf_static'),
+                  ('odom', robot_pose_remap)]
 
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {

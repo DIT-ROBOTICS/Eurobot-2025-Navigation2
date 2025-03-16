@@ -33,7 +33,7 @@ namespace nav2_behaviors
         max_linear_vel = 1.0;
         auto node_test = node_.lock();
         sub_costmap = node_test->create_subscription<nav_msgs::msg::OccupancyGrid>("/global_costmap/costmap", rclcpp::QoS(10), std::bind(&Escape::costmapCallback, this, std::placeholders::_1));
-        sub_rival = node_test->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>("/rival_pose", rclcpp::QoS(10), std::bind(&Escape::rivalCallback, this, std::placeholders::_1));
+        sub_rival = node_test->create_subscription<nav_msgs::msg::Odometry>("/rival_pose", rclcpp::QoS(10), std::bind(&Escape::rivalCallback, this, std::placeholders::_1));
     }
 
     Status Escape::onRun(const std::shared_ptr<const EscapeAction::Goal> command){
@@ -62,7 +62,7 @@ namespace nav2_behaviors
         costmap = msg;
     }
 
-    void Escape::rivalCallback(const geometry_msgs::msg::PoseWithCovarianceStamped& msg){
+    void Escape::rivalCallback(const nav_msgs::msg::Odometry& msg){
         rivalPose = msg;
     }
 

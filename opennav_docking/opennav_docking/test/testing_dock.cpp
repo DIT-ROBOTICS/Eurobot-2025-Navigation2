@@ -45,7 +45,7 @@ public:
   virtual void deactivate() {}
 
   virtual geometry_msgs::msg::PoseStamped getStagingPose(
-    const geometry_msgs::msg::Pose &, const std::string &)
+    const geometry_msgs::msg::Pose &, const std::string &, const std::string &)
   {
     // Declared in test
     std::string exception;
