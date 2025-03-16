@@ -108,8 +108,12 @@ controller_server:
     FollowPath:
       plugin: "custom_controller::CustomController"
       max_linear_vel: 1.0
+      linear_kp: 1.5
       transform_tolerance: 0.1
       look_ahead_distance: 0.2
+      speed_decade: 0.7
+      costmap_tolerance: 60
+      keep_planning: false
       
     Cautious:
       plugin: "custom_controller::CustomController"
@@ -202,7 +206,7 @@ global_costmap:
         R_sq_threshold: 0.85
         reset_timeout_threshold: 70
         rival_inscribed_radius: 0.22
-        halted_inflation_radius: 0.4
+        halted_inflation_radius: 0.5
         wandering_inflation_radius: 0.5
         moving_inflation_radius: 0.3
         unknown_inflation_radius: 0.55
@@ -216,6 +220,8 @@ global_costmap:
         inscribed_radius_rate: 0.99
         inflation_radius_rate: 1.005
         debug_mode: 0                       # 0: off, 1: Print rival state change only, 2: Print rival state change and statistics, 3: Print everything continuously
+        vel_factor_weight: 0.42
+        safe_distance: 0.5
       object_layer:
         plugin: "Object_costmap_plugin::ObjectLayer"
         enabled: True
