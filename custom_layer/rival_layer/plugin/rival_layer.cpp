@@ -111,6 +111,12 @@ namespace custom_path_costmap_plugin {
             return;
         }
 
+        auto node = node_.lock();
+        node->get_parameter(name_ + "." + "halted_inflation_radius_", halted_inflation_radius_);
+        node->get_parameter(name_ + "." + "wandering_inflation_radius_", wandering_inflation_radius_);
+        node->get_parameter(name_ + "." + "moving_inflation_radius_", moving_inflation_radius_);
+        node->get_parameter(name_ + "." + "unknown_inflation_radius_", unknown_inflation_radius_);
+
         resetMapToValue(0, 0, getSizeInCellsX(), getSizeInCellsY(), nav2_costmap_2d::FREE_SPACE);
 
         // Set the rival as a lethal obstacle & Update the costmap with the rival's path
