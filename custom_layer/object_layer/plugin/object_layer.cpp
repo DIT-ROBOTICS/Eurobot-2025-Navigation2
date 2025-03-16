@@ -53,6 +53,9 @@ namespace Object_costmap_plugin {
         if(!enabled_){
             return;
         }
+        auto node = node_.lock();
+        node->get_parameter(name_ + "." + "column_inflation_radius", column_inflation_radius);
+        node->get_parameter(name_ + "." + "board_inflation_radius", board_inflation_radius);
         resetMapToValue(0, 0, getSizeInCellsX(), getSizeInCellsY(), nav2_costmap_2d::FREE_SPACE);
         for(auto object : columnList){
             ExpandPointWithCircle(object.pose.position.x, object.pose.position.y, nav2_costmap_2d::LETHAL_OBSTACLE, column_inflation_radius, cost_scaling_factor, column_inscribed_radius);
