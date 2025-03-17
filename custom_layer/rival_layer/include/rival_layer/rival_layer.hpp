@@ -159,7 +159,7 @@ namespace custom_path_costmap_plugin {
             bool rival_pose_received_ = false;
 
             // Timeout for reset the costmap
-            int reset_timeout_ = 0;
+            int reset_timeout_ = 100;
 
             // Use stastistics method or not
             bool use_statistic_method_ = false;
