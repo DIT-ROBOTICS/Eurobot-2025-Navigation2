@@ -136,12 +136,6 @@ namespace custom_path_costmap_plugin {
         }
 
         auto node = node_.lock();
-        node->get_parameter(name_ + "." + "halted_inflation_radius_", halted_inflation_radius_);
-        node->get_parameter(name_ + "." + "wandering_inflation_radius_", wandering_inflation_radius_);
-        node->get_parameter(name_ + "." + "moving_inflation_radius_", moving_inflation_radius_);
-        node->get_parameter(name_ + "." + "unknown_inflation_radius_", unknown_inflation_radius_);
-
-        auto node = node_.lock();
         node->get_parameter(name_ + "." + "halted_inflation_radius", halted_inflation_radius_);
         node->get_parameter(name_ + "." + "wandering_inflation_radius", wandering_inflation_radius_);
         node->get_parameter(name_ + "." + "moving_inflation_radius", moving_inflation_radius_);
