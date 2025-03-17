@@ -74,7 +74,7 @@ namespace nav2_behaviors
         }
 
         if(param_client->service_is_ready()){
-            param_client->get_parameters({"rival_layer.halted_inflation_radius_"}, [this](std::shared_future<std::vector<rclcpp::Parameter>> future){
+            param_client->get_parameters({"rival_layer.halted_inflation_radius"}, [this](std::shared_future<std::vector<rclcpp::Parameter>> future){
                 future.wait();
                 auto result = future.get();
                 original_rival_halted_radius = result[0].as_double();
@@ -82,7 +82,7 @@ namespace nav2_behaviors
         }
 
         if(param_client->service_is_ready()){
-            param_client->get_parameters({"rival_layer.wandering_inflation_radius_"}, [this](std::shared_future<std::vector<rclcpp::Parameter>> future){
+            param_client->get_parameters({"rival_layer.wandering_inflation_radius"}, [this](std::shared_future<std::vector<rclcpp::Parameter>> future){
                 future.wait();
                 auto result = future.get();
                 original_rival_wandering_radius = result[0].as_double();
@@ -90,7 +90,7 @@ namespace nav2_behaviors
         }
 
         if(param_client->service_is_ready()){
-            param_client->get_parameters({"rival_layer.moving_inflation_radius_"}, [this](std::shared_future<std::vector<rclcpp::Parameter>> future){
+            param_client->get_parameters({"rival_layer.moving_inflation_radius"}, [this](std::shared_future<std::vector<rclcpp::Parameter>> future){
                 future.wait();
                 auto result = future.get();
                 original_rival_moving_radius = result[0].as_double();
@@ -98,7 +98,7 @@ namespace nav2_behaviors
         }
 
         if(param_client->service_is_ready()){
-            param_client->get_parameters({"rival_layer.unknown_inflation_radius_"}, [this](std::shared_future<std::vector<rclcpp::Parameter>> future){
+            param_client->get_parameters({"rival_layer.unknown_inflation_radius"}, [this](std::shared_future<std::vector<rclcpp::Parameter>> future){
                 future.wait();
                 auto result = future.get();
                 original_rival_unknown_radius = result[0].as_double();
@@ -172,14 +172,14 @@ namespace nav2_behaviors
         double halted_radius = doShrink ? 0.1 : original_rival_halted_radius;
         if(param_client->service_is_ready()){
             // rival_layer.halted_inflation_radius
-            param_client->set_parameters({rclcpp::Parameter("rival_layer.halted_inflation_radius_", halted_radius)},[this, halted_radius](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future){
+            param_client->set_parameters({rclcpp::Parameter("rival_layer.halted_inflation_radius", halted_radius)},[this, halted_radius](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future){
                 future.wait();
                 auto result = future.get();
                 if(result[0].successful){
-                    RCLCPP_INFO(logger_, "Set halted_inflation_radius_ successfully to %f", halted_radius);
+                    RCLCPP_INFO(logger_, "Set halted_inflation_radius successfully to %f", halted_radius);
                 }
                 else{
-                    RCLCPP_ERROR(logger_, "Failed to set halted_inflation_radius_ to %f", halted_radius);
+                    RCLCPP_ERROR(logger_, "Failed to set halted_inflation_radius to %f", halted_radius);
                 }
             });
         }
@@ -187,14 +187,14 @@ namespace nav2_behaviors
         double wandering_radius = doShrink ? 0.1 : original_rival_wandering_radius;
         if(param_client->service_is_ready()){
             // rival_layer.wandering_inflation_radius
-            param_client->set_parameters({rclcpp::Parameter("rival_layer.wandering_inflation_radius_", wandering_radius)},[this, wandering_radius](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future){
+            param_client->set_parameters({rclcpp::Parameter("rival_layer.wandering_inflation_radius", wandering_radius)},[this, wandering_radius](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future){
                 future.wait();
                 auto result = future.get();
                 if(result[0].successful){
-                    RCLCPP_INFO(logger_, "Set wandering_inflation_radius_ successfully to %f", wandering_radius);
+                    RCLCPP_INFO(logger_, "Set wandering_inflation_radius successfully to %f", wandering_radius);
                 }
                 else{
-                    RCLCPP_ERROR(logger_, "Failed to set wandering_inflation_radius_ to %f", wandering_radius);
+                    RCLCPP_ERROR(logger_, "Failed to set wandering_inflation_radius to %f", wandering_radius);
                 }
             });
         }
@@ -202,14 +202,14 @@ namespace nav2_behaviors
         double moving_radius = doShrink ? 0.1 : original_rival_moving_radius;
         if(param_client->service_is_ready()){
             // rival_layer.moving_inflation_radius
-            param_client->set_parameters({rclcpp::Parameter("rival_layer.moving_inflation_radius_", moving_radius)},[this, moving_radius](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future){
+            param_client->set_parameters({rclcpp::Parameter("rival_layer.moving_inflation_radius", moving_radius)},[this, moving_radius](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future){
                 future.wait();
                 auto result = future.get();
                 if(result[0].successful){
-                    RCLCPP_INFO(logger_, "Set moving_inflation_radius_ successfully to %f", moving_radius);
+                    RCLCPP_INFO(logger_, "Set moving_inflation_radius successfully to %f", moving_radius);
                 }
                 else{
-                    RCLCPP_ERROR(logger_, "Failed to set moving_inflation_radius_ to %f", moving_radius);
+                    RCLCPP_ERROR(logger_, "Failed to set moving_inflation_radius to %f", moving_radius);
                 }
             });
         }
@@ -217,14 +217,14 @@ namespace nav2_behaviors
         double unknown_radius = doShrink ? 0.1 : original_rival_unknown_radius;
         if(param_client->service_is_ready()){
             // rival_layer.unknown_inflation_radius
-            param_client->set_parameters({rclcpp::Parameter("rival_layer.unknown_inflation_radius_", unknown_radius)},[this, unknown_radius](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future){
+            param_client->set_parameters({rclcpp::Parameter("rival_layer.unknown_inflation_radius", unknown_radius)},[this, unknown_radius](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future){
                 future.wait();
                 auto result = future.get();
                 if(result[0].successful){
-                    RCLCPP_INFO(logger_, "Set unknown_inflation_radius_ successfully to %f", unknown_radius);
+                    RCLCPP_INFO(logger_, "Set unknown_inflation_radius successfully to %f", unknown_radius);
                 }
                 else{
-                    RCLCPP_ERROR(logger_, "Failed to set unknown_inflation_radius_ to %f", unknown_radius);
+                    RCLCPP_ERROR(logger_, "Failed to set unknown_inflation_radius to %f", unknown_radius);
                 }
             });
         }
