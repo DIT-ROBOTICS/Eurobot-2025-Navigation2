@@ -142,8 +142,8 @@ local_costmap:
         plugin: "custom_path_costmap_plugin::RivalLayer"
         enabled: True
         model_size: 22
-        x_cov_threshold: 0.01
-        y_cov_threshold: 0.01
+        x_cov_threshold: 0.015
+        y_cov_threshold: 0.015
         R_sq_threshold: 0.85
         reset_timeout_threshold: 70
         rival_inscribed_radius: 0.22
@@ -158,10 +158,14 @@ local_costmap:
         max_extend_length: 0.6
         cov_range_max: 0.05385164807134504  # sqrt(0.0029)
         cov_range_min: 0.01414213562373095  # sqrt(0.0002)
+        vel_range_max: 1.0
+        vel_range_min: 0.0
         inscribed_radius_rate: 0.99
         inflation_radius_rate: 1.005
         debug_mode: 0                       # 0: off, 1: Print rival state change only, 2: Print rival state change and statistics, 3: Print everything continuously
-        use_statistic_method: False
+        use_statistic_method: True
+        offset_vel_factor_weight: 0.42
+        expand_vel_factor_weight: 0.42
       object_layer:
         plugin: "Object_costmap_plugin::ObjectLayer"
         enabled: True
@@ -193,19 +197,19 @@ global_costmap:
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 5.0
-        inflation_radius: 0.15
+        inflation_radius: 0.20 
       rival_layer:
         plugin: "custom_path_costmap_plugin::RivalLayer"
         enabled: True
         model_size: 22
-        x_cov_threshold: 0.01
-        y_cov_threshold: 0.01
+        x_cov_threshold: 0.02
+        y_cov_threshold: 0.02
         R_sq_threshold: 0.85
         reset_timeout_threshold: 70
         rival_inscribed_radius: 0.22
         halted_inflation_radius: 0.4
-        wandering_inflation_radius: 0.4
-        moving_inflation_radius: 0.3
+        wandering_inflation_radius: 0.3
+        moving_inflation_radius: 0.4
         unknown_inflation_radius: 0.4
         halted_cost_scaling_factor: 10.0
         wandering_cost_scaling_factor: 10.0
@@ -214,10 +218,12 @@ global_costmap:
         max_extend_length: 0.6
         cov_range_max: 0.05385164807134504  # sqrt(0.0029)
         cov_range_min: 0.01414213562373095  # sqrt(0.0002)
+        vel_range_max: 1.0
+        vel_range_min: 0.0
         inscribed_radius_rate: 0.99
         inflation_radius_rate: 1.005
         debug_mode: 0                       # 0: off, 1: Print rival state change only, 2: Print rival state change and statistics, 3: Print everything continuously
-        use_statistic_method: False
+        use_statistic_method: True
       object_layer:
         plugin: "Object_costmap_plugin::ObjectLayer"
         enabled: True
@@ -307,10 +313,10 @@ velocity_smoother:
     smoothing_frequency: 20.0
     scale_velocities: False
     feedback: "OPEN_LOOP"
-    max_velocity: [1.0, 1.0, 0.7]
-    min_velocity: [-1.0, -1.0, -0.7]
-    max_accel: [2.0, 2.0, 3.0]
-    max_decel: [-2.0, -2.0, -3.0]
+    max_velocity: [0.8, 0.8, 0.6]
+    min_velocity: [-0.8, -0.8, -0.6]
+    max_accel: [2.8, 2.8, 2.0]
+    max_decel: [-2.8, -2.8, -2.4]
     odom_topic: "/final_pose_nav"
     odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]
