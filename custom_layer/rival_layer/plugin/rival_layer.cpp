@@ -135,6 +135,18 @@ namespace custom_path_costmap_plugin {
             return;
         }
 
+        auto node = node_.lock();
+        node->get_parameter(name_ + "." + "halted_inflation_radius_", halted_inflation_radius_);
+        node->get_parameter(name_ + "." + "wandering_inflation_radius_", wandering_inflation_radius_);
+        node->get_parameter(name_ + "." + "moving_inflation_radius_", moving_inflation_radius_);
+        node->get_parameter(name_ + "." + "unknown_inflation_radius_", unknown_inflation_radius_);
+
+        auto node = node_.lock();
+        node->get_parameter(name_ + "." + "halted_inflation_radius", halted_inflation_radius_);
+        node->get_parameter(name_ + "." + "wandering_inflation_radius", wandering_inflation_radius_);
+        node->get_parameter(name_ + "." + "moving_inflation_radius", moving_inflation_radius_);
+        node->get_parameter(name_ + "." + "unknown_inflation_radius", unknown_inflation_radius_);
+
         
         // Set the rival as a lethal obstacle & Update the costmap with the rival's path
         if(rival_pose_received_) {
