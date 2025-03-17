@@ -173,10 +173,10 @@ global_costmap:
         R_sq_threshold: 0.85
         reset_timeout_threshold: 70
         rival_inscribed_radius: 0.22
-        halted_inflation_radius: 0.4
-        wandering_inflation_radius: 0.4
-        moving_inflation_radius: 0.3
-        unknown_inflation_radius: 0.4
+        halted_inflation_radius: 0.5
+        wandering_inflation_radius: 0.5
+        moving_inflation_radius: 0.4
+        unknown_inflation_radius: 0.5
         halted_cost_scaling_factor: 4.0
         wandering_cost_scaling_factor: 4.0
         moving_cost_scaling_factor: 3.0
@@ -276,10 +276,10 @@ velocity_smoother:
     smoothing_frequency: 20.0
     scale_velocities: False
     feedback: "OPEN_LOOP"
-    max_velocity: [1.0, 1.0, 1.0]
-    min_velocity: [-1.0, -1.0, -1.0]
-    max_accel: [2.0, 2.0, 3.5]
-    max_decel: [-2.0, -2.0, -2.0]  
+    max_velocity: [1.5, 1.5, 2.0]
+    min_velocity: [-1.5, -1.5, -2.0]
+    max_accel: [2.5, 2.5, 6.0]
+    max_decel: [-2.5, -2.5, -6.0]  
     odom_topic: "/final_pose_nav"
     odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]
@@ -361,7 +361,7 @@ docking_server:
     # dock_database: /my/path/to/dock_database.yaml
 
     controller:
-      max_linear_vel: 0.15
+      max_linear_vel: 0.3
       min_linear_vel: 0.07
       linear_kp_accel_vel: 0.5
       linear_ki_accel_vel: 0.1
