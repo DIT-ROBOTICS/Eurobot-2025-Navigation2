@@ -19,19 +19,19 @@ class ControllerSelector : public rclcpp::Node {
             controller_selector_pub_ = this->create_publisher<std_msgs::msg::String>("/controller_type", rclcpp::QoS(10).reliable().transient_local());
             controller_selector_timer_ = this->create_wall_timer(std::chrono::milliseconds(50), std::bind(&ControllerSelector::timer_callback, this));
         
-            declare_parameter("Path_controller", rclcpp::ParameterValue("FollowPath"));
-            declare_parameter("Dock_controller", rclcpp::ParameterValue("DockMission"));
+            declare_parameter("Fast_controller", rclcpp::ParameterValue("FollowPath"));
+            declare_parameter("Slow_controller", rclcpp::ParameterValue("Cautious"));
 
-            this->get_parameter("Path_controller", path_controller_);
-            this->get_parameter("Dock_controller", dock_controller_);
+            this->get_parameter("Fast_controller", fast_controller_);
+            this->get_parameter("Slow_controller", slow_controller_);
         }   
 
     private:
         void feedback_callback(nav2_msgs::action::NavigateThroughPoses::Feedback feedback) {
             if(feedback.number_of_poses_remaining <= 1) {
-                controller_type_ = dock_controller_;
+                controller_type_ = slow_controller;
             } else {
-                controller_type_ = path_controller_;
+                controller_type_ = fast_controller;
             }
 
             if(controller_type_prev_ != controller_type_)    RCLCPP_INFO(this->get_logger(), "Controller type has switch to '%s'", controller_type_.c_str());
@@ -60,7 +60,7 @@ class ControllerSelector : public rclcpp::Node {
         // Hardcoded controller selection
         std::string controller_type_;
         std::string controller_type_prev_ = "None";
-        std::string path_controller_, dock_controller_;
+        std::string fast_controller, slow_controller;
 };
 
 int main(int argc, char * argv[]) {

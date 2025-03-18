@@ -67,8 +67,8 @@ bt_navigator:
 
 ControllerSelector:
   ros__parameters:
-    Path_controller: "FollowPath"
-    Dock_controller: "Cautious"
+    Fast_controller: "FollowPath"
+    Slow_controller: "Cautious"
 
 bt_navigator_navigate_through_poses_rclcpp_node:
   ros__parameters:
