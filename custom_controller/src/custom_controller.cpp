@@ -13,6 +13,7 @@
 #include "nav_msgs/msg/occupancy_grid.hpp" // For raw costmap data
 #include "geometry_msgs/msg/pose_stamped.hpp"
 
+
 using std::hypot;
 using std::min;
 using std::max;
@@ -37,6 +38,10 @@ void CustomController::configure(
     node_ = parent;
     auto node = parent.lock();
     speed_test = 0.0;
+
+    last_vel_x_ = 0.0;
+    last_vel_y_ = 0.0;
+
     costmap_ros_ = costmap_ros;
     tf_ = tf;
     plugin_name_ = name;
@@ -53,15 +58,22 @@ void CustomController::configure(
             // RCLCPP_INFO(logger_, "Received costmap data.");
         });
 
-    rival_pose_subscription_ = node->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
+    rival_pose_subscription_ = node->create_subscription<nav_msgs::msg::Odometry>(
         "/rival_pose",  // Replace with your actual rival pose topic
         rclcpp::QoS(10),
-        [this](const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg) {
+        [this](const nav_msgs::msg::Odometry::SharedPtr msg) {
             rival_pose_ = *msg;
+            rival_distance_ = sqrt(pow(rival_pose_.pose.pose.position.x - cur_pose_.x_, 2) + pow(rival_pose_.pose.pose.position.y - cur_pose_.y_, 2));
+            //RCLCPP_INFO(logger_, "Rival distance is [%lf]", rival_distance_);
+            std_msgs::msg::Float64 distance;
+            if(rival_distance_ > 4) rival_distance_ = 0;
+            distance.data = rival_distance_;
+            rival_distance_pub_->publish(distance);
         });
 
     global_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("received_global_plan", 5);
     check_goal_pub_ = node->create_publisher<geometry_msgs::msg::PoseStamped>("check_goal", 5);
+    rival_distance_pub_ = node->create_publisher<std_msgs::msg::Float64>("rival_distance", 5);
 
     // Declare parameters if not declared
     declare_parameter_if_not_declared(node, plugin_name_ + ".max_linear_vel", rclcpp::ParameterValue(0.7));
@@ -72,8 +84,13 @@ void CustomController::configure(
     declare_parameter_if_not_declared(node, plugin_name_ + ".max_angular_acc", rclcpp::ParameterValue(1.0));
     declare_parameter_if_not_declared(node, plugin_name_ + ".yaw_goal_tolerance", rclcpp::ParameterValue(0.01));
     declare_parameter_if_not_declared(node, plugin_name_ + ".angular_kp", rclcpp::ParameterValue(4.0));
+    declare_parameter_if_not_declared(node, plugin_name_ + ".linear_kp", rclcpp::ParameterValue(1.5));
     declare_parameter_if_not_declared(node, plugin_name_ + ".transform_tolerance", rclcpp::ParameterValue(0.1));
     declare_parameter_if_not_declared(node, plugin_name_ + ".look_ahead_distance", rclcpp::ParameterValue(1.0));
+    declare_parameter_if_not_declared(node, plugin_name_ + ".costmap_tolerance", rclcpp::ParameterValue(60));
+    declare_parameter_if_not_declared(node, plugin_name_ + ".speed_decade", rclcpp::ParameterValue(0.7));
+    
+    //declare_parameter_if_not_declared(node, plugin_name_ + ".keepPlan", rclcpp::ParameterValue(ture));
     // Get parameters from the config file
     node->get_parameter(plugin_name_ + ".max_linear_vel", max_linear_vel_);
     node->get_parameter(plugin_name_ + ".min_linear_vel", min_linear_vel_);
@@ -83,7 +100,11 @@ void CustomController::configure(
     node->get_parameter(plugin_name_ + ".max_angular_acc", max_angular_acc_);
     node->get_parameter(plugin_name_ + ".yaw_goal_tolerance", yaw_goal_tolerance_);
     node->get_parameter(plugin_name_ + ".angular_kp", angular_kp_);
+    node->get_parameter(plugin_name_ + ".linear_kp", linear_kp_);
     node->get_parameter(plugin_name_ + ".look_ahead_distance", look_ahead_distance_);
+    node->get_parameter(plugin_name_ + ".keep_palnning", keep_palnning_);
+    node->get_parameter(plugin_name_ + ".costmap_tolerance", costmap_tolerance_);
+    node->get_parameter(plugin_name_ + ".speed_decade", speed_decade_);
     double transform_tolerance;
     
     node->get_parameter(plugin_name_ + ".transform_tolerance", transform_tolerance);
@@ -95,17 +116,20 @@ void CustomController::cleanup(){
     RCLCPP_INFO(logger_, "[%s] Cleaning up controller", plugin_name_.c_str());
     global_path_pub_.reset();
     check_goal_pub_.reset();
+    rival_distance_pub_.reset();
 }
 void CustomController::activate(){
     RCLCPP_INFO(logger_, "[%s] Activating controller", plugin_name_.c_str());
     global_path_pub_->on_activate();
     check_goal_pub_->on_activate();
+    // rival_distance_pub_->on_activate();
 
 }
 void CustomController::deactivate(){
     RCLCPP_INFO(logger_, "[%s] Deactivating controller", plugin_name_.c_str());
     global_path_pub_->on_deactivate();
     check_goal_pub_->on_deactivate();
+    // rival_distance_pub_->on_deactivate();
 }
 
 // void CustomController::setSpeedLimit(double speed_limit, double speed_limit_yaw){
@@ -115,7 +139,8 @@ void CustomController::deactivate(){
 
 // Get the global plan with transformed poses
 void CustomController::setPlan(const nav_msgs::msg::Path & path)
-{
+{   
+    if(cur_goal_pose_.x_ != path.poses.back().pose.position.x || cur_goal_pose_.y_ != path.poses.back().pose.position.y) update_plan_ = true;
     if(!update_plan_){
         return;
     }
@@ -125,6 +150,8 @@ void CustomController::setPlan(const nav_msgs::msg::Path & path)
     }   
     global_plan_ = path;
     RCLCPP_INFO(logger_, "Received a new plan");
+    cur_goal_pose_.x_ = global_plan_.poses.back().pose.position.x;
+    cur_goal_pose_.y_ = global_plan_.poses.back().pose.position.y;
     
     auto msg = std::make_unique<nav_msgs::msg::Path>(global_plan_);
     global_plan_.header.stamp = path.header.stamp;
@@ -140,7 +167,7 @@ void CustomController::setPlan(const nav_msgs::msg::Path & path)
     //RCLCPP_INFO(logger_, "yaw is = [%lf]", yaw);
     final_goal_angle_ = yaw;
 
-    update_plan_ = false;
+    update_plan_ = keep_palnning_;
     // update_plan_ = true;
     isObstacleExist_ = false;
     //print the distance between the points
@@ -349,8 +376,8 @@ bool CustomController::checkObstacle(int current_index, int check_index){
             int mapX = vector_global_path_[i].x_ * 100;
             int mapY = vector_global_path_[i].y_ * 100;
             int index = (mapY-1) * 300 + mapX;
-            if(latest_costmap_->data[index] > 60){
-                //RCLCPP_INFO(logger_, "Obstacle data is [%d]", latest_costmap_->data[index]);
+            if(latest_costmap_->data[index] > costmap_tolerance_){
+                RCLCPP_INFO(logger_, "Obstacle data is [%d]", latest_costmap_->data[index]);
                 return true;
                 // return false;
             }
@@ -386,8 +413,10 @@ bool CustomController::checkObstacle(int current_index, int check_index){
             int mapX = vector_global_path_[i].x_ * 100;
             int mapY = vector_global_path_[i].y_ * 100;
             int index = (mapY-1) * 300 + mapX;
-            if(latest_costmap_->data[index] > 60){
-                RCLCPP_INFO(logger_, "Obstacle data is [%d]", latest_costmap_->data[index]);
+
+            if(latest_costmap_->data[index] > costmap_tolerance_){
+                // RCLCPP_INFO(logger_, "Obstacle data is [%d]", latest_costmap_->data[index]);
+
                 return true;
                 // return false;
             }
@@ -411,16 +440,13 @@ geometry_msgs::msg::TwistStamped CustomController::computeVelocityCommands(
     cmd_vel.header.stamp = clock_->now();
 
     if(!goal_checker->isGoalReached(pose.pose, global_plan_.poses.back().pose, velocity)){
-        rival_distance_ = sqrt(pow(rival_pose_.pose.pose.position.x - cur_pose_.x_, 2) + pow(rival_pose_.pose.pose.position.y - cur_pose_.y_, 2));
-        //RCLCPP_INFO(logger_, "Rival distance is [%lf]", rival_distance_);
         
         
         local_goal_ = getLookAheadPoint(cur_pose_, vector_global_path_, look_ahead_distance_);
         
         check_index_ = 0;
         current_index_ = 0;
-        last_vel_x_ = cmd_vel.twist.linear.x;
-        last_vel_y_ = cmd_vel.twist.linear.y;
+
         //RCLCPP_INFO(logger_, "last_vel = []")
         //RCLCPP_INFO(logger_, "vector_global_path_ final goal angle after get LAD is = [%lf]", vector_global_path_[vector_global_path_.size()-1].theta_);
         //final_goal_angle_ = vector_global_path_[vector_global_path_.size()-1].theta_;
@@ -431,36 +457,46 @@ geometry_msgs::msg::TwistStamped CustomController::computeVelocityCommands(
         // posetoRobotState(rival_pose_.pose, local_rival_pose_);
         // local_rival_pose_ = globalTOlocal(cur_pose_, local_rival_pose_);
 
-        // //rival_to_move_angle = atan2(rival_pose_.pose.pose.position.y - cur_pose_.y_, rival_pose_.pose.pose.position.x - cur_pose_.x_);
+        // rival_to_move_angle = atan2(rival_pose_.pose.pose.position.y - cur_pose_.y_, rival_pose_.pose.pose.position.x - cur_pose_.x_);
         // RCLCPP_INFO(logger_, "rival to move angle = [%lf]", rival_to_move_angle);
-        if(rival_distance_ < 1){
-            //RCLCPP_INFO(logger_, "Rival is too close");
-            max_linear_vel_ = 0.2;
-        }else{
-            max_linear_vel_ = 0.4;
-        }
+
+        // if(rival_distance_ < 1){
+        //     //RCLCPP_INFO(logger_, "Rival is too close");
+        //     max_linear_vel_ = 0.5;
+        //     // update_plan_ = true;
+        // }else{
+        //     max_linear_vel_ = 0.7;
+        // }
+        cmd_vel.twist.linear.x = last_vel_x_;
+        cmd_vel.twist.linear.y = last_vel_y_;
+
         double local_distance = sqrt(pow(local_goal_.x_ - cur_pose_.x_, 2) + pow(local_goal_.y_ - cur_pose_.y_, 2));
+        
         //RCLCPP_INFO(logger_, "final goal angle is [%lf]", vector_global_path_[vector_global_path_.size()-1].theta_);
         //RCLCPP_INFO(logger_, "cur_pose angle is [%lf]", cur_pose_.theta_);
-        cmd_vel.twist.linear.x = std::min(global_distance * 1.5, max_linear_vel_) * cos(local_angle);
-        cmd_vel.twist.linear.y = std::min(global_distance * 1.5, max_linear_vel_) * sin(local_angle);
+
+        cmd_vel.twist.linear.x = std::min(global_distance * linear_kp_, max_linear_vel_) * cos(local_angle);
+        cmd_vel.twist.linear.y = std::min(global_distance * linear_kp_, max_linear_vel_) * sin(local_angle);
+
         cmd_vel.twist.angular.z = getGoalAngle(cur_pose_.theta_, final_goal_angle_);
         double vel_ = sqrt(pow(cmd_vel.twist.linear.x, 2) + pow(cmd_vel.twist.linear.y, 2));
         check_distance_ = std::max(vel_ * 2.5,look_ahead_distance_);
         //RCLCPP_INFO(logger_, "check_distance is [%lf]", check_distance_);
         check_index_ = getIndex(cur_pose_, vector_global_path_, check_distance_);
         current_index_ = getIndex(cur_pose_, vector_global_path_, look_ahead_distance_);
+        last_vel_x_ = cmd_vel.twist.linear.x;
+        last_vel_y_ = cmd_vel.twist.linear.y;
         // RCLCPP_INFO(logger_, "check_index is [%d]", check_index_);        
         // RCLCPP_INFO(logger_, "current_index is [%d]", current_index_);
         // RCLCPP_INFO(logger_, "vector_global_path size is [%d]", vector_global_path_.size());
         // RCLCPP_INFO(logger_, "global_path size is [%d]", global_plan_.poses.size());
-        //RCLCPP_INFO(logger_, "final_goal_angle is [%lf]", final_goal_angle_);
-        //RCLCPP_INFO(logger_, "cmd_vel is [%lf] [%lf] [%lf]", cmd_vel.twist.linear.x, cmd_vel.twist.linear.y, cmd_vel.twist.angular.z);
-        //RCLCPP_INFO(logger_, "local_angle is [%lf]", local_angle);
+        // RCLCPP_INFO(logger_, "final_goal_angle is [%lf]", final_goal_angle_);
+        // RCLCPP_INFO(logger_, "cmd_vel is [%lf] [%lf] [%lf]", cmd_vel.twist.linear.x, cmd_vel.twist.linear.y, cmd_vel.twist.angular.z);
+        // RCLCPP_INFO(logger_, "local_angle is [%lf]", local_angle);
         isObstacleExist_ = checkObstacle(current_index_, check_index_);
         if(isObstacleExist_){
-            cmd_vel.twist.linear.x = last_vel_x_;
-            cmd_vel.twist.linear.y = last_vel_y_;
+            cmd_vel.twist.linear.x = last_vel_x_ * speed_decade_;
+            cmd_vel.twist.linear.y = last_vel_y_ * speed_decade_;
             cmd_vel.twist.angular.z = 0.0;
             update_plan_ = true;
             return cmd_vel;
@@ -483,6 +519,7 @@ geometry_msgs::msg::TwistStamped CustomController::computeVelocityCommands(
         return cmd_vel;
     }
 }
+//test
 void CustomController::setSpeedLimit(
   const double & speed_limit,
   const bool & percentage)

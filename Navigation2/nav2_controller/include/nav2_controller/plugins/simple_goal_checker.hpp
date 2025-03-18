@@ -80,6 +80,7 @@ protected:
   // Dynamic parameters handler
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
   std::string plugin_name_;
+  int xy_debounce_threshold_, yaw_debounce_threshold_;
 
   /**
    * @brief Callback executed when a paramter change is detected

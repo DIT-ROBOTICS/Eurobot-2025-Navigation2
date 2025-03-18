@@ -262,6 +262,7 @@ void DockingServer::dockRobot()
 
     // ** Docking control loop: while not docked, run controller
     rclcpp::Time dock_contact_time;
+    controller_->velocityInit(dock_pose.pose);  // ** Set total distance for velocity control
     while (rclcpp::ok()) {
       try {
         // Approach the dock using control law
@@ -461,6 +462,7 @@ bool DockingServer::resetApproach(const geometry_msgs::msg::PoseStamped & stagin
   rclcpp::Rate loop_rate(controller_frequency_);
   auto start = this->now();
   auto timeout = rclcpp::Duration::from_seconds(dock_approach_timeout_);
+  controller_->velocityInit(staging_pose.pose); // ** Set total distance for velocity control
   while (rclcpp::ok()) {
     publishDockingFeedback(DockRobot::Feedback::INITIAL_PERCEPTION);
 
@@ -566,10 +568,11 @@ void DockingServer::undockRobot()
 
     // Get staging pose (in fixed frame)
     geometry_msgs::msg::PoseStamped staging_pose =
-      dock->getStagingPose(dock_pose.pose, dock_pose.header.frame_id);
+      dock->getStagingPose(dock_pose.pose, dock_pose.header.frame_id, dock_type);
 
     // Control robot to staging pose
     rclcpp::Time loop_start = this->now();
+    controller_->velocityInit(staging_pose.pose); // ** Set total distance for velocity control
     while (rclcpp::ok()) {
       // Stop if we exceed max duration
       auto timeout = rclcpp::Duration::from_seconds(goal->max_undocking_time);

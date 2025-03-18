@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
     auto sub = node->create_subscription<geometry_msgs::msg::Twist>(
         cmd_cb_name, 1000, vel_callback);
     auto sub_initial_pose = node->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-        "initialpose", 1000, initial_pose_callback);
+        "initial_pose", 1000, initial_pose_callback);
 
     tf2_ros::TransformBroadcaster odom_broadcaster(node);
     
@@ -99,8 +99,8 @@ int main(int argc, char **argv) {
         // First, we'll publish the transform over tf
         geometry_msgs::msg::TransformStamped odom_trans;
         odom_trans.header.stamp = current_time;
-        odom_trans.header.frame_id = tf_prefix_ + "odom";
-        odom_trans.child_frame_id = tf_prefix_ + "base_link";
+        odom_trans.header.frame_id = tf_prefix_ + "map";
+        odom_trans.child_frame_id = tf_prefix_ + "base_footprint";
         odom_trans.transform.translation.x = x;
         odom_trans.transform.translation.y = y;
         odom_trans.transform.translation.z = 0.0;
@@ -112,7 +112,7 @@ int main(int argc, char **argv) {
         // Next, we'll publish the odometry message over ROS
         nav_msgs::msg::Odometry odom;
         odom.header.stamp = current_time;
-        odom.header.frame_id = tf_prefix_ + "odom";
+        odom.header.frame_id = tf_prefix_ + "map";
 
         // Set the position
         odom.pose.pose.position.x = x;
@@ -121,7 +121,7 @@ int main(int argc, char **argv) {
         odom.pose.pose.orientation = tf2::toMsg(odom_quat); // tf2::Quaternion to geometry_msgs
 
         // Set the velocity
-        odom.child_frame_id = tf_prefix_ + "base_link";
+        odom.child_frame_id = tf_prefix_ + "base_footprint";
         odom.twist.twist.linear.x = vx;
         odom.twist.twist.linear.y = vy;
         odom.twist.twist.angular.z = vth;

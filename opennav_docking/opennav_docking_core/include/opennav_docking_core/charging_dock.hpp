@@ -74,7 +74,7 @@ public:
    * @return PoseStamped of staging pose in the specified frame
    */
   virtual geometry_msgs::msg::PoseStamped getStagingPose(
-    const geometry_msgs::msg::Pose & pose, const std::string & frame) = 0;
+    const geometry_msgs::msg::Pose & pose, const std::string & frame, const std::string & dock_type) = 0;
 
   /**
    * @brief Method to obtain the refined pose of the dock, usually based on sensors

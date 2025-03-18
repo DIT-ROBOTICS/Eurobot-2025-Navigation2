@@ -43,7 +43,6 @@ def generate_launch_description():
     use_respawn = LaunchConfiguration('use_respawn')
     use_odometry_sim = LaunchConfiguration('use_odometry_sim')
     robot_pose_remap = LaunchConfiguration('robot_pose_remap')
-    rival_pose_remap = LaunchConfiguration('rival_pose_remap')
 
     # Launch configuration variables specific to simulation
     rviz_config_file = LaunchConfiguration('rviz_config_file')
@@ -73,7 +72,7 @@ def generate_launch_description():
 
     declare_params_file_cmd = DeclareLaunchArgument(
         'params_file',
-        default_value=os.path.join(pkg_dir, 'params', 'machine_params.yaml'),
+        default_value=os.path.join(pkg_dir, 'params', 'nav2_params.yaml'),
         description='Full path to the ROS2 parameters file to use for all launched nodes')
 
     declare_autostart_cmd = DeclareLaunchArgument(
@@ -106,13 +105,8 @@ def generate_launch_description():
     
     declare_robot_pose_remap_cmd = DeclareLaunchArgument(
         'robot_pose_remap',
-        default_value='final_pose',
+        default_value='/final_pose_nav',
         description='Remapping for robot pose topic')
-    
-    declare_rival_pose_remap_cmd = DeclareLaunchArgument(
-        'rival_pose_remap',
-        default_value='rival/final_pose',
-        description='Remapping for rival pose topic')
 
     rviz_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -134,8 +128,15 @@ def generate_launch_description():
                           'use_composition': use_composition,
                           'use_odometry_sim': use_odometry_sim,
                           'use_respawn': use_respawn,
-                          'robot_pose_remap': robot_pose_remap,
-                          'rival_pose_remap': rival_pose_remap}.items())
+                          'robot_pose_remap': robot_pose_remap}.items())
+    
+    final_pose_bridge_cmd = Node(
+        package='navigation2_run',
+        executable='final_pose_bridge',
+        name='final_pose_bridge',
+        output='screen',
+        parameters=[params_file]
+    )
 
     # Create the launch description and populate
     ld = LaunchDescription()
@@ -155,12 +156,14 @@ def generate_launch_description():
     ld.add_action(declare_use_odometry_sim_cmd)
     ld.add_action(declare_use_respawn_cmd)
     ld.add_action(declare_robot_pose_remap_cmd)
-    ld.add_action(declare_rival_pose_remap_cmd)
 
     # Add any conditioned actions
 
     # Add the actions to launch all of the navigation nodes
     ld.add_action(rviz_cmd)
     ld.add_action(bringup_cmd)
+
+    # Add the final pose bridge node
+    ld.add_action(final_pose_bridge_cmd)
 
     return ld

@@ -26,11 +26,15 @@ ament_target_dependencies(odometry_sim rclcpp geometry_msgs nav2_msgs tf2_ros tf
 add_executable(script_sim src/script_sim.cpp)
 ament_target_dependencies(script_sim rclcpp geometry_msgs nav2_msgs tf2_ros tf2 tf2_geometry_msgs yaml-cpp opennav_docking_msgs)
 
+add_executable(final_pose_bridge src/final_pose_bridge.cpp)
+ament_target_dependencies(final_pose_bridge rclcpp geometry_msgs nav2_msgs)
+
 target_link_libraries(script_sim yaml-cpp)
 
 install(TARGETS
   odometry_sim
   script_sim
+  final_pose_bridge
   DESTINATION lib/${PROJECT_NAME}
 )
 

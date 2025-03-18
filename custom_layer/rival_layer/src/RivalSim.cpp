@@ -6,8 +6,8 @@
 class RivalSimPub : public rclcpp::Node {
     public:
         RivalSimPub() : Node("rival_sim_pub") {
-            rival_pub_ = this->create_publisher<nav_msgs::msg::Odometry>("/rival_pose", 100);
-            rival_timer_ = this->create_wall_timer(std::chrono::milliseconds(50), std::bind(&RivalSimPub::timer_callback, this));
+            rival_pub_ = this->create_publisher<nav_msgs::msg::Odometry>("/rival/final_pose", 100);
+            rival_timer_ = this->create_wall_timer(std::chrono::milliseconds(time_span_), std::bind(&RivalSimPub::timer_callback, this));
 
             // Get the rival mode -> 0: Halted, 1: Wandering, 2: Moving, 3: Moving with noise
             declare_parameter("Rival_mode", rclcpp::ParameterValue(2));
@@ -44,6 +44,8 @@ class RivalSimPub : public rclcpp::Node {
                     
                     message.pose.pose.position.x = pause_pose_.pose.pose.position.x;
                     message.pose.pose.position.y = pause_pose_.pose.pose.position.y;
+                    message.twist.twist.linear.x = 0.0;
+                    message.twist.twist.linear.y = 0.0;
 
                     if (cooldown_ > 50) {
                         pause_ = false;
@@ -53,6 +55,8 @@ class RivalSimPub : public rclcpp::Node {
                 } else {
                     message.pose.pose.position.x += move_x_;
                     message.pose.pose.position.y += move_y_;
+                    message.twist.twist.linear.x = 10.0/float(time_span_);
+                    message.twist.twist.linear.y = 10.0/float(time_span_);
 
                     if(rival_mode_ == 3) {
                         move_x_ += (0.01+float(rand()%5-2)/400.0) * toggle_x_;
@@ -103,6 +107,7 @@ class RivalSimPub : public rclcpp::Node {
         bool pause_ = false;
         int cooldown_ = 0;
         int trigger_once_cnt_ = 50;
+        int time_span_ = 50;
         nav_msgs::msg::Odometry pause_pose_;
 };
 

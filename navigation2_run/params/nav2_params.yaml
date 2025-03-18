@@ -2,8 +2,8 @@ bt_navigator:
   ros__parameters:
     use_sim_time: False
     global_frame: map
-    robot_base_frame: base_link
-    odom_topic: /odom
+    robot_base_frame: base_footprint
+    odom_topic: /final_pose_nav
     bt_loop_duration: 10
     default_server_timeout: 20
     wait_for_service_timeout: 1000
@@ -68,7 +68,7 @@ bt_navigator:
 ControllerSelector:
   ros__parameters:
     Path_controller: "FollowPath"
-    Dock_controller: "DockMission"
+    Dock_controller: "Cautious"
 
 bt_navigator_navigate_through_poses_rclcpp_node:
   ros__parameters:
@@ -91,7 +91,7 @@ controller_server:
     progress_checker_plugin: "progress_checker"
     current_goal_checker: "percise_goal_checker"
     goal_checker_plugins: ["percise_goal_checker"]
-    controller_plugins: ["FollowPath", "DockMission"]
+    controller_plugins: ["FollowPath", "Cautious"]
 
     # Progress checker parameters
     progress_checker:
@@ -102,16 +102,22 @@ controller_server:
     percise_goal_checker:
       stateful: True
       plugin: "nav2_controller::SimpleGoalChecker"
-      xy_goal_tolerance: 0.02
+      xy_goal_tolerance: 0.01
       yaw_goal_tolerance: 0.05
+      xy_debounce_threshold: 3
+      yaw_debounce_threshold: 3
     # Controller parameters
     FollowPath:
       plugin: "custom_controller::CustomController"
       max_linear_vel: 1.0
+      linear_kp: 1.5
       transform_tolerance: 0.1
       look_ahead_distance: 0.2
+      speed_decade: 0.7
+      costmap_tolerance: 60
+      keep_planning: false
       
-    DockMission:
+    Cautious:
       plugin: "custom_controller::CustomController"
       max_linear_vel: 0.5
       transform_tolerance: 0.1
@@ -122,54 +128,18 @@ local_costmap:
     ros__parameters:
       update_frequency: 20.0
       publish_frequency: 20.0
-      global_frame: odom
-      robot_base_frame: base_link
-      use_sim_time: False
+      global_frame: map
+      robot_base_frame: base_footprint
       rolling_window: False
       width: 3
       height: 2
       resolution: 0.01
       robot_radius: 0.22
       # plugins: ["static_layer", "inflation_layer"]
-      plugins: ["static_layer", "rival_layer", "object_layer"]
+      plugins: ["static_layer"]
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
         map_subscribe_transient_local: True
-      inflation_layer:
-        plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 0.03
-        inflation_radius: 0.1
-      rival_layer:
-        plugin: "custom_path_costmap_plugin::RivalLayer"
-        enabled: True
-        model_size: 22
-        x_cov_threshold: 0.01
-        y_cov_threshold: 0.01
-        R_sq_threshold: 0.85
-        reset_timeout_threshold: 40
-        rival_inscribed_radius: 0.22
-        halted_inflation_radius: 0.4
-        wandering_inflation_radius: 0.5
-        moving_inflation_radius: 0.43
-        unknown_inflation_radius: 0.55
-        halted_cost_scaling_factor: 10.0
-        wandering_cost_scaling_factor: 3.0
-        moving_cost_scaling_factor: 11.0
-        unknown_cost_scaling_factor: 3.0
-        max_extend_length: 0.6
-        cov_range_max: 0.05385164807134504  # sqrt(0.0029)
-        cov_range_min: 0.01414213562373095  # sqrt(0.0002)
-        inscribed_radius_rate: 0.99
-        inflation_radius_rate: 1.005
-        debug_mode: 0                       # 0: off, 1: Print rival state change only, 2: Print rival state change and statistics, 3: Print everything continuously
-      object_layer:
-        plugin: "Object_costmap_plugin::ObjectLayer"
-        enabled: True
-        column_inscribed_radius: 0.075
-        board_inscribed_radius: 0.01
-        column_inflation_radius: 0.22
-        board_inflation_radius: 0.22
-        column_cost_scaling_factor: 3.0
       always_send_full_costmap: True
 
 global_costmap:
@@ -178,7 +148,7 @@ global_costmap:
       update_frequency: 20.0
       publish_frequency: 20.0
       global_frame: map
-      robot_base_frame: base_link
+      robot_base_frame: base_footprint
       use_sim_time: False
       robot_radius: 0.22
       resolution: 0.01
@@ -193,30 +163,38 @@ global_costmap:
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 5.0
-        inflation_radius: 0.15
+        inflation_radius: 0.2
       rival_layer:
         plugin: "custom_path_costmap_plugin::RivalLayer"
         enabled: True
         model_size: 22
-        x_cov_threshold: 0.01
-        y_cov_threshold: 0.01
+        x_cov_threshold: 0.02
+        y_cov_threshold: 0.02
         R_sq_threshold: 0.85
-        reset_timeout_threshold: 40
+        reset_timeout_threshold: 70
         rival_inscribed_radius: 0.22
-        halted_inflation_radius: 0.4
+        halted_inflation_radius: 0.5
         wandering_inflation_radius: 0.5
-        moving_inflation_radius: 0.43
-        unknown_inflation_radius: 0.55
-        halted_cost_scaling_factor: 10.0
-        wandering_cost_scaling_factor: 3.0
-        moving_cost_scaling_factor: 11.0
-        unknown_cost_scaling_factor: 3.0
+        moving_inflation_radius: 0.4
+        unknown_inflation_radius: 0.5
+        halted_cost_scaling_factor: 4.0
+        wandering_cost_scaling_factor: 4.0
+        moving_cost_scaling_factor: 3.0
+        unknown_cost_scaling_factor: 4.0
         max_extend_length: 0.6
         cov_range_max: 0.05385164807134504  # sqrt(0.0029)
         cov_range_min: 0.01414213562373095  # sqrt(0.0002)
+        vel_range_max: 1.0
+        vel_range_min: 0.0
         inscribed_radius_rate: 0.99
         inflation_radius_rate: 1.005
         debug_mode: 0                       # 0: off, 1: Print rival state change only, 2: Print rival state change and statistics, 3: Print everything continuously
+        use_statistic_method: False
+        offset_vel_factor_weight_statistic: 0.42
+        expand_vel_factor_weight_statistic: 0.42
+        offset_vel_factor_weight_localization: 0.42
+        expand_vel_factor_weight_localization: 0.42
+        safe_distance: 0.5
       object_layer:
         plugin: "Object_costmap_plugin::ObjectLayer"
         enabled: True
@@ -261,23 +239,15 @@ behavior_server:
     costmap_topic: local_costmap/costmap_raw
     footprint_topic: local_costmap/published_footprint
     cycle_frequency: 10.0
-    behavior_plugins: ["spin", "backup", "drive_on_heading", "assisted_teleop", "wait", "escape", "shrink"]
-    spin:
-      plugin: "nav2_behaviors/Spin"
-    backup:
-      plugin: "nav2_behaviors/BackUp"
-    drive_on_heading:
-      plugin: "nav2_behaviors/DriveOnHeading"
-    assisted_teleop:
-      plugin: "nav2_behaviors/AssistedTeleop"
+    behavior_plugins: ["wait", "escape", "shrink"]
     escape:
       plugin: "nav2_behaviors/Escape"
     wait:
       plugin: "nav2_behaviors/Wait"
     shrink:
       plugin: "nav2_behaviors/Shrink"
-    global_frame: odom
-    robot_base_frame: base_link
+    global_frame: map
+    robot_base_frame: base_footprint
     transform_tolerance: 0.1
     use_sim_time: False
     simulate_ahead_time: 2.0
@@ -306,11 +276,11 @@ velocity_smoother:
     smoothing_frequency: 20.0
     scale_velocities: False
     feedback: "OPEN_LOOP"
-    max_velocity: [1.0, 1.0, 0.75]
-    min_velocity: [-1.0, -1.0, -0.75]
-    max_accel: [1.0, 1.0, 3.0]
-    max_decel: [-1.0, -1.0, -3.0]  
-    odom_topic: "odom"
+    max_velocity: [1.5, 1.5, 2.0]
+    min_velocity: [-1.5, -1.5, -2.0]
+    max_accel: [2.5, 2.5, 6.0]
+    max_decel: [-2.5, -2.5, -6.0]  
+    odom_topic: "/final_pose_nav"
     odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]
     velocity_timeout: 0.1 # must be less than velocity_smoother_wait in docking_server
@@ -322,22 +292,27 @@ docking_server:
     wait_charge_timeout: 5.0
     dock_approach_timeout: 30.0
     max_retries: 3
-    base_frame: "base_link"
+    base_frame: "base_footprint"
     fixed_frame: "map"
     dock_backwards: false
     dock_prestaging_tolerance: 0.02
     velocity_smoother_wait: 0.12
 
     # Types of docks
-    dock_plugins: ['mission_dock']
-    mission_dock:
+    dock_plugins: ["mission_dock_x", "mission_dock_y"]
+    mission_dock_x:
       plugin: 'opennav_docking::SimpleChargingDock'
       docking_threshold: 0.01
+      use_debounce: true
+      xy_debounce_threshold: 2
+      yaw_debounce_threshold: 2
+      use_dynamic_offset: true
       staging_x_offset: 0.35
-      staging_y_offset: 0.0
-      staging_yaw_offset: 0.0
+      staging_y_offset: 0.35
+      staging_yaw_offset: 1.57
       use_battery_status: false
       use_stall_detection: false
+      base_frame: "base_footprint"
 
       external_detection_timeout: 1.0
       external_detection_translation_x: 0.0
@@ -345,23 +320,57 @@ docking_server:
       external_detection_rotation_roll: 0.0
       external_detection_rotation_pitch: 0.0
       external_detection_rotation_yaw: 0.0
-      filter_coef: 0.1
+      filter_coef: 0.0
+
+    mission_dock_y:
+      plugin: 'opennav_docking::SimpleChargingDock'
+      docking_threshold: 0.01
+      use_debounce: true
+      xy_debounce_threshold: 2
+      yaw_debounce_threshold: 2
+      use_dynamic_offset: true
+      staging_x_offset: 0.0
+      staging_y_offset: 0.35
+      staging_yaw_offset: 0.0
+      use_battery_status: false
+      use_stall_detection: false
+      base_frame: "base_footprint"
+
+      external_detection_timeout: 1.0
+      external_detection_translation_x: 0.0
+      external_detection_translation_y: 0.0
+      external_detection_rotation_roll: 0.0
+      external_detection_rotation_pitch: 0.0
+      external_detection_rotation_yaw: 0.0
+      filter_coef: 0.0
 
     docks: ['home_dock', 'flex_dock1', 'flex_dock2']
     home_dock:
-      type: 'mission_dock'
+      type: 'mission_dock_x'
       frame: map
       pose: [0.0, 0.0, 0.0]
     flex_dock1:
-      type: 'mission_dock'
+      type: 'mission_dock_x'
       frame: map
       pose: [2.2, 1.4, 0.0]
     flex_dock2:
-      type: 'mission_dock'
+      type: 'mission_dock_x'
       frame: map
-      pose: [1.5, 1.0, 0.0]
+      pose: [1.5, 1.0, 1.57]
     
     # dock_database: /my/path/to/dock_database.yaml
 
     controller:
-      max_linear_vel: 0.5
+      max_linear_vel: 0.3
+      min_linear_vel: 0.07
+      linear_kp_accel_vel: 0.5
+      linear_ki_accel_vel: 0.1
+      linear_kp_decel_dis: 3.0
+      # linear_kp_decel_vel: 0.6
+      angular_kp: 4.0
+      deceleration_distance: 0.1
+      reserved_distance: 0.03
+
+final_pose_bridge:
+  ros__parameters:
+    twist_topic: "/driving_duaiduaiduai"

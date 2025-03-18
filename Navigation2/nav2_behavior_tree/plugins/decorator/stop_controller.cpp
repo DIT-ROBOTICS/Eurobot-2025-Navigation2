@@ -33,8 +33,8 @@ namespace nav2_behavior_tree
             cmd_vel.linear.x = 0.0;
             cmd_vel.angular.z = 0.0;
             cmd_vel_pub->publish(cmd_vel);
-            stop_robot = true;
-            return BT::NodeStatus::FAILURE;
+            RCLCPP_INFO(node_->get_logger(), "running in stop_controller");
+            return BT::NodeStatus::RUNNING;
         }
         return child_node_->executeTick();
     }

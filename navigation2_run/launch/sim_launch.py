@@ -40,6 +40,7 @@ def generate_launch_description():
     use_composition = LaunchConfiguration('use_composition')
     use_respawn = LaunchConfiguration('use_respawn')
     use_odometry_sim = LaunchConfiguration('use_odometry_sim')
+    robot_pose_remap = LaunchConfiguration('robot_pose_remap')
 
     # Launch configuration variables specific to simulation
     rviz_config_file = LaunchConfiguration('rviz_config_file')
@@ -100,6 +101,11 @@ def generate_launch_description():
         default_value='True',
         description='Whether to start odometry simulation')
 
+    declare_robot_pose_remap_cmd = DeclareLaunchArgument(
+        'robot_pose_remap',
+        default_value='/final_pose_nav',
+        description='Remapping for robot pose topic')
+
     rviz_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(launch_dir, 'rviz_launch.py')),
@@ -119,7 +125,8 @@ def generate_launch_description():
                           'autostart': autostart,
                           'use_composition': use_composition,
                           'use_odometry_sim': use_odometry_sim,
-                          'use_respawn': use_respawn}.items())
+                          'use_respawn': use_respawn,
+                          'robot_pose_remap': robot_pose_remap}.items())
 
     # Create the launch description and populate
     ld = LaunchDescription()
@@ -137,6 +144,7 @@ def generate_launch_description():
     ld.add_action(declare_use_rviz_cmd)
     ld.add_action(declare_use_odometry_sim_cmd)
     ld.add_action(declare_use_respawn_cmd)
+    ld.add_action(declare_robot_pose_remap_cmd)
 
     # Add the actions to launch all of the navigation nodes
     ld.add_action(rviz_cmd)

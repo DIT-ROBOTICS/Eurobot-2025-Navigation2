@@ -6,6 +6,7 @@
 #include "nav2_costmap_2d/layer.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_util/node_utils.hpp"
+#include "std_msgs/msg/float64.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 
 // Circular Queue for rival's path      |front| ____ <--- ____ |rear|
@@ -89,7 +90,7 @@ namespace custom_path_costmap_plugin {
             double rival_inscribed_radius_;
             double halted_inflation_radius_, wandering_inflation_radius_, moving_inflation_radius_, unknown_inflation_radius_;
             double halted_cost_scaling_factor_, wandering_cost_scaling_factor_, moving_cost_scaling_factor_, unknown_cost_scaling_factor_;
-            double max_extend_length_, cov_range_max_, cov_range_min_;
+            double max_extend_length_, cov_range_max_, cov_range_min_, vel_range_max_, vel_range_min_;
             double inscribed_radius_rate_, inflation_radius_rate_;
             // Debug mode
             int debug_mode_;    // 0: off, 1: Print rival state change only, 2: Print rival state change and statistics, 3: Print everything continuously
@@ -114,8 +115,19 @@ namespace custom_path_costmap_plugin {
             double rival_x_ = 0.0, rival_y_ = 0.0;
             CircularQueue rival_path_;
             double cos_theta_ = 0.0, sin_theta_ = 0.0;
-            int direction_ = 1;
 
+            double v_from_localization_x_ = 0.0;
+            double v_from_localization_y_ = 0.0;
+            
+            int direction_ = 1;
+            double rival_distance_;
+            double vel_factor_;
+            double offset_vel_factor_weight_statistic_;
+            double expand_vel_factor_weight_statistic_;
+            double offset_vel_factor_weight_localization_;
+            double expand_vel_factor_weight_localization_;
+            double position_offset_;
+            double safe_distance_;
             // Enum for rival's state
             enum class RivalState {
                 HALTED,
@@ -138,12 +150,19 @@ namespace custom_path_costmap_plugin {
             void FieldExpansion(double x, double y);
 
             // Rival pose subscibtion
+            rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr rival_distance_sub_;
+            void rivalDistanceCallback(const std_msgs::msg::Float64::SharedPtr msg);
+      
             rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr rival_pose_sub_;
             void rivalPoseCallback(const nav_msgs::msg::Odometry::SharedPtr rival_pose);
+            
             bool rival_pose_received_ = false;
 
             // Timeout for reset the costmap
-            int reset_timeout_ = 0;
+            int reset_timeout_ = 100;
+
+            // Use stastistics method or not
+            bool use_statistic_method_ = false;
 
             // DEBUG
             RivalState rival_state_prev_ = RivalState::UNKNOWN;
