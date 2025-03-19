@@ -22,8 +22,8 @@ class ObjectSimPub : public rclcpp::Node {
         std::vector<double> board_pos_y { /* fill with desired values */ };
         std::vector<double> board_orientation { /* fill with desired values */ };
         ObjectSimPub() : Node("object_sim_pub") {
-            column_pub_ = this->create_publisher<geometry_msgs::msg::PoseArray>("/column_pose_array", 100);
-            board_pub_ = this->create_publisher<geometry_msgs::msg::PoseArray>("/board_pose_array", 100);
+            column_pub_ = this->create_publisher<geometry_msgs::msg::PoseArray>("/detected/global_center_poses/column", 100);
+            board_pub_ = this->create_publisher<geometry_msgs::msg::PoseArray>("/detected/global_center_poses/platform", 100);
             column_timer_ = this->create_wall_timer(std::chrono::milliseconds(50), std::bind(&ObjectSimPub::column_timer_callback, this));
             board_timer_ = this->create_wall_timer(std::chrono::milliseconds(50), std::bind(&ObjectSimPub::board_timer_callback, this));
         }
