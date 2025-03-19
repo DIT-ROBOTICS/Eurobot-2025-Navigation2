@@ -146,10 +146,13 @@ namespace Object_costmap_plugin {
         double cosy_cosp = 1.0 - 2.0 * (object.pose.orientation.y * object.pose.orientation.y +
                                         object.pose.orientation.z * object.pose.orientation.z);
         double angle = std::atan2(siny_cosp, cosy_cosp);
-        
+        // RCLCPP_WARN(
+        //     rclcpp::get_logger("ObjectLayer"), 
+        //     "my angle : %lf", angle);        
         // Precompute sine and cosine of the angle.
-        double cosAngle = std::cos(angle);
-        double sinAngle = std::sin(angle);
+        double receivedAngle = object.pose.orientation.x;
+        double cosAngle = std::cos(receivedAngle);
+        double sinAngle = std::sin(receivedAngle);
         
         unsigned int mx, my;
         double cost = 0.0;

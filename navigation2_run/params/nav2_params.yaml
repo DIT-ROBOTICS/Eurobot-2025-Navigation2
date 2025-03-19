@@ -373,4 +373,5 @@ docking_server:
 
 final_pose_bridge:
   ros__parameters:
-    twist_topic: "/driving_duaiduaiduai"
+    # twist_topic: "/driving_duaiduaiduai"
+    twist_topic: "/odoo_googoogoo"
