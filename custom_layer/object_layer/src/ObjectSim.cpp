@@ -15,7 +15,7 @@ class ObjectSimPub : public rclcpp::Node {
         int change_position_board = 90;
         geometry_msgs::msg::PoseArray column_message;
         geometry_msgs::msg::PoseArray board_message;
-        int mode = 1;
+        int mode = 0;
         std::vector<double> column_pos_x {0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 2.9, 2.9, 2.9, 2.9, 2.9, 2.9, 2.9, 2.9, 1.35, 1.3, 1.25, 1.2, 1.65, 1.7, 1.75, 1.8, 0.85, 0.8, 0.75, 0.7, 2.15, 2.2, 2.25, 2.3, 0.85, 0.8, 0.75, 0.7, 2.15, 2.2, 2.25, 2.3};
         std::vector<double> column_pos_y {0.75, 0.7, 0.65, 0.6, 1.75, 1.7, 1.65, 1.6, 0.75, 0.7, 0.65, 0.6, 1.75, 1.7, 1.65, 1.6, 1, 1, 1, 1, 1, 1, 1, 1, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 1.8, 1.8, 1.8, 1.8, 1.8, 1.8, 1.8, 1.8};
         std::vector<double> board_pos_x {};
@@ -41,6 +41,7 @@ class ObjectSimPub : public rclcpp::Node {
                     column_pub_->publish(column_message);
                     change_position_column = 50;
                 }
+                else column_pub_->publish(column_message);
                 change_position_column--;
             }
             else if(mode == 1){
@@ -69,6 +70,7 @@ class ObjectSimPub : public rclcpp::Node {
                     board_pub_->publish(board_message);
                     change_position_board = 90;
                 }
+                else board_pub_->publish(board_message);
                 change_position_board--;
             }
             else if(mode == 1){
