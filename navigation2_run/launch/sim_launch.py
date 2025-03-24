@@ -15,6 +15,7 @@
 """This is all-in-one launch script intended for use by nav2 developers."""
 
 import os
+import sys
 
 from ament_index_python.packages import get_package_share_directory # type: ignore
 
@@ -30,6 +31,15 @@ def generate_launch_description():
     # Get the launch directory
     pkg_dir = get_package_share_directory('navigation2_run')
     launch_dir = os.path.join(pkg_dir, 'launch')
+    ros_domain_id = os.getenv('ROS_DOMAIN_ID')
+
+    if ros_domain_id == '11':
+        params_file_name = 'nav2_params_11.yaml'
+    elif ros_domain_id == '14':
+        params_file_name = 'nav2_params_14.yaml'
+    else:
+        print('Unrecognized ROS_DOMAIN_ID={ros_domain_id}. Please set ROS_DOMAIN_ID to 11 or 14')
+        sys.exit(1)
 
     namespace = LaunchConfiguration('namespace')
     use_namespace = LaunchConfiguration('use_namespace')
@@ -70,7 +80,7 @@ def generate_launch_description():
 
     declare_params_file_cmd = DeclareLaunchArgument(
         'params_file',
-        default_value=os.path.join(pkg_dir, 'params', 'nav2_params.yaml'),
+        default_value=os.path.join(pkg_dir, 'params', params_file_name),
         description='Full path to the ROS2 parameters file to use for all launched nodes')
 
     declare_autostart_cmd = DeclareLaunchArgument(
