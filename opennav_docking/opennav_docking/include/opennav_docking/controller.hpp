@@ -83,6 +83,8 @@ class Controller
       const geometry_msgs::msg::Pose & target, geometry_msgs::msg::Twist & cmd,
       bool backward = false);
 
+    bool computeIfNeedStop(const geometry_msgs::msg::Pose & target, geometry_msgs::msg::Twist & cmd);
+
     /**
      * @brief Set the total distance for velocity control & Set velocity state to acceleration.
      * @param target Target pose, in robot centric coordinates.
@@ -113,10 +115,14 @@ class Controller
     double look_ahead_distance_;
     double final_goal_angle_;
 
+    // see if need to stop
+    double stop_degree_;
+
     // Variables
     std::vector<RobotState> global_path_;
     std::vector<RobotState> vector_global_path_;
     RobotState robot_pose_;
+    RobotState rival_pose_;
     RobotState local_goal_;
     double total_distance_;
     double deceleration_distance_;
@@ -124,7 +130,9 @@ class Controller
 
     // Robot pose subscibtion
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr robot_pose_sub_;
+    rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr rival_pose_sub_;
     void robotPoseCallback(const nav_msgs::msg::Odometry::SharedPtr robot_pose);
+    void rivalPoseCallback(const nav_msgs::msg::Odometry::SharedPtr rival_pose);
 
     // Local goal publisher
     rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr local_goal_pub_;
