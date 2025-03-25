@@ -11,7 +11,7 @@ find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav2_core REQUIRED)
 find_package(pluginlib REQUIRED)
-
+find_package(tf2_geometry_msgs REQUIRED)
 set(dep_pkgs
     rclcpp
     nav2_core
@@ -29,6 +29,10 @@ ament_target_dependencies(custom_controller
   nav2_core
   pluginlib
   geometry_msgs
+)
+
+target_link_libraries(${PROJECT_NAME}
+  tf2_geometry_msgs::tf2_geometry_msgs
 )
 
 target_include_directories(custom_controller PUBLIC

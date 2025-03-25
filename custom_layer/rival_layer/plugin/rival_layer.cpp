@@ -90,8 +90,13 @@ namespace custom_path_costmap_plugin {
             "/rival_pose", 100, std::bind(&RivalLayer::rivalPoseCallback, this, std::placeholders::_1));
         rival_distance_sub_ = node->create_subscription<std_msgs::msg::Float64>(
             "/rival_distance", 100, std::bind(&RivalLayer::rivalDistanceCallback, this, std::placeholders::_1));
-            rival_direction_sub_ = node->create_subscription<nav_msgs::msg::Odometry>(
+        rival_direction_sub_ = node->create_subscription<nav_msgs::msg::Odometry>(
             "/rival_direction", 100, std::bind(&RivalLayer::rivalDirectionCallback, this, std::placeholders::_1));
+        robot_pose_sub_ = node->create_subscription<geometry_msgs::msg::PoseStamped>(
+            "/robot_pose", 100, std::bind(&RivalLayer::robotPoseCallback, this, std::placeholders::_1));
+        robot_vel_sub_ = node->create_subscription<geometry_msgs::msg::Twist>(
+            "/cmd_vel", 100, std::bind(&RivalLayer::robotVelCallback, this, std::placeholders::_1));
+        
         // Initialize the queue
         rival_path_.init(model_size_);
     }
@@ -119,9 +124,8 @@ namespace custom_path_costmap_plugin {
         resetMapToValue(0, 0, getSizeInCellsX(), getSizeInCellsY(), nav2_costmap_2d::FREE_SPACE);
 
         // Set the rival as a lethal obstacle & Update the costmap with the rival's path
-        if(rival_pose_received_) {
+        if(rival_pose_received_){
             if(reset_timeout_ >= reset_timeout_threshold_)  reset();
-            
             FieldExpansion(rival_x_, rival_y_);
             updateWithMax(master_grid, 0, 0, getSizeInCellsX(), getSizeInCellsY());
             
@@ -391,7 +395,16 @@ namespace custom_path_costmap_plugin {
         // Store the rival's pose
         rival_x_ = rival_pose->pose.pose.position.x;
         rival_y_ = rival_pose->pose.pose.position.y;
-        rival_pose_received_ = true;
+        if(robot_pose_received_ == true && robot_vel_received_ == true){
+            global_robot_vel_x_ =  (local_robot_vel_x_) * cos(-robot_pose_angle_) + (local_robot_vel_y_) * sin(-robot_pose_angle_);
+            global_robot_vel_y_ =  (local_robot_vel_y_) * cos(-robot_pose_angle_) - (local_robot_vel_x_) * sin(-robot_pose_angle_);   
+            RCLCPP_INFO(logger_,"rival pose is changing");
+            rival_x_ -= global_robot_vel_x_ * 0.1;
+            rival_y_ -= global_robot_vel_y_ * 0.1;
+            robot_pose_received_ = false;
+            robot_vel_received_ = false;
+        }
+        
 
         // Pop the oldest pose if the queue is full
         if(rival_path_.isFull()) { 
@@ -409,7 +422,7 @@ namespace custom_path_costmap_plugin {
         rival_x_sq_sum_ += rival_x_ * rival_x_;
         rival_y_sq_sum_ += rival_y_ * rival_y_;
         rival_xy_sum_ += rival_x_ * rival_y_;
-
+        rival_pose_received_ = true;
         if(debug_mode_ == 3) {
             RCLCPP_INFO(
                 rclcpp::get_logger("RivalLayer"), 
@@ -419,12 +432,33 @@ namespace custom_path_costmap_plugin {
     void RivalLayer::rivalDistanceCallback(const std_msgs::msg::Float64::SharedPtr msg)
     {
         rival_distance_ = msg->data;
-        RCLCPP_INFO(logger_, "rival_distance is : %f", msg->data);
+        //RCLCPP_INFO(logger_, "rival_distance is : %f", msg->data);
     }
 
     void RivalLayer::rivalDirectionCallback(const nav_msgs::msg::Odometry::SharedPtr msg){
         v_from_localization_x_ = msg->twist.twist.linear.x;
         v_from_localization_y_ = msg->twist.twist.linear.y;
+    }
+
+    void RivalLayer::robotPoseCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg){
+        tf2::Quaternion q;
+        tf2::fromMsg(msg->pose.orientation, q);
+        tf2::Matrix3x3 qt(q);
+        double pitch, row, yaw;
+        qt.getRPY(pitch, row, yaw);
+        robot_pose_angle_ = yaw;
+        robot_pose_received_ = true;
+        RCLCPP_INFO(logger_,"robot pose received");
+    }
+
+    void RivalLayer::robotVelCallback(const geometry_msgs::msg::Twist::SharedPtr msg){
+        if(msg->linear.x != 0 || msg->linear.y != 0 || msg->angular.z != 0){
+            local_robot_vel_x_ = msg->linear.x;
+            local_robot_vel_y_ = msg->linear.y;
+            local_robot_vel_z_ = msg->angular.z;
+            robot_vel_received_ = true;
+            RCLCPP_INFO(logger_,"robot vel received");
+        }
     }
     
 

@@ -9,6 +9,9 @@
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 #include "std_msgs/msg/float64.hpp"
 #include "nav_msgs/msg/odometry.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
+#include "geometry_msgs/msg/twist.hpp"
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 // Circular Queue for rival's path      |front| ____ <--- ____ |rear|
 class CircularQueue {
@@ -124,6 +127,13 @@ namespace custom_path_costmap_plugin {
             double vel_factor_weight_;
             double position_offset_;
             double safe_distance_;
+            double robot_pose_angle_;
+            double local_robot_vel_x_ = 0;
+            double local_robot_vel_y_ = 0;
+            double local_robot_vel_z_ = 0;
+            double global_robot_vel_x_ = 0;
+            double global_robot_vel_y_ = 0;
+            
             // Enum for rival's state
             enum class RivalState {
                 HALTED,
@@ -149,11 +159,18 @@ namespace custom_path_costmap_plugin {
             rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr rival_pose_sub_;
             rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr rival_distance_sub_;
             rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr rival_direction_sub_;
+            rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr robot_pose_sub_;
+            rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr robot_vel_sub_;
+            
             void rivalPoseCallback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr rival_pose);
             void rivalDistanceCallback(const std_msgs::msg::Float64::SharedPtr msg);
             void rivalDirectionCallback(const nav_msgs::msg::Odometry::SharedPtr msg);
+            void robotPoseCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
+            void robotVelCallback(const geometry_msgs::msg::Twist::SharedPtr msg);
+            
             bool rival_pose_received_ = false;
-
+            bool robot_pose_received_ = false;
+            bool robot_vel_received_ = false;
             // Timeout for reset the costmap
             int reset_timeout_ = 0;
 

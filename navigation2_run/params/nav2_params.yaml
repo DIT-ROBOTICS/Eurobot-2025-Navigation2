@@ -106,7 +106,7 @@ controller_server:
     # Controller parameters
     FollowPath:
       plugin: "custom_controller::CustomController"
-      max_linear_vel: 0.4
+      max_linear_vel: 1.0
       linear_kp: 1.5
       transform_tolerance: 0.1
       look_ahead_distance: 0.2

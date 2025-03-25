@@ -16,6 +16,7 @@
   <depend>nav2_costmap_2d</depend>
   <depend>pluginlib</depend>
   <depend>geometry_msgs</depend>
+  <depend>tf2_geometry_msgs</depend>
 
   <export>
     <costmap_2d plugin="${prefix}/rival_layer.xml"/>
