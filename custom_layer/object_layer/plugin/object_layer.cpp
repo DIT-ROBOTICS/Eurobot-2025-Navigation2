@@ -37,7 +37,7 @@ namespace Object_costmap_plugin {
         
         columnList.clear();
         boardList.clear();
-        
+        clearTimer = 20;
     }
 
     void ObjectLayer::updateBounds(double robot_x, double robot_y, double robot_yaw,
@@ -64,6 +64,16 @@ namespace Object_costmap_plugin {
             ExpandPointWithRectangle(object.pose.position.x, object.pose.position.y, nav2_costmap_2d::LETHAL_OBSTACLE, board_inflation_radius, cost_scaling_factor, board_inscribed_radius, object);
         }
         updateWithMax(master_grid, 0, 0, getSizeInCellsX(), getSizeInCellsY());
+        checkClear();
+    }
+
+    void ObjectLayer::checkClear(){
+        if(clearTimer == 0){
+            boardList.clear();
+            columnList.clear();
+            clearTimer = 20;
+        }
+        clearTimer--;
     }
 
     bool ObjectLayer::isClearable(){
@@ -82,7 +92,7 @@ namespace Object_costmap_plugin {
     }
 
     void ObjectLayer::columnPoseArrayCallback(const geometry_msgs::msg::PoseArray::SharedPtr object_poseArray){
-        columnList.clear();
+        // columnList.clear();
         for(auto pose : object_poseArray->poses){
             geometry_msgs::msg::PoseStamped poseStamped;
             poseStamped.pose = pose;
@@ -91,7 +101,7 @@ namespace Object_costmap_plugin {
     }
 
     void ObjectLayer::boardPoseArrayCallback(const geometry_msgs::msg::PoseArray::SharedPtr object_poseArray){
-        boardList.clear();
+        // boardList.clear();
         for(auto pose : object_poseArray->poses){
             geometry_msgs::msg::PoseStamped poseStamped;
             poseStamped.pose = pose;
