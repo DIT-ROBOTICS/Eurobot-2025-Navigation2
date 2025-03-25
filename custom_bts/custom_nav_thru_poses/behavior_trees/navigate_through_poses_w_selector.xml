@@ -18,8 +18,9 @@
         </RateController>
         <RecoveryNode number_of_retries="1" name="FollowPath">
           <ReactiveSequence>
-            <ControllerSelector topic_name="/controller_type" default_controller="FollowPath" selected_controller="{controller}"/>
-            <FollowPath path="{path}" controller_id="{controller}"/>
+            <ControllerSelector topic_name="/controller_type" default_controller="Fast" selected_controller="{controller}"/>
+            <GoalCheckSelector topic_name="/goal_checker_type" default_goal_checker="Percise" selected_goal_checker="{goal_checker}"/>
+            <FollowPath path="{path}" controller_id="{controller}" goal_checker_id="{goal_checker}"/>
           </ReactiveSequence>
           <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
         </RecoveryNode>
@@ -27,10 +28,6 @@
       <ReactiveFallback name="RecoveryFallback">
         <GoalUpdated/>
         <RoundRobin name="RecoveryActions">
-          <!-- <Sequence name="ClearingActions">
-            <ClearEntireCostmap name="ClearLocalCostmap-Subtree" service_name="local_costmap/clear_entirely_local_costmap"/>
-            <ClearEntireCostmap name="ClearGlobalCostmap-Subtree" service_name="global_costmap/clear_entirely_global_costmap"/>
-          </Sequence> -->
           <Wait wait_duration="3"/>
           <Shrink shrink_to="0.05"/>
           <Wait wait_duration="1"/>
