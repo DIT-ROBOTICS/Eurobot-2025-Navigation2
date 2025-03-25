@@ -29,9 +29,9 @@ class ControllerSelector : public rclcpp::Node {
     private:
         void feedback_callback(nav2_msgs::action::NavigateThroughPoses::Feedback feedback) {
             if(feedback.number_of_poses_remaining <= 1) {
-                controller_type_ = slow_controller;
+                controller_type_ = slow_controller_;
             } else {
-                controller_type_ = fast_controller;
+                controller_type_ = fast_controller_;
             }
 
             if(controller_type_prev_ != controller_type_)    RCLCPP_INFO(this->get_logger(), "Controller type has switch to '%s'", controller_type_.c_str());
@@ -60,7 +60,7 @@ class ControllerSelector : public rclcpp::Node {
         // Hardcoded controller selection
         std::string controller_type_;
         std::string controller_type_prev_ = "None";
-        std::string fast_controller, slow_controller;
+        std::string fast_controller_, slow_controller_;
 };
 
 int main(int argc, char * argv[]) {
