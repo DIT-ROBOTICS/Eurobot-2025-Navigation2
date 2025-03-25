@@ -288,24 +288,22 @@ RobotState CustomController::getLookAheadPoint(
 
 double CustomController::getGoalAngle(double cur_angle, double goal_angle) {
     double ang_diff_ = goal_angle - cur_angle;
-    double angular_max_vel_ = 2.0;
     double angle_vel_ = 0.0;
-    double angular_kp_ = 4.0;
     if(cur_angle >= 0 && goal_angle >= 0){
-            if(ang_diff_ >= 0) angle_vel_ = std::min((ang_diff_ * angular_kp_), angular_max_vel_);
-            else angle_vel_ = std::max((ang_diff_ * angular_kp_), -angular_max_vel_);
+            if(ang_diff_ >= 0) angle_vel_ = std::min((ang_diff_ * angular_kp_), max_angular_vel_);
+            else angle_vel_ = std::max((ang_diff_ * angular_kp_), -max_angular_vel_);
         }
         else if(cur_angle < 0 && goal_angle < 0){
-           if(ang_diff_ >= 0) angle_vel_ = std::min((ang_diff_ * angular_kp_), angular_max_vel_);
-            else angle_vel_ = std::max((ang_diff_ * angular_kp_), -angular_max_vel_);
+           if(ang_diff_ >= 0) angle_vel_ = std::min((ang_diff_ * angular_kp_), max_angular_vel_);
+            else angle_vel_ = std::max((ang_diff_ * angular_kp_), -max_angular_vel_);
         }
         else if(cur_angle < 0 && goal_angle >= 0){
-            if((fabs(cur_angle) + goal_angle) >= M_PI) angle_vel_ = std::max((-ang_diff_ * angular_kp_), -angular_max_vel_);
-            else angle_vel_ = std::min((ang_diff_ * angular_kp_), angular_max_vel_); 
+            if((fabs(cur_angle) + goal_angle) >= M_PI) angle_vel_ = std::max((-ang_diff_ * angular_kp_), -max_angular_vel_);
+            else angle_vel_ = std::min((ang_diff_ * angular_kp_), max_angular_vel_); 
         }
         else{
-            if((cur_angle + fabs(goal_angle)) <= M_PI) angle_vel_ = std::max((ang_diff_ * angular_kp_), -angular_max_vel_);
-            else angle_vel_ = std::min((-ang_diff_ * angular_kp_), angular_max_vel_);
+            if((cur_angle + fabs(goal_angle)) <= M_PI) angle_vel_ = std::max((ang_diff_ * angular_kp_), -max_angular_vel_);
+            else angle_vel_ = std::min((-ang_diff_ * angular_kp_), max_angular_vel_);
         }
     return angle_vel_;
     // if(goal_angle - cur_angle >= 3.1415926) {
