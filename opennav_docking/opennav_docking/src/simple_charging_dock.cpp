@@ -157,6 +157,8 @@ void SimpleChargingDock::configure(
   filtered_dock_pose_pub_ = node_->create_publisher<geometry_msgs::msg::PoseStamped>(
     "filtered_dock_pose", 1);
   staging_pose_pub_ = node_->create_publisher<geometry_msgs::msg::PoseStamped>("staging_pose", 1);
+  controller_selector_pub_ = node_->create_publisher<std_msgs::msg::String>("/controller_type", rclcpp::QoS(10).reliable().transient_local());
+  goal_checker_selector_pub_ = node_->create_publisher<std_msgs::msg::String>("/goal_checker_type", rclcpp::QoS(10).reliable().transient_local());
 }
 
 geometry_msgs::msg::PoseStamped SimpleChargingDock::getStagingPose(
@@ -180,14 +182,49 @@ geometry_msgs::msg::PoseStamped SimpleChargingDock::getStagingPose(
   staging_pose.pose = pose;
   staging_pose.pose.orientation = pose.orientation;
 
+  dock_tpye_ = dock_type;
+
   // Apply x and y offsets
   if(use_dynamic_offset_) {
-    if(dock_type == "mission_dock_x") {
-      staging_pose.pose.position.x -= pose.position.z;
-    } else if(dock_type == "mission_dock_y") {
-      staging_pose.pose.position.y -= pose.position.z;
-    } else {
-      RCLCPP_WARN(node_->get_logger(), "Unknown dock type: %s", dock_type.c_str());
+    switch(dock_type_) {
+      case "dock_x_percise_fast":
+        staging_pose.pose.position.x -= pose.position.z;
+        offset_direction_ = "x";
+        controller_selector_pub_->publish("Fast");
+        goal_checker_selector_pub_->publish("Percise");
+        break;
+      case "dock_y_percise_fast":
+        staging_pose.pose.position.y -= pose.position.z;
+        offset_direction_ = "y";
+        controller_selector_pub_->publish("Fast");
+        goal_checker_selector_pub_->publish("Percise");
+        break;
+      case "dock_x_percise_slow":
+        staging_pose.pose.position.x -= pose.position.z;
+        offset_direction_ = "x";
+        controller_selector_pub_->publish("Slow");
+        goal_checker_selector_pub_->publish("Percise");
+        break;
+      case "dock_y_percise_slow":
+        staging_pose.pose.position.y -= pose.position.z;
+        offset_direction_ = "y";
+        controller_selector_pub_->publish("Slow");
+        goal_checker_selector_pub_->publish("Percise");
+        break;
+      case "dock_x_loose_fast":
+        staging_pose.pose.position.x -= pose.position.z;
+        offset_direction_ = "x";
+        controller_selector_pub_->publish("Fast");
+        goal_checker_selector_pub_->publish("Loose");
+        break;
+      case "dock_y_loose_fast":
+        staging_pose.pose.position.y -= pose.position.z;
+        offset_direction_ = "y";
+        controller_selector_pub_->publish("Fast");
+        goal_checker_selector_pub_->publish("Loose");
+        break;
+      default:
+        RCLCPP_WARN(node_->get_logger(), "Unknown dock type: %s", dock_type.c_str());
     }
   } else {
     staging_pose.pose.position.x += cos(yaw) * staging_x_offset_ - sin(yaw) * staging_y_offset_;
@@ -199,6 +236,7 @@ geometry_msgs::msg::PoseStamped SimpleChargingDock::getStagingPose(
   }
 
   // Publish staging pose for debugging purposes
+
   staging_pose_pub_->publish(staging_pose);
 
 return staging_pose;
@@ -304,9 +342,11 @@ bool SimpleChargingDock::isDocked()
   }
 
   // If we are close enough, pretend we are charging
-  double d = std::hypot(
-    base_pose.pose.position.x - dock_pose_.pose.position.x,
-    base_pose.pose.position.y - dock_pose_.pose.position.y);
+  if(offset_direction_ == "x") {
+    double d = fabs(base_pose.pose.position.x - dock_pose_.pose.position.x);
+  } else if(offset_direction_ == "y") {
+    double d = fabs(base_pose.pose.position.y - dock_pose_.pose.position.y);
+  }
 
   if(use_debounce_) {
     if (d < docking_threshold_) {

@@ -267,10 +267,8 @@ void DockingServer::dockRobot()
       try {
         // Approach the dock using control law
         if (approachDock(dock, dock_pose)) {
-          // We are docked, wait for charging to begin
-          RCLCPP_INFO(get_logger(), "Made contact with dock, waiting for charge to start");
           if (waitForCharge(dock)) {
-            RCLCPP_INFO(get_logger(), "Robot is charging!");
+            RCLCPP_INFO(get_logger(), "Robot is docked!");
             result->success = true;
             result->num_retries = num_retries_;
             stashDockData(goal->use_dock_id, dock, true);
@@ -392,6 +390,7 @@ bool DockingServer::approachDock(Dock * dock, geometry_msgs::msg::PoseStamped & 
 
     // Stop and report success if connected to dock
     if (dock->plugin->isDocked() || dock->plugin->isCharging()) {
+      publishZeroVelocity();
       return true;
     }
 
