@@ -157,13 +157,13 @@ namespace custom_path_costmap_plugin {
             void FieldExpansion(double x, double y);
 
             // Rival pose subscibtion
-            rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr rival_pose_sub_;
+            rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr rival_pose_sub_;
             rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr rival_distance_sub_;
             rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr rival_direction_sub_;
             rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr robot_pose_sub_;
             rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr robot_vel_sub_;
             
-            void rivalPoseCallback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr rival_pose);
+            void rivalPoseCallback(const nav_msgs::msg::Odometry::SharedPtr rival_pose);
             void rivalDistanceCallback(const std_msgs::msg::Float64::SharedPtr msg);
             void rivalDirectionCallback(const nav_msgs::msg::Odometry::SharedPtr msg);
             void robotPoseCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
