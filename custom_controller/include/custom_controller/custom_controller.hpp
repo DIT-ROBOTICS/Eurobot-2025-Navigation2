@@ -10,6 +10,7 @@
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "std_msgs/msg/float64.hpp"
+#include "nav_msgs/msg/odometry.hpp"
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 namespace custom_controller{
@@ -67,9 +68,9 @@ class CustomController : public nav2_core::Controller{
         
         rclcpp::Clock::SharedPtr clock_;
         rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr costmap_subscription_;
-        rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr rival_pose_subscription_;
+        rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr rival_pose_subscription_;
         nav_msgs::msg::OccupancyGrid::SharedPtr latest_costmap_; // Store the received costmap
-        geometry_msgs::msg::PoseWithCovarianceStamped rival_pose_; // Store the received rival pose
+        nav_msgs::msg::Odometry rival_pose_; // Store the received rival pose
         rclcpp::Logger logger_{rclcpp::get_logger("CustomController")};
 
         rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr local_goal_pub_;
@@ -84,7 +85,9 @@ class CustomController : public nav2_core::Controller{
         
         
         // Parameters from the config file
+        double control_frequency_;
         double max_linear_vel_, min_linear_vel_;
+        double linear_acceleration_;
         double max_angular_vel_, min_angular_vel_;
         double max_linear_acc_, max_angular_acc_;
         double yaw_goal_tolerance_;
@@ -97,8 +100,13 @@ class CustomController : public nav2_core::Controller{
         double rival_to_move_angle;
         double last_vel_x_;
         double last_vel_y_;
+
         double speed_decade_;
         int costmap_tolerance_;
+
+        double target_vel_x_;
+        double target_vel_y_;
+  
         rclcpp::Duration transform_tolerance_ {0, 0};
 
         // Variables

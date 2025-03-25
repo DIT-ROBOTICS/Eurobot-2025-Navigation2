@@ -1,12 +1,12 @@
 #include "chrono"
 
 #include "rclcpp/rclcpp.hpp"
-#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
+#include "nav_msgs/msg/odometry.hpp"
 
 class RivalSimPub : public rclcpp::Node {
     public:
         RivalSimPub() : Node("rival_sim_pub") {
-            rival_pub_ = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("/rival_pose", 100);
+            rival_pub_ = this->create_publisher<nav_msgs::msg::Odometry>("/rival/final_pose", 100);
             rival_timer_ = this->create_wall_timer(std::chrono::milliseconds(50), std::bind(&RivalSimPub::timer_callback, this));
 
             // Get the rival mode -> 0: Halted, 1: Wandering, 2: Moving, 3: Moving with noise
@@ -19,7 +19,7 @@ class RivalSimPub : public rclcpp::Node {
             trigger_once_cnt_--;
 
             if(trigger_once_cnt_ > 0) {
-                auto message = geometry_msgs::msg::PoseWithCovarianceStamped();
+                auto message = nav_msgs::msg::Odometry();
 
                 // header
                 message.header.stamp = this->now();
@@ -31,7 +31,7 @@ class RivalSimPub : public rclcpp::Node {
 
                 rival_pub_->publish(message);
             } else {  
-                auto message = geometry_msgs::msg::PoseWithCovarianceStamped();
+                auto message = nav_msgs::msg::Odometry();
 
                 // header
                 message.header.stamp = this->now();
@@ -93,7 +93,7 @@ class RivalSimPub : public rclcpp::Node {
             }
         }
 
-        rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr rival_pub_;
+        rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr rival_pub_;
         rclcpp::TimerBase::SharedPtr rival_timer_;
         int rival_mode_ = 0;
         double move_x_ = 1.5;
@@ -103,7 +103,7 @@ class RivalSimPub : public rclcpp::Node {
         bool pause_ = false;
         int cooldown_ = 0;
         int trigger_once_cnt_ = 50;
-        geometry_msgs::msg::PoseWithCovarianceStamped pause_pose_;
+        nav_msgs::msg::Odometry pause_pose_;
 };
 
 int main(int argc, char * argv[]) {

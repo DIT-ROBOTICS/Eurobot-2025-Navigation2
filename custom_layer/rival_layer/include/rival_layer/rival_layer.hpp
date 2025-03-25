@@ -6,7 +6,6 @@
 #include "nav2_costmap_2d/layer.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_util/node_utils.hpp"
-#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 #include "std_msgs/msg/float64.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -119,8 +118,10 @@ namespace custom_path_costmap_plugin {
             double rival_x_ = 0.0, rival_y_ = 0.0;
             CircularQueue rival_path_;
             double cos_theta_ = 0.0, sin_theta_ = 0.0;
+
             double v_from_localization_x_ = 0.0;
             double v_from_localization_y_ = 0.0;
+            
             int direction_ = 1;
             double rival_distance_;
             double vel_factor_;
@@ -173,6 +174,9 @@ namespace custom_path_costmap_plugin {
             bool robot_vel_received_ = false;
             // Timeout for reset the costmap
             int reset_timeout_ = 0;
+
+            // Use stastistics method or not
+            bool use_statistic_method_ = false;
 
             // DEBUG
             RivalState rival_state_prev_ = RivalState::UNKNOWN;

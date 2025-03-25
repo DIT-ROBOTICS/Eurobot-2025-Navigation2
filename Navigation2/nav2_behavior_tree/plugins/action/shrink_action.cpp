@@ -19,6 +19,7 @@ namespace nav2_behavior_tree
     void ShrinkAction::on_tick()
     {
         RCLCPP_INFO(node_->get_logger(), "ShrinkAction: Shrinking the inflation radius to %f", goal_.shrink_to);
+        increment_recovery_count();
     }
 }
 
