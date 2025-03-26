@@ -71,10 +71,10 @@ void CustomController::configure(
             rival_distance_pub_->publish(distance);
         });
 
-    global_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("received_global_plan", 5);
-    check_goal_pub_ = node->create_publisher<geometry_msgs::msg::PoseStamped>("check_goal", 5);
-    rival_distance_pub_ = node->create_publisher<std_msgs::msg::Float64>("rival_distance", 5);
-
+    global_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("/received_global_plan", 5);
+    check_goal_pub_ = node->create_publisher<geometry_msgs::msg::PoseStamped>("/check_goal", 5);
+    rival_distance_pub_ = node->create_publisher<std_msgs::msg::Float64>("/rival_distance", 5);
+    robot_pose_pub_ = node->create_publisher<geometry_msgs::msg::PoseStamped>("/robot_pose", 5);
     // Declare parameters if not declared
     declare_parameter_if_not_declared(node, plugin_name_ + ".max_linear_vel", rclcpp::ParameterValue(0.7));
     declare_parameter_if_not_declared(node, plugin_name_ + ".min_linear_vel", rclcpp::ParameterValue(0.0));
@@ -90,7 +90,7 @@ void CustomController::configure(
     declare_parameter_if_not_declared(node, plugin_name_ + ".costmap_tolerance", rclcpp::ParameterValue(60));
     declare_parameter_if_not_declared(node, plugin_name_ + ".speed_decade", rclcpp::ParameterValue(0.7));
     
-    //declare_parameter_if_not_declared(node, plugin_name_ + ".keepPlan", rclcpp::ParameterValue(ture));
+    declare_parameter_if_not_declared(node, plugin_name_ + ".keep_planning", rclcpp::ParameterValue(true));
     // Get parameters from the config file
     node->get_parameter(plugin_name_ + ".max_linear_vel", max_linear_vel_);
     node->get_parameter(plugin_name_ + ".min_linear_vel", min_linear_vel_);
@@ -102,7 +102,7 @@ void CustomController::configure(
     node->get_parameter(plugin_name_ + ".angular_kp", angular_kp_);
     node->get_parameter(plugin_name_ + ".linear_kp", linear_kp_);
     node->get_parameter(plugin_name_ + ".look_ahead_distance", look_ahead_distance_);
-    node->get_parameter(plugin_name_ + ".keep_palnning", keep_palnning_);
+    node->get_parameter(plugin_name_ + ".keep_planning", keep_planning_);
     node->get_parameter(plugin_name_ + ".costmap_tolerance", costmap_tolerance_);
     node->get_parameter(plugin_name_ + ".speed_decade", speed_decade_);
     double transform_tolerance;
@@ -117,11 +117,13 @@ void CustomController::cleanup(){
     global_path_pub_.reset();
     check_goal_pub_.reset();
     rival_distance_pub_.reset();
+    robot_pose_pub_.reset();
 }
 void CustomController::activate(){
     RCLCPP_INFO(logger_, "[%s] Activating controller", plugin_name_.c_str());
     global_path_pub_->on_activate();
     check_goal_pub_->on_activate();
+    robot_pose_pub_->on_activate();
     // rival_distance_pub_->on_activate();
 
 }
@@ -129,6 +131,7 @@ void CustomController::deactivate(){
     RCLCPP_INFO(logger_, "[%s] Deactivating controller", plugin_name_.c_str());
     global_path_pub_->on_deactivate();
     check_goal_pub_->on_deactivate();
+    robot_pose_pub_->on_deactivate();
     // rival_distance_pub_->on_deactivate();
 }
 
@@ -167,7 +170,7 @@ void CustomController::setPlan(const nav_msgs::msg::Path & path)
     //RCLCPP_INFO(logger_, "yaw is = [%lf]", yaw);
     final_goal_angle_ = yaw;
 
-    update_plan_ = keep_palnning_;
+    update_plan_ = keep_planning_;
     // update_plan_ = true;
     isObstacleExist_ = false;
     //print the distance between the points
@@ -431,6 +434,10 @@ geometry_msgs::msg::TwistStamped CustomController::computeVelocityCommands(
   const geometry_msgs::msg::Twist & velocity,
   nav2_core::GoalChecker * goal_checker)
 {
+    
+    
+    auto robot_pose_ = std::make_unique<geometry_msgs::msg::PoseStamped>(pose);
+    robot_pose_pub_->publish(std::move(robot_pose_));
     vector_global_path_.clear();
     posetoRobotState(pose.pose, cur_pose_);
     pathToVector(global_plan_, vector_global_path_);

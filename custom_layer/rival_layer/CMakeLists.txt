@@ -11,6 +11,8 @@ find_package(rclcpp REQUIRED)
 find_package(nav2_costmap_2d REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(nav_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 
 set(lib_dep_pkgs
 rclcpp
@@ -39,7 +41,9 @@ endif()
 pluginlib_export_plugin_description_file(nav2_costmap_2d rival_layer.xml)
 ament_target_dependencies(rival_layer ${lib_dep_pkgs})
 ament_target_dependencies(RivalSim ${sim_dep_pkgs})
-
+target_link_libraries(${PROJECT_NAME}
+  tf2_geometry_msgs::tf2_geometry_msgs
+)
 install(TARGETS 
   rival_layer
   DESTINATION lib/${PROJECT_NAME})

@@ -11,6 +11,7 @@
 #include "pluginlib/class_list_macros.hpp"
 #include "std_msgs/msg/float64.hpp"
 #include "nav_msgs/msg/odometry.hpp"
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 namespace custom_controller{
 class RobotState {
@@ -74,10 +75,15 @@ class CustomController : public nav2_core::Controller{
 
         rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr local_goal_pub_;
         rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr rival_distance_pub_;
+        std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> global_path_pub_;
+        std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseStamped>> check_goal_pub_;
+        std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseStamped>> robot_pose_pub_;
+        
         
         rcl_interfaces::msg::SetParametersResult
         dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
-
+        
+        
         // Parameters from the config file
         double control_frequency_;
         double max_linear_vel_, min_linear_vel_;
@@ -108,8 +114,6 @@ class CustomController : public nav2_core::Controller{
 
         nav_msgs::msg::Path global_plan_;  // Store the global plan
         geometry_msgs::msg::PoseStamped check_goal_;
-        std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> global_path_pub_;
-        std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseStamped>> check_goal_pub_;
         std::vector<RobotState> vector_global_path_;
         RobotState goal_pose_;
         RobotState local_goal_;
@@ -123,7 +127,7 @@ class CustomController : public nav2_core::Controller{
         int check_index_;
         int current_index_;
         bool isObstacleExist_;
-        bool keep_palnning_;
+        bool keep_planning_;
         
 };
 
