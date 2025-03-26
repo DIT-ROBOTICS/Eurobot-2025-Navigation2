@@ -10,6 +10,7 @@ namespace custom_path_costmap_plugin {
         // Initialize the layer
         enabled_ = true;
         current_ = true;
+        resetMapToValue(0, 0, getSizeInCellsX(), getSizeInCellsY(), nav2_costmap_2d::FREE_SPACE);
 
         // Declare the parameters
         declareParameter("enabled", rclcpp::ParameterValue(true));
@@ -22,31 +23,36 @@ namespace custom_path_costmap_plugin {
 
         declareParameter("reset_timeout_threshold", rclcpp::ParameterValue(40));
 
-        declareParameter("rival_inscribed_radius_", rclcpp::ParameterValue(0.22));
+        declareParameter("rival_inscribed_radius", rclcpp::ParameterValue(0.22));
 
-        declareParameter("halted_inflation_radius_", rclcpp::ParameterValue(0.5));
-        declareParameter("wandering_inflation_radius_", rclcpp::ParameterValue(0.5));
-        declareParameter("moving_inflation_radius_", rclcpp::ParameterValue(0.2));
-        declareParameter("unknown_inflation_radius_", rclcpp::ParameterValue(0.55));
+        declareParameter("halted_inflation_radius", rclcpp::ParameterValue(0.5));
+        declareParameter("wandering_inflation_radius", rclcpp::ParameterValue(0.5));
+        declareParameter("moving_inflation_radius", rclcpp::ParameterValue(0.2));
+        declareParameter("unknown_inflation_radius", rclcpp::ParameterValue(0.55));
 
-        declareParameter("halted_cost_scaling_factor_", rclcpp::ParameterValue(10.0));
-        declareParameter("wandering_cost_scaling_factor_", rclcpp::ParameterValue(3.0));
-        declareParameter("moving_cost_scaling_factor_", rclcpp::ParameterValue(11.0));
-        declareParameter("unknown_cost_scaling_factor_", rclcpp::ParameterValue(3.0));
+        declareParameter("halted_cost_scaling_factor", rclcpp::ParameterValue(10.0));
+        declareParameter("wandering_cost_scaling_factor", rclcpp::ParameterValue(3.0));
+        declareParameter("moving_cost_scaling_factor", rclcpp::ParameterValue(11.0));
+        declareParameter("unknown_cost_scaling_factor", rclcpp::ParameterValue(3.0));
 
-        declareParameter("max_extend_length_", rclcpp::ParameterValue(0.6));
+        declareParameter("max_extend_length", rclcpp::ParameterValue(0.6));
 
-        declareParameter("cov_range_max_", rclcpp::ParameterValue(sqrt(0.0029)));
-        declareParameter("cov_range_min_", rclcpp::ParameterValue(sqrt(0.0002)));
+        declareParameter("cov_range_max", rclcpp::ParameterValue(sqrt(0.0029)));
+        declareParameter("cov_range_min", rclcpp::ParameterValue(sqrt(0.0002)));
 
-        declareParameter("inscribed_radius_rate_", rclcpp::ParameterValue(0.99));
-        declareParameter("inflation_radius_rate_", rclcpp::ParameterValue(1.005));
+        declareParameter("vel_range_max", rclcpp::ParameterValue(1.0));
+        declareParameter("vel_range_min", rclcpp::ParameterValue(0.05));
+
+        declareParameter("inscribed_radius_rate", rclcpp::ParameterValue(0.99));
+        declareParameter("inflation_radius_rate", rclcpp::ParameterValue(1.005));
 
         declareParameter("debug_mode", rclcpp::ParameterValue(0));
 
-        declareParameter("vel_factor_weight", rclcpp::ParameterValue(0.42));
+        declareParameter("offset_vel_factor_weight_statistic", rclcpp::ParameterValue(0.42));
+        declareParameter("expand_vel_factor_weight_statistic", rclcpp::ParameterValue(0.20));
+        declareParameter("offset_vel_factor_weight_localization", rclcpp::ParameterValue(0.42));
         declareParameter("safe_distance", rclcpp::ParameterValue(0.5));
-
+        declareParameter("expand_vel_factor_weight_localization", rclcpp::ParameterValue(0.20));
         declareParameter("use_statistic_method", rclcpp::ParameterValue(false));
       
         // Get the node
@@ -66,29 +72,36 @@ namespace custom_path_costmap_plugin {
 
         node->get_parameter(name_ + "." + "reset_timeout_threshold", reset_timeout_threshold_);
 
-        node->get_parameter(name_ + "." + "rival_inscribed_radius_", rival_inscribed_radius_);
+        node->get_parameter(name_ + "." + "rival_inscribed_radius", rival_inscribed_radius_);
 
-        node->get_parameter(name_ + "." + "halted_inflation_radius_", halted_inflation_radius_);
-        node->get_parameter(name_ + "." + "wandering_inflation_radius_", wandering_inflation_radius_);
-        node->get_parameter(name_ + "." + "moving_inflation_radius_", moving_inflation_radius_);
-        node->get_parameter(name_ + "." + "unknown_inflation_radius_", unknown_inflation_radius_);
+        node->get_parameter(name_ + "." + "halted_inflation_radius", halted_inflation_radius_);
+        node->get_parameter(name_ + "." + "wandering_inflation_radius", wandering_inflation_radius_);
+        node->get_parameter(name_ + "." + "moving_inflation_radius", moving_inflation_radius_);
+        node->get_parameter(name_ + "." + "unknown_inflation_radius", unknown_inflation_radius_);
 
-        node->get_parameter(name_ + "." + "halted_cost_scaling_factor_", halted_cost_scaling_factor_);
-        node->get_parameter(name_ + "." + "wandering_cost_scaling_factor_", wandering_cost_scaling_factor_);
-        node->get_parameter(name_ + "." + "moving_cost_scaling_factor_", moving_cost_scaling_factor_);
-        node->get_parameter(name_ + "." + "unknown_cost_scaling_factor_", unknown_cost_scaling_factor_);
+        node->get_parameter(name_ + "." + "halted_cost_scaling_factor", halted_cost_scaling_factor_);
+        node->get_parameter(name_ + "." + "wandering_cost_scaling_factor", wandering_cost_scaling_factor_);
+        node->get_parameter(name_ + "." + "moving_cost_scaling_factor", moving_cost_scaling_factor_);
+        node->get_parameter(name_ + "." + "unknown_cost_scaling_factor", unknown_cost_scaling_factor_);
 
-        node->get_parameter(name_ + "." + "max_extend_length_", max_extend_length_);
+        node->get_parameter(name_ + "." + "max_extend_length", max_extend_length_);
 
-        node->get_parameter(name_ + "." + "cov_range_max_", cov_range_max_);
-        node->get_parameter(name_ + "." + "cov_range_min_", cov_range_min_);
+        node->get_parameter(name_ + "." + "cov_range_max", cov_range_max_);
+        node->get_parameter(name_ + "." + "cov_range_min", cov_range_min_);
 
-        node->get_parameter(name_ + "." + "inscribed_radius_rate_", inscribed_radius_rate_);
-        node->get_parameter(name_ + "." + "inflation_radius_rate_", inflation_radius_rate_);
+        node->get_parameter(name_ + "." + "vel_range_max", vel_range_max_);
+        node->get_parameter(name_ + "." + "vel_range_min", vel_range_min_);
+
+        node->get_parameter(name_ + "." + "inscribed_radius_rate", inscribed_radius_rate_);
+        node->get_parameter(name_ + "." + "inflation_radius_rate", inflation_radius_rate_);
 
         node->get_parameter(name_ + "." + "debug_mode", debug_mode_);
 
-        node->get_parameter(name_ + "." + "vel_factor_weight", vel_factor_weight_);
+        node->get_parameter(name_ + "." + "offset_vel_factor_weight_statistic", offset_vel_factor_weight_statistic_);
+        node->get_parameter(name_ + "." + "expand_vel_factor_weight_statistic", expand_vel_factor_weight_statistic_);
+        node->get_parameter(name_ + "." + "offset_vel_factor_weight_localization", offset_vel_factor_weight_localization_);
+        node->get_parameter(name_ + "." + "expand_vel_factor_weight_localization", expand_vel_factor_weight_localization_);
+        
         node->get_parameter(name_ + "." + "safe_distance", safe_distance_);
 
         node->get_parameter(name_ + "." + "use_statistic_method", use_statistic_method_);
@@ -129,19 +142,30 @@ namespace custom_path_costmap_plugin {
             return;
         }
 
-        resetMapToValue(0, 0, getSizeInCellsX(), getSizeInCellsY(), nav2_costmap_2d::FREE_SPACE);
+        auto node = node_.lock();
+        node->get_parameter(name_ + "." + "halted_inflation_radius", halted_inflation_radius_);
+        node->get_parameter(name_ + "." + "wandering_inflation_radius", wandering_inflation_radius_);
+        node->get_parameter(name_ + "." + "moving_inflation_radius", moving_inflation_radius_);
+        node->get_parameter(name_ + "." + "unknown_inflation_radius", unknown_inflation_radius_);
 
         // Set the rival as a lethal obstacle & Update the costmap with the rival's path
+        // ! May have issues
+        resetMapToValue(0, 0, getSizeInCellsX(), getSizeInCellsY(), nav2_costmap_2d::FREE_SPACE);
+        
         if(rival_pose_received_){
             if(reset_timeout_ >= reset_timeout_threshold_)  reset();
+          
             FieldExpansion(rival_x_, rival_y_);
-            updateWithMax(master_grid, 0, 0, getSizeInCellsX(), getSizeInCellsY());
-            
+
             rival_pose_received_ = false;
             reset_timeout_ = 0;
         } else {
             reset_timeout_++;
         }
+
+        if(reset_timeout_ >= reset_timeout_threshold_)  reset();
+
+        updateWithMax(master_grid, 0, 0, getSizeInCellsX(), getSizeInCellsY());
     }
 
     bool RivalLayer::isClearable() {
@@ -181,13 +205,9 @@ namespace custom_path_costmap_plugin {
         resetMapToValue(0, 0, getSizeInCellsX(), getSizeInCellsY(), nav2_costmap_2d::FREE_SPACE);
 
         reset_timeout_ = 0;
-
-        RCLCPP_WARN(
-            rclcpp::get_logger("RivalLayer"), 
-            "Resetting RivalLayer");
     }
 
-    void RivalLayer::PredictRivalPath(){
+    void RivalLayer::PredictRivalPath() {
         // Debug
         if(debug_mode_ == 1 || debug_mode_ == 2 || debug_mode_ == 3)    PrintRivalState();
 
@@ -198,24 +218,30 @@ namespace custom_path_costmap_plugin {
             if(rival_path_.isFull()) {
                 if(rival_x_cov_ < x_cov_threshold_ && rival_y_cov_ < y_cov_threshold_) {
                     rival_state_ = RivalState::HALTED;
-    
+
                 } else if(R_sq_ < R_sq_threshold_) {
                     rival_state_ = RivalState::WANDERING;
-    
+                
                 } else {
                     rival_state_ = RivalState::MOVING;
-    
                 }
             } else {
                 rival_state_ = RivalState::UNKNOWN;
                 return;
             }
         } else {
+            // First, we check the rival velocity
             if(v_from_localization_x_ < 0.05 && v_from_localization_y_ < 0.05) {
                 rival_state_ = RivalState::HALTED;
             } else {
                 rival_state_ = RivalState::MOVING;
             }
+            // Then, we double check the CoV to filter the unwanted velocity
+            // if(rival_path_.isFull()) {
+            //     if(rival_x_cov_ < x_cov_threshold_ && rival_y_cov_ < y_cov_threshold_) {
+            //         rival_state_ = RivalState::HALTED;
+            //     }
+            // }
         }
     }
 
@@ -272,9 +298,15 @@ namespace custom_path_costmap_plugin {
           
             regression_intercept_ = (rival_y_sum_ - regression_slope_ * rival_x_sum_) / model_size_;
 
-            cos_theta_ = 1 / sqrt(1 + pow(regression_slope_, 2));
-            sin_theta_ = regression_slope_ / sqrt(1 + pow(regression_slope_, 2));
-            direction_ = (rival_path_.get(model_size_ - 1).first - rival_path_.get(0).first) > 0 ? 1 : -1;
+            if(use_statistic_method_) {
+                cos_theta_ = 1 / sqrt(1 + pow(regression_slope_, 2));
+                sin_theta_ = regression_slope_ / sqrt(1 + pow(regression_slope_, 2));
+                direction_ = (rival_path_.get(model_size_ - 1).first - rival_path_.get(0).first) > 0 ? 1 : -1;
+            } else {
+                cos_theta_ = 1 / sqrt(1 + pow(v_from_localization_y_ / v_from_localization_x_, 2));
+                sin_theta_ = (v_from_localization_y_/v_from_localization_x_) / sqrt(1 + pow(v_from_localization_y_ / v_from_localization_x_, 2));
+                direction_ = v_from_localization_x_ > 0 ? 1 : -1;
+            }
 
             for(int i=0; i<model_size_; i++) {
                 SSres_ += pow(rival_path_.get(i).second - GetRegressionPrediction(rival_path_.get(i).first), 2);
@@ -377,15 +409,19 @@ namespace custom_path_costmap_plugin {
                 break;
 
             case RivalState::MOVING:
-                
-                
-                vel_factor_ = std::min(1.0, hypot(rival_x_cov_, rival_y_cov_)/(cov_range_max_-cov_range_min_)) * vel_factor_weight_;//max = 0.35
-                position_offset_ = std::max((rival_distance_ - safe_distance_), 0.0) * vel_factor_;
-                ExpandPointWithCircle(x, y, nav2_costmap_2d::LETHAL_OBSTACLE, halted_inflation_radius_, halted_cost_scaling_factor_, rival_inscribed_radius_);
-                ExpandLine(x, y, nav2_costmap_2d::LETHAL_OBSTACLE, moving_inflation_radius_, moving_cost_scaling_factor_, 0, 
-                    max_extend_length_*std::min(1.0, hypot(rival_x_cov_, rival_y_cov_)/(cov_range_max_-cov_range_min_)) / std::max(rival_distance_, 1.0));
-                
-                
+                if(use_statistic_method_) {
+                    vel_factor_ = std::min(1.0, hypot(rival_x_cov_, rival_y_cov_)/(cov_range_max_-cov_range_min_));
+                    position_offset_ = std::max((rival_distance_ - safe_distance_), 0.0) * vel_factor_ * offset_vel_factor_weight_statistic_;
+                    ExpandPointWithCircle(x, y, nav2_costmap_2d::LETHAL_OBSTACLE, halted_inflation_radius_, halted_cost_scaling_factor_, rival_inscribed_radius_);
+                    ExpandLine(x, y, nav2_costmap_2d::LETHAL_OBSTACLE, moving_inflation_radius_, moving_cost_scaling_factor_, 0, 
+                        max_extend_length_* vel_factor_ * expand_vel_factor_weight_statistic_ / std::max(rival_distance_, 1.0));
+                } else {
+                    vel_factor_ = std::min(1.0, hypot(v_from_localization_x_, v_from_localization_y_)/(vel_range_max_-vel_range_min_));
+                    position_offset_ = std::max((rival_distance_ - safe_distance_), 0.0) * vel_factor_ * offset_vel_factor_weight_localization_;
+                    ExpandPointWithCircle(x, y, nav2_costmap_2d::LETHAL_OBSTACLE, halted_inflation_radius_, halted_cost_scaling_factor_, rival_inscribed_radius_);
+                    ExpandLine(x, y, nav2_costmap_2d::LETHAL_OBSTACLE, moving_inflation_radius_, moving_cost_scaling_factor_, 0, 
+                        max_extend_length_ * vel_factor_ * expand_vel_factor_weight_localization_ / std::max(rival_distance_, 1.0));
+                }
                 break;
             
             case RivalState::UNKNOWN:

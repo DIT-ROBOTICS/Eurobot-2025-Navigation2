@@ -10,7 +10,7 @@
         <RateController hz="1.0">
           <RecoveryNode number_of_retries="1" name="ComputePathThroughPoses">
             <ReactiveSequence> 
-              <RemovePassedGoals input_goals="{goals}" output_goals="{goals}" radius="0.25"/>
+              <RemovePassedGoals input_goals="{goals}" output_goals="{goals}" radius="0.25" robot_base_frame="base_footprint"/>
               <ComputePathThroughPoses goals="{goals}" path="{path}" planner_id="GridBased"/>
             </ReactiveSequence>
             <ClearEntireCostmap name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_entirely_global_costmap"/>
@@ -27,13 +27,14 @@
       <ReactiveFallback name="RecoveryFallback">
         <GoalUpdated/>
         <RoundRobin name="RecoveryActions">
-          <Sequence name="ClearingActions">
+          <!-- <Sequence name="ClearingActions">
             <ClearEntireCostmap name="ClearLocalCostmap-Subtree" service_name="local_costmap/clear_entirely_local_costmap"/>
             <ClearEntireCostmap name="ClearGlobalCostmap-Subtree" service_name="global_costmap/clear_entirely_global_costmap"/>
-          </Sequence>
-          <Spin spin_dist="1.57"/>
-          <Wait wait_duration="5"/>
-          <BackUp backup_dist="0.30" backup_speed="0.05"/>
+          </Sequence> -->
+          <Wait wait_duration="3"/>
+          <Shrink shrink_to="0.05"/>
+          <Wait wait_duration="1"/>
+          <Escape run_dist="5" time_allowance="5" is_recovery="1"/>
         </RoundRobin>
       </ReactiveFallback>
     </RecoveryNode>

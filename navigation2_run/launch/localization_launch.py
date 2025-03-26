@@ -78,16 +78,6 @@ def generate_launch_description():
         condition=IfCondition(use_odometry_sim),
         actions=[
             Node(
-                package='tf2_ros',
-                executable='static_transform_publisher',
-                name='map_to_odom',
-                arguments=[
-                    '0', '0', '0',  # Translation: x, y, z
-                    '0', '0', '0',  # Rotation: roll, pitch, yaw
-                    [LaunchConfiguration('namespace'), '/map'],  # Parent frame
-                    [LaunchConfiguration('namespace'), '/odom']  # Child frame
-                ]),
-            Node(
                 package='navigation2_run',
                 executable='odometry_sim',
                 name='odometry_sim',
