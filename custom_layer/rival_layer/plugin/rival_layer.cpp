@@ -111,7 +111,11 @@ namespace custom_path_costmap_plugin {
             "/rival/final_pose", 100, std::bind(&RivalLayer::rivalPoseCallback, this, std::placeholders::_1));
         rival_distance_sub_ = node->create_subscription<std_msgs::msg::Float64>(
             "/rival_distance", 100, std::bind(&RivalLayer::rivalDistanceCallback, this, std::placeholders::_1));
-
+        robot_pose_sub_ = node->create_subscription<geometry_msgs::msg::PoseStamped>(
+            "/robot_pose", 100, std::bind(&RivalLayer::robotPoseCallback, this, std::placeholders::_1));
+        robot_vel_sub_ = node->create_subscription<geometry_msgs::msg::Twist>(
+            "/cmd_vel", 100, std::bind(&RivalLayer::robotVelCallback, this, std::placeholders::_1));
+        
         // Initialize the queue
         rival_path_.init(model_size_);
     }
@@ -445,6 +449,15 @@ namespace custom_path_costmap_plugin {
         rival_y_ = rival_pose->pose.pose.position.y;
         v_from_localization_x_ = rival_pose->twist.twist.linear.x;
         v_from_localization_y_ = rival_pose->twist.twist.linear.y;
+        if(robot_pose_received_ == true && robot_vel_received_ == true){
+            global_robot_vel_x_ =  (local_robot_vel_x_) * cos(-robot_pose_angle_) + (local_robot_vel_y_) * sin(-robot_pose_angle_);
+            global_robot_vel_y_ =  (local_robot_vel_y_) * cos(-robot_pose_angle_) - (local_robot_vel_x_) * sin(-robot_pose_angle_);   
+            RCLCPP_INFO(logger_,"rival pose is changing");
+            rival_x_ -= global_robot_vel_x_ * 0.1;
+            rival_y_ -= global_robot_vel_y_ * 0.1;
+            robot_pose_received_ = false;
+            robot_vel_received_ = false;
+        }
         rival_pose_received_ = true;
         
         // Pop the oldest pose if the queue is full
@@ -474,6 +487,27 @@ namespace custom_path_costmap_plugin {
     {
         rival_distance_ = msg->data;
         // RCLCPP_INFO(logger_, "rival_distance is : %f", msg->data);
+    }
+
+    void RivalLayer::robotPoseCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg){
+        tf2::Quaternion q;
+        tf2::fromMsg(msg->pose.orientation, q);
+        tf2::Matrix3x3 qt(q);
+        double pitch, row, yaw;
+        qt.getRPY(pitch, row, yaw);
+        robot_pose_angle_ = yaw;
+        robot_pose_received_ = true;
+        RCLCPP_INFO(logger_,"robot pose received");
+    }
+
+    void RivalLayer::robotVelCallback(const geometry_msgs::msg::Twist::SharedPtr msg){
+        if(msg->linear.x != 0 || msg->linear.y != 0 || msg->angular.z != 0){
+            local_robot_vel_x_ = msg->linear.x;
+            local_robot_vel_y_ = msg->linear.y;
+            local_robot_vel_z_ = msg->angular.z;
+            robot_vel_received_ = true;
+            RCLCPP_INFO(logger_,"robot vel received");
+        }
     }
 
     void RivalLayer::PrintRivalState() {

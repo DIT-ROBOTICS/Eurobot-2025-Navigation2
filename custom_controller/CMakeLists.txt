@@ -11,7 +11,7 @@ find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav2_core REQUIRED)
 find_package(pluginlib REQUIRED)
-
+find_package(tf2_geometry_msgs REQUIRED)
 set(dep_pkgs
     rclcpp
     nav2_core
