@@ -19,14 +19,17 @@ namespace nav2_behaviors
         Status onRun(const std::shared_ptr<const ShrinkAction::Goal> command) override;
         void onConfigure() override;
         Status onCycleUpdate() override;
-        void deactivate() override;
-        void onActionCompletion() override;
         bool noCostInMiddle();
         bool noCostAtGoal();
+        rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr shrink_srv;
+        void handleShrinkBack(
+            const std::shared_ptr<std_srvs::srv::SetBool::Request> request,
+            const std::shared_ptr<std_srvs::srv::SetBool::Response> response);
 
     protected:
         int times;
         int unused_shrink;
+        bool shrinkBack;
         double original_inflation_radius;
         double original_rival_halted_radius;
         double original_rival_wandering_radius;
@@ -50,6 +53,7 @@ namespace nav2_behaviors
         void getOriginalParam();
         void setToOriginal();
         void setToShrink();
+        void setToShrinkBack(bool ShrinkBack);
     };
 }
 

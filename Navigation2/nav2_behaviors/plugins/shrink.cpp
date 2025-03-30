@@ -26,15 +26,14 @@ namespace nav2_behaviors
             rclcpp::QoS(10), 
             std::bind(&Shrink::costmapCallback, this, std::placeholders::_1)
         );
+        node->declare_parameter("shrinkBack", rclcpp::ParameterValue(false));
+        node->get_parameter("shrinkBack", shrinkBack);
         getOriginalParam();
-    }
 
-    void Shrink::deactivate(){
-        setToOriginal();
-    }
-
-    void Shrink::onActionCompletion(){
-        setToOriginal();
+        shrink_srv = node->create_service<std_srvs::srv::SetBool>(
+            "/shrink/shrinkBack",
+            std::bind(&Shrink::handleShrinkBack, this, std::placeholders::_1, std::placeholders::_2)
+        );
     }
 
     Status Shrink::onRun(const std::shared_ptr<const ShrinkAction::Goal> command){
@@ -50,18 +49,55 @@ namespace nav2_behaviors
     Status Shrink::onCycleUpdate(){
         times++;
         setToShrink();
+        shrinkBack = false;
         if(noCostInMiddle() && noCostAtGoal() && times > 20){
             // setToOriginal();
             times = 0;
+            shrinkBack = true;
+            setToShrinkBack(shrinkBack);
             return Status::SUCCEEDED;
         }
         else if(times > 20){
             RCLCPP_ERROR(logger_, "shrink the inflation radius is not working");
             // setToOriginal();
             times = 0;
+            shrinkBack = true;
+            setToShrinkBack(shrinkBack);
             return Status::FAILED;
         }
         else return Status::RUNNING;
+    }
+
+    void Shrink::handleShrinkBack(
+        const std::shared_ptr<std_srvs::srv::SetBool::Request> request,
+        const std::shared_ptr<std_srvs::srv::SetBool::Response> response)
+    {
+        if(request->data){
+            shrinkBack = false;
+            setToShrinkBack(shrinkBack);
+            setToOriginal();
+            response->success = true;
+            response->message = "shrinkBack is set to true";
+        }
+    }
+
+    // if get request, set back to false, if sending from me, set to true.
+    void Shrink::setToShrinkBack(bool ShrinkBack){
+        if(param_client->service_is_ready()){
+            param_client->set_parameters({rclcpp::Parameter("shrinkBack", ShrinkBack)},[this](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future){
+                future.wait();
+                auto result = future.get();
+                if(result[0].successful){
+                    RCLCPP_INFO(logger_, "Set shrinkBack successfully");
+                }
+                else{
+                    RCLCPP_ERROR(logger_, "Failed to set shrinkBack");
+                }
+            });
+        }
+        else{
+            RCLCPP_ERROR(logger_, "Service is not ready");
+        }
     }
 
     void Shrink::getOriginalParam(){
