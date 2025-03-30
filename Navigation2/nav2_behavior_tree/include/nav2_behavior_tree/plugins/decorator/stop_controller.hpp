@@ -5,6 +5,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/bool.hpp"
 #include "geometry_msgs/msg/twist.hpp"
+#include "std_srvs/srv/set_bool.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -21,9 +22,10 @@ namespace nav2_behavior_tree
             }
             BT::NodeStatus tick() override;
         private:
-            void stopCallback(const std_msgs::msg::Bool::SharedPtr msg);
-            void getShrinkParam();
-            void doShrinkRequest();
+            bool stop_robot;
+            bool shrink_timer_start;
+            int shrink_timer;
+            bool shrinkBack;    
             rclcpp::Node::SharedPtr node_;
             rclcpp::CallbackGroup::SharedPtr callback_group_;
             rclcpp::AsyncParametersClient::SharedPtr param_client;
@@ -31,8 +33,10 @@ namespace nav2_behavior_tree
             rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr stop_sub;
             rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub;
             rclcpp::Client<std_srvs::srv::SetBool>::SharedPtr shrink_client;
-            bool stop_robot;
-            bool shrinkBack;
+            void stopCallback(const std_msgs::msg::Bool::SharedPtr msg);
+            void getShrinkParam();
+            void doShrinkRequest();
+            bool checkShrinkBack();
     };
 }
 

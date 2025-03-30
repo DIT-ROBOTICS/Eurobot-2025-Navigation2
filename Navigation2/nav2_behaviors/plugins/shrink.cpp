@@ -16,9 +16,15 @@ namespace nav2_behaviors
         if (!node) {
             throw std::runtime_error("Failed to lock node");
         }
-        param_client = std::make_shared<rclcpp::AsyncParametersClient>(
+
+        radius_param_client = std::make_shared<rclcpp::AsyncParametersClient>(
             node, 
             "/global_costmap/global_costmap"
+        );
+
+        shrinkBack_param_client = std::make_shared<rclcpp::AsyncParametersClient>(
+            node, 
+            "/behavior_server"
         );
 
         sub_costmap = node->create_subscription<nav_msgs::msg::OccupancyGrid>(
@@ -27,7 +33,7 @@ namespace nav2_behaviors
             std::bind(&Shrink::costmapCallback, this, std::placeholders::_1)
         );
         node->declare_parameter("shrinkBack", rclcpp::ParameterValue(false));
-        node->get_parameter("shrinkBack", shrinkBack);
+        node->get_parameter("/behavior_server/shrinkBack", shrinkBack);
         getOriginalParam();
 
         shrink_srv = node->create_service<std_srvs::srv::SetBool>(
@@ -50,6 +56,7 @@ namespace nav2_behaviors
         times++;
         setToShrink();
         shrinkBack = false;
+        setToShrinkBack(shrinkBack);
         if(noCostInMiddle() && noCostAtGoal() && times > 20){
             // setToOriginal();
             times = 0;
@@ -83,8 +90,8 @@ namespace nav2_behaviors
 
     // if get request, set back to false, if sending from me, set to true.
     void Shrink::setToShrinkBack(bool ShrinkBack){
-        if(param_client->service_is_ready()){
-            param_client->set_parameters({rclcpp::Parameter("shrinkBack", ShrinkBack)},[this](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future){
+        if(shrinkBack_param_client->service_is_ready()){
+            shrinkBack_param_client->set_parameters({rclcpp::Parameter("shrinkBack", ShrinkBack)},[this](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future){
                 future.wait();
                 auto result = future.get();
                 if(result[0].successful){
@@ -101,56 +108,56 @@ namespace nav2_behaviors
     }
 
     void Shrink::getOriginalParam(){
-        if(param_client->service_is_ready()){
-            param_client->get_parameters({"inflation_layer.inflation_radius"}, [this](std::shared_future<std::vector<rclcpp::Parameter>> future){
+        if(radius_param_client->service_is_ready()){
+            radius_param_client->get_parameters({"inflation_layer.inflation_radius"}, [this](std::shared_future<std::vector<rclcpp::Parameter>> future){
                 future.wait();
                 auto result = future.get();
                 original_inflation_radius = result[0].as_double();
             });
         }
 
-        if(param_client->service_is_ready()){
-            param_client->get_parameters({"rival_layer.halted_inflation_radius"}, [this](std::shared_future<std::vector<rclcpp::Parameter>> future){
+        if(radius_param_client->service_is_ready()){
+            radius_param_client->get_parameters({"rival_layer.halted_inflation_radius"}, [this](std::shared_future<std::vector<rclcpp::Parameter>> future){
                 future.wait();
                 auto result = future.get();
                 original_rival_halted_radius = result[0].as_double();
             });
         }
 
-        if(param_client->service_is_ready()){
-            param_client->get_parameters({"rival_layer.wandering_inflation_radius"}, [this](std::shared_future<std::vector<rclcpp::Parameter>> future){
+        if(radius_param_client->service_is_ready()){
+            radius_param_client->get_parameters({"rival_layer.wandering_inflation_radius"}, [this](std::shared_future<std::vector<rclcpp::Parameter>> future){
                 future.wait();
                 auto result = future.get();
                 original_rival_wandering_radius = result[0].as_double();
             });
         }
 
-        if(param_client->service_is_ready()){
-            param_client->get_parameters({"rival_layer.moving_inflation_radius"}, [this](std::shared_future<std::vector<rclcpp::Parameter>> future){
+        if(radius_param_client->service_is_ready()){
+            radius_param_client->get_parameters({"rival_layer.moving_inflation_radius"}, [this](std::shared_future<std::vector<rclcpp::Parameter>> future){
                 future.wait();
                 auto result = future.get();
                 original_rival_moving_radius = result[0].as_double();
             });
         }
 
-        if(param_client->service_is_ready()){
-            param_client->get_parameters({"rival_layer.unknown_inflation_radius"}, [this](std::shared_future<std::vector<rclcpp::Parameter>> future){
+        if(radius_param_client->service_is_ready()){
+            radius_param_client->get_parameters({"rival_layer.unknown_inflation_radius"}, [this](std::shared_future<std::vector<rclcpp::Parameter>> future){
                 future.wait();
                 auto result = future.get();
                 original_rival_unknown_radius = result[0].as_double();
             });
         }
 
-        if(param_client->service_is_ready()){
-            param_client->get_parameters({"object_layer.board_inflation_radius"}, [this](std::shared_future<std::vector<rclcpp::Parameter>> future){
+        if(radius_param_client->service_is_ready()){
+            radius_param_client->get_parameters({"object_layer.board_inflation_radius"}, [this](std::shared_future<std::vector<rclcpp::Parameter>> future){
                 future.wait();
                 auto result = future.get();
                 original_object_board_radius = result[0].as_double();
             });
         }
 
-        if(param_client->service_is_ready()){
-            param_client->get_parameters({"object_layer.column_inflation_radius"}, [this](std::shared_future<std::vector<rclcpp::Parameter>> future){
+        if(radius_param_client->service_is_ready()){
+            radius_param_client->get_parameters({"object_layer.column_inflation_radius"}, [this](std::shared_future<std::vector<rclcpp::Parameter>> future){
                 future.wait();
                 auto result = future.get();
                 original_object_column_radius = result[0].as_double();
@@ -187,8 +194,8 @@ namespace nav2_behaviors
 
     void Shrink::changeInflationLayer(bool doShrink){
         double radius = doShrink ? 0.1 : original_inflation_radius;
-        if(param_client->service_is_ready()){
-            param_client->set_parameters({rclcpp::Parameter("inflation_layer.inflation_radius", radius)},[this, radius](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future){
+        if(radius_param_client->service_is_ready()){
+            radius_param_client->set_parameters({rclcpp::Parameter("inflation_layer.inflation_radius", radius)},[this, radius](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future){
                 future.wait();
                 auto result = future.get();
                 if(result[0].successful){
@@ -206,9 +213,9 @@ namespace nav2_behaviors
 
     void Shrink::changeRivalLayer(bool doShrink){
         double halted_radius = doShrink ? 0.1 : original_rival_halted_radius;
-        if(param_client->service_is_ready()){
+        if(radius_param_client->service_is_ready()){
             // rival_layer.halted_inflation_radius
-            param_client->set_parameters({rclcpp::Parameter("rival_layer.halted_inflation_radius", halted_radius)},[this, halted_radius](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future){
+            radius_param_client->set_parameters({rclcpp::Parameter("rival_layer.halted_inflation_radius", halted_radius)},[this, halted_radius](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future){
                 future.wait();
                 auto result = future.get();
                 if(result[0].successful){
@@ -221,9 +228,9 @@ namespace nav2_behaviors
         }
 
         double wandering_radius = doShrink ? 0.1 : original_rival_wandering_radius;
-        if(param_client->service_is_ready()){
+        if(radius_param_client->service_is_ready()){
             // rival_layer.wandering_inflation_radius
-            param_client->set_parameters({rclcpp::Parameter("rival_layer.wandering_inflation_radius", wandering_radius)},[this, wandering_radius](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future){
+            radius_param_client->set_parameters({rclcpp::Parameter("rival_layer.wandering_inflation_radius", wandering_radius)},[this, wandering_radius](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future){
                 future.wait();
                 auto result = future.get();
                 if(result[0].successful){
@@ -236,9 +243,9 @@ namespace nav2_behaviors
         }
 
         double moving_radius = doShrink ? 0.1 : original_rival_moving_radius;
-        if(param_client->service_is_ready()){
+        if(radius_param_client->service_is_ready()){
             // rival_layer.moving_inflation_radius
-            param_client->set_parameters({rclcpp::Parameter("rival_layer.moving_inflation_radius", moving_radius)},[this, moving_radius](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future){
+            radius_param_client->set_parameters({rclcpp::Parameter("rival_layer.moving_inflation_radius", moving_radius)},[this, moving_radius](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future){
                 future.wait();
                 auto result = future.get();
                 if(result[0].successful){
@@ -251,9 +258,9 @@ namespace nav2_behaviors
         }
 
         double unknown_radius = doShrink ? 0.1 : original_rival_unknown_radius;
-        if(param_client->service_is_ready()){
+        if(radius_param_client->service_is_ready()){
             // rival_layer.unknown_inflation_radius
-            param_client->set_parameters({rclcpp::Parameter("rival_layer.unknown_inflation_radius", unknown_radius)},[this, unknown_radius](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future){
+            radius_param_client->set_parameters({rclcpp::Parameter("rival_layer.unknown_inflation_radius", unknown_radius)},[this, unknown_radius](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future){
                 future.wait();
                 auto result = future.get();
                 if(result[0].successful){
@@ -268,9 +275,9 @@ namespace nav2_behaviors
 
     void Shrink::changeObjectLayer(bool doShrink){
         double board_radius = doShrink ? 0.1 : original_object_board_radius;
-        if(param_client->service_is_ready()){
+        if(radius_param_client->service_is_ready()){
             // object_layer.board_inflation_radius
-            param_client->set_parameters({rclcpp::Parameter("object_layer.board_inflation_radius", board_radius)},[this, board_radius](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future){
+            radius_param_client->set_parameters({rclcpp::Parameter("object_layer.board_inflation_radius", board_radius)},[this, board_radius](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future){
                 future.wait();
                 auto result = future.get();
                 if(result[0].successful){
@@ -283,9 +290,9 @@ namespace nav2_behaviors
         }
 
         double column_radius = doShrink ? 0.1 : original_object_column_radius;
-        if(param_client->service_is_ready()){
+        if(radius_param_client->service_is_ready()){
             // object_layer.column_inflation_radius
-            param_client->set_parameters({rclcpp::Parameter("object_layer.column_inflation_radius", column_radius)},[this, column_radius](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future){
+            radius_param_client->set_parameters({rclcpp::Parameter("object_layer.column_inflation_radius", column_radius)},[this, column_radius](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future){
                 future.wait();
                 auto result = future.get();
                 if(result[0].successful){

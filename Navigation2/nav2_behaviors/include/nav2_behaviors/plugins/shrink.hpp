@@ -6,6 +6,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
+#include "std_srvs/srv/set_bool.hpp"
 
 namespace nav2_behaviors
 {
@@ -44,7 +45,8 @@ namespace nav2_behaviors
         geometry_msgs::msg::PoseStamped goalPose;
         nav_msgs::msg::OccupancyGrid costmap;
         rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr sub_costmap;
-        rclcpp::AsyncParametersClient::SharedPtr param_client;
+        rclcpp::AsyncParametersClient::SharedPtr radius_param_client;
+        rclcpp::AsyncParametersClient::SharedPtr shrinkBack_param_client;
         rclcpp::Duration command_time_allowance{0,0};
         rclcpp::Time end_time;
         void changeInflationLayer(bool doShrink);
