@@ -22,13 +22,17 @@ namespace nav2_behavior_tree
             BT::NodeStatus tick() override;
         private:
             void stopCallback(const std_msgs::msg::Bool::SharedPtr msg);
+            void getShrinkParam();
+            void doShrinkRequest();
             rclcpp::Node::SharedPtr node_;
             rclcpp::CallbackGroup::SharedPtr callback_group_;
+            rclcpp::AsyncParametersClient::SharedPtr param_client;
             rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
             rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr stop_sub;
             rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub;
+            rclcpp::Client<std_srvs::srv::SetBool>::SharedPtr shrink_client;
             bool stop_robot;
-
+            bool shrinkBack;
     };
 }
 

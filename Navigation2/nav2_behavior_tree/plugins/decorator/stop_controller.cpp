@@ -14,7 +14,13 @@ namespace nav2_behavior_tree
             rclcpp::CallbackGroupType::MutuallyExclusive,
             false);
         callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
-        
+        param_client = std::make_shared<rclcpp::AsyncParametersClient>(
+            node_,
+            "/shrink" // not sure
+        );
+        shrink_client = node_->create_client<std_srvs::srv::SetBool>(
+            "/shrink/shrinkBack",
+            rmw_qos_profile_services_default);
         rclcpp::SubscriptionOptions sub_option;
         sub_option.callback_group = callback_group_;
         stop_sub = node_->create_subscription<std_msgs::msg::Bool>(
@@ -27,6 +33,10 @@ namespace nav2_behavior_tree
     inline BT::NodeStatus StopController::tick()
     {
         callback_group_executor_.spin_some();
+
+        getShrinkParam();
+        if(shrinkBack) doShrinkRequest();
+        
         if (stop_robot)
         {
             geometry_msgs::msg::Twist cmd_vel;
@@ -36,12 +46,45 @@ namespace nav2_behavior_tree
             RCLCPP_INFO(node_->get_logger(), "running in stop_controller");
             return BT::NodeStatus::FAILURE;
         }
+        
         return child_node_->executeTick();
     }
 
     void StopController::stopCallback(const std_msgs::msg::Bool::SharedPtr msg)
     {
         stop_robot = msg->data;
+    }
+
+    void StopController::getShrinkParam()
+    {
+        if (param_client->service_is_ready())
+        {
+            param_client->get_parameters({"shrinkBack"}, [this](std::shared_future<std::vector<rclcpp::Parameter>> future)
+            {
+                future.wait();
+                auto result = future.get();
+                shrinkBack = result[0].as_bool();
+            });
+        }
+        else
+        {
+            RCLCPP_ERROR(node_->get_logger(), "Service is not ready");
+        }
+    }
+    void doShrinkRequest(){
+        if(!shrink_client->wait_for_service(std::chrono::milliseconds(100))){
+            RCLCPP_ERROR(node_->get_logger(), "Service not available, waiting...");
+        }
+        else {
+            auto request = std::make_shared<std_srvs::srv::SetBool::Request>();
+            request->data = true;
+            auto result = shrink_client->async_send_request(request);
+            if(rclcpp::spin_until_future_complete(node_, result)){
+                if(result.get()->success) RCLCPP_INFO(node_->get_logger(), "Shrink request sent successfully");
+                else RCLCPP_ERROR(node_->get_logger(), "Failed to send shrink request");
+            }
+            else RCLCPP_ERROR(node_->get_logger(), "Failed to send shrink request");
+        }
     }
 } // namespace nav2_behavior_tree
 
