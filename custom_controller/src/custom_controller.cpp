@@ -89,6 +89,7 @@ void CustomController::configure(
     declare_parameter_if_not_declared(node, plugin_name_ + ".look_ahead_distance", rclcpp::ParameterValue(1.0));
     declare_parameter_if_not_declared(node, plugin_name_ + ".costmap_tolerance", rclcpp::ParameterValue(60));
     declare_parameter_if_not_declared(node, plugin_name_ + ".speed_decade", rclcpp::ParameterValue(0.7));
+    declare_parameter_if_not_declared(node, plugin_name_ + ".keep_planning", rclcpp::ParameterValue(true));
     
     //declare_parameter_if_not_declared(node, plugin_name_ + ".keepPlan", rclcpp::ParameterValue(ture));
     // Get parameters from the config file
@@ -102,9 +103,9 @@ void CustomController::configure(
     node->get_parameter(plugin_name_ + ".angular_kp", angular_kp_);
     node->get_parameter(plugin_name_ + ".linear_kp", linear_kp_);
     node->get_parameter(plugin_name_ + ".look_ahead_distance", look_ahead_distance_);
-    node->get_parameter(plugin_name_ + ".keep_palnning", keep_palnning_);
     node->get_parameter(plugin_name_ + ".costmap_tolerance", costmap_tolerance_);
     node->get_parameter(plugin_name_ + ".speed_decade", speed_decade_);
+    node->get_parameter(plugin_name_ + ".keep_planning", keep_planning_);
     double transform_tolerance;
     
     node->get_parameter(plugin_name_ + ".transform_tolerance", transform_tolerance);
@@ -140,8 +141,11 @@ void CustomController::deactivate(){
 // Get the global plan with transformed poses
 void CustomController::setPlan(const nav_msgs::msg::Path & path)
 {   
-    if(cur_goal_pose_.x_ != path.poses.back().pose.position.x || cur_goal_pose_.y_ != path.poses.back().pose.position.y) update_plan_ = true;
+    if(cur_goal_pose_.x_ != path.poses.back().pose.position.x || cur_goal_pose_.y_ != path.poses.back().pose.position.y 
+        || cur_goal_pose_.theta_ != tf2::getYaw(path.poses.back().pose.orientation)) update_plan_ = true;
+    
     if(!update_plan_){
+        // RCLCPP_INFO(logger_, "The global plan is not updated");
         return;
     }
     
@@ -164,10 +168,10 @@ void CustomController::setPlan(const nav_msgs::msg::Path & path)
     tf2::Matrix3x3 qt(q);
     double pitch, row, yaw;
     qt.getRPY(pitch, row, yaw);
-    //RCLCPP_INFO(logger_, "yaw is = [%lf]", yaw);
+    // RCLCPP_INFO(logger_, "yaw is = [%lf]", yaw);
     final_goal_angle_ = yaw;
 
-    update_plan_ = keep_palnning_;
+    update_plan_ = keep_planning_;
     // update_plan_ = true;
     isObstacleExist_ = false;
     //print the distance between the points
@@ -291,6 +295,7 @@ double CustomController::getGoalAngle(double cur_angle, double goal_angle) {
     double angular_max_vel_ = 2.0;
     double angle_vel_ = 0.0;
     double angular_kp_ = 4.0;
+    // RCLCPP_INFO(logger_, "cur_angle = [%lf] goal_angle = [%lf] ang_diff = [%lf]", cur_angle, goal_angle, ang_diff_);
     if(cur_angle >= 0 && goal_angle >= 0){
             if(ang_diff_ >= 0) angle_vel_ = std::min((ang_diff_ * angular_kp_), angular_max_vel_);
             else angle_vel_ = std::max((ang_diff_ * angular_kp_), -angular_max_vel_);
@@ -308,6 +313,7 @@ double CustomController::getGoalAngle(double cur_angle, double goal_angle) {
             else angle_vel_ = std::min((-ang_diff_ * angular_kp_), angular_max_vel_);
         }
     return angle_vel_;
+    
     // if(goal_angle - cur_angle >= 3.1415926) {
     //     return (goal_angle - cur_angle - 3.1415926 * 2);
     // } else if(goal_angle - cur_angle < -3.1415926) {
@@ -439,7 +445,7 @@ geometry_msgs::msg::TwistStamped CustomController::computeVelocityCommands(
     cmd_vel.header.frame_id = pose.header.frame_id;
     cmd_vel.header.stamp = clock_->now();
 
-    if(!goal_checker->isGoalReached(pose.pose, global_plan_.poses.back().pose, velocity)){
+    // if(!goal_checker->isGoalReached(pose.pose, global_plan_.poses.back().pose, velocity)){
         
         
         local_goal_ = getLookAheadPoint(cur_pose_, vector_global_path_, look_ahead_distance_);
@@ -503,26 +509,26 @@ geometry_msgs::msg::TwistStamped CustomController::computeVelocityCommands(
         }
         
         return cmd_vel;
-    }
-    else if(fabs(final_goal_angle_ - cur_pose_.theta_) > 0.01){
-        cmd_vel.twist.linear.x = 0.0;
-        cmd_vel.twist.linear.y = 0.0;
-        cmd_vel.twist.angular.z = getGoalAngle(cur_pose_.theta_, final_goal_angle_);
-        return cmd_vel;
-    }
-    else{
-        RCLCPP_INFO(logger_, "[%s] Goal reached", plugin_name_.c_str());
-        cmd_vel.twist.linear.x = 0.0;
-        cmd_vel.twist.linear.y = 0.0;
-        cmd_vel.twist.angular.z = 0.0;
-        update_plan_ = true;
-        return cmd_vel;
-    }
+    // }
+    // else if(fabs(final_goal_angle_ - cur_pose_.theta_) > 0.01){
+    //     cmd_vel.twist.linear.x = 0.0;
+    //     cmd_vel.twist.linear.y = 0.0;
+    //     cmd_vel.twist.angular.z = getGoalAngle(cur_pose_.theta_, final_goal_angle_);
+    //     return cmd_vel;
+    // }
+    // else{
+    //     RCLCPP_INFO(logger_, "[%s] Goal reached", plugin_name_.c_str());
+    //     cmd_vel.twist.linear.x = 0.0;
+    //     cmd_vel.twist.linear.y = 0.0;
+    //     cmd_vel.twist.angular.z = 0.0;
+    //     update_plan_ = true;
+    //     return cmd_vel;
+    // }
 }
 //test
 void CustomController::setSpeedLimit(
-  const double & speed_limit,
-  const bool & percentage)
+  const double & /*speed_limit*/,
+  const bool & /*percentage*/)
 {
     return;
 //   if (speed_limit == nav2_costmap_2d::NO_SPEED_LIMIT) {
