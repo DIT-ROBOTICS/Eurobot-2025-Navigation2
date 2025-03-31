@@ -10,7 +10,7 @@
 #include "nav_msgs/msg/odometry.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/twist.hpp"
-#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 // Circular Queue for rival's path      |front| ____ <--- ____ |rear|
 class CircularQueue {
@@ -131,12 +131,17 @@ namespace custom_path_costmap_plugin {
             double expand_vel_factor_weight_localization_;
             double position_offset_;
             double safe_distance_;
-            double robot_pose_angle_;
+            double robot_pose_angle_ = 0;
+            double robot_pose_x_ = 0;
+            double robot_pose_y_ = 0;
             double local_robot_vel_x_ = 0;
             double local_robot_vel_y_ = 0;
             double local_robot_vel_z_ = 0;
             double global_robot_vel_x_ = 0;
             double global_robot_vel_y_ = 0;
+            double rival_correction_factor_x_ = 0.0;
+            double rival_correction_factor_y_ = 0.0;
+            double rival_correction_factor_z_ = 0.0;
             // Enum for rival's state
             enum class RivalState {
                 HALTED,

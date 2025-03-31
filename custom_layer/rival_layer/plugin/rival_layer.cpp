@@ -54,7 +54,9 @@ namespace custom_path_costmap_plugin {
         declareParameter("safe_distance", rclcpp::ParameterValue(0.5));
         declareParameter("expand_vel_factor_weight_localization", rclcpp::ParameterValue(0.20));
         declareParameter("use_statistic_method", rclcpp::ParameterValue(false));
-      
+        declareParameter("rival_correction_factor_x", rclcpp::ParameterValue(0.1));
+        declareParameter("rival_correction_factor_y", rclcpp::ParameterValue(0.1));
+        declareParameter("rival_correction_factor_z", rclcpp::ParameterValue(0.1));
         // Get the node
         auto node = node_.lock();
         if (!node) {
@@ -105,7 +107,9 @@ namespace custom_path_costmap_plugin {
         node->get_parameter(name_ + "." + "safe_distance", safe_distance_);
 
         node->get_parameter(name_ + "." + "use_statistic_method", use_statistic_method_);
-
+        node->get_parameter(name_ + "." + "rival_correction_factor_x", rival_correction_factor_x_);
+        node->get_parameter(name_ + "." + "rival_correction_factor_y", rival_correction_factor_y_);
+        node->get_parameter(name_ + "." + "rival_correction_factor_z", rival_correction_factor_z_);
         // Subscribe to the rival's pose
         rival_pose_sub_ = node->create_subscription<nav_msgs::msg::Odometry>(
             "/rival/final_pose", 100, std::bind(&RivalLayer::rivalPoseCallback, this, std::placeholders::_1));
@@ -453,8 +457,12 @@ namespace custom_path_costmap_plugin {
             global_robot_vel_x_ =  (local_robot_vel_x_) * cos(-robot_pose_angle_) + (local_robot_vel_y_) * sin(-robot_pose_angle_);
             global_robot_vel_y_ =  (local_robot_vel_y_) * cos(-robot_pose_angle_) - (local_robot_vel_x_) * sin(-robot_pose_angle_);   
             RCLCPP_INFO(logger_,"rival pose is changing");
-            rival_x_ -= global_robot_vel_x_ * 0.1;
-            rival_y_ -= global_robot_vel_y_ * 0.1;
+            rival_x_ -= global_robot_vel_x_ * rival_correction_factor_x_;
+            rival_y_ -= global_robot_vel_y_ * rival_correction_factor_y_;
+            double rival_x_vector_ = rival_x_ - robot_pose_x_;
+            double rival_y_vector_ = rival_y_ - robot_pose_y_;
+            rival_x_ -= local_robot_vel_z_ * (-rival_y_vector_) * rival_correction_factor_z_;
+            rival_y_ -= local_robot_vel_z_ * (rival_x_vector_) * rival_correction_factor_z_;
             robot_pose_received_ = false;
             robot_vel_received_ = false;
         }
@@ -496,6 +504,8 @@ namespace custom_path_costmap_plugin {
         double pitch, row, yaw;
         qt.getRPY(pitch, row, yaw);
         robot_pose_angle_ = yaw;
+        robot_pose_x_ = msg->pose.position.x;
+        robot_pose_y_ = msg->pose.position.y;
         robot_pose_received_ = true;
         RCLCPP_INFO(logger_,"robot pose received");
     }
