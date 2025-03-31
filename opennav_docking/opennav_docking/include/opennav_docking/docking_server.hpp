@@ -231,6 +231,8 @@ protected:
   double undock_linear_tolerance_, undock_angular_tolerance_;
   // Maximum number of times the robot will return to staging pose and retry docking
   int max_retries_, num_retries_;
+  // success for dock service
+  bool success_;
   // This is the root frame of the robot - typically "base_link"
   std::string base_frame_;
   // This is our fixed frame for controlling - typically "odom"

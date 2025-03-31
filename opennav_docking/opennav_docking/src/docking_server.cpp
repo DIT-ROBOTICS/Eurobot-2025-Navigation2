@@ -418,6 +418,14 @@ bool DockingServer::approachDock(Dock * dock, geometry_msgs::msg::PoseStamped & 
     if (!controller_->computeVelocityCommand(target_pose.pose, command, dock_backwards_)) {
       throw opennav_docking_core::FailedToControl("Failed to get control");
     }
+    // test to stop
+    controller_->computeIfNeedStop(dock_pose.pose, command);
+    if(command.linear.x == 0 && command.linear.y == 0 && command.angular.z == 0) {
+      RCLCPP_INFO(get_logger(), "Stopping robot to avoid collision with rival");
+      success_ = false;
+      vel_publisher_->publish(command);
+      return false;
+    }
     vel_publisher_->publish(command);
 
     if (this->now() - start > timeout) {

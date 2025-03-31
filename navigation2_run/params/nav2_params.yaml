@@ -371,7 +371,9 @@ docking_server:
       # linear_kp_decel_vel: 0.6
       angular_kp: 4.0
       deceleration_distance: 0.1
-      reserved_distance: 0.0
+      reserved_distance: 0.03
+      stop_degree: 120.0
+      rival_radius: 0.44
 
 final_pose_bridge:
   ros__parameters:
