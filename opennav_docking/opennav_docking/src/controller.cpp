@@ -181,7 +181,7 @@ bool Controller::computeIfNeedStop(const geometry_msgs::msg::Pose & target, geom
     // Calculate the vector from the robot to the rival
     double rival_dx = rival_pose_.x_ - robot_pose_.x_;
     double rival_dy = rival_pose_.y_ - robot_pose_.y_;
-    double rival_distance = std::sqrt(rival_dx * rival_dx + rival_dy * rival_dy) - 0.22;  // 0.22 is the radius of the rival
+    double rival_distance = std::sqrt(rival_dx * rival_dx + rival_dy * rival_dy) - 0.44;  // 0.44 is the radius of the rival
     
     // Calculate the angle to the rival
     double rival_angle = std::atan2(rival_dy, rival_dx);
