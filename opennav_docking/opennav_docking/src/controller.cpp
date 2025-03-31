@@ -53,6 +53,7 @@ Controller::Controller(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node) 
     declare_parameter_if_not_declared(node, "controller.deceleration_distance", rclcpp::ParameterValue(0.1));
     declare_parameter_if_not_declared(node, "controller.reserved_distance", rclcpp::ParameterValue(0.03));
     declare_parameter_if_not_declared(node, "controller.stop_degree", rclcpp::ParameterValue(45.0));
+    declare_parameter_if_not_declared(node, "controller.rival_radius", rclcpp::ParameterValue(0.44));
 
     // Get parameters from the config file
     node->get_parameter("controller.max_linear_vel", max_linear_vel_);
@@ -70,6 +71,7 @@ Controller::Controller(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node) 
     node->get_parameter("controller.deceleration_distance", deceleration_distance_);
     node->get_parameter("controller.reserved_distance", reserved_distance_);
     node->get_parameter("controller.stop_degree", stop_degree_);
+    node->get_parameter("controller.rival_radius", rival_radius_);
 
     logger_ = node->get_logger();
     clock_ = node->get_clock();
@@ -181,7 +183,7 @@ bool Controller::computeIfNeedStop(const geometry_msgs::msg::Pose & target, geom
     // Calculate the vector from the robot to the rival
     double rival_dx = rival_pose_.x_ - robot_pose_.x_;
     double rival_dy = rival_pose_.y_ - robot_pose_.y_;
-    double rival_distance = std::sqrt(rival_dx * rival_dx + rival_dy * rival_dy) - 0.44;  // 0.44 is the radius of the rival
+    double rival_distance = std::sqrt(rival_dx * rival_dx + rival_dy * rival_dy) - rival_radius_;  // 0.44 is the radius of the rival
     
     // Calculate the angle to the rival
     double rival_angle = std::atan2(rival_dy, rival_dx);
@@ -198,8 +200,8 @@ bool Controller::computeIfNeedStop(const geometry_msgs::msg::Pose & target, geom
         RCLCPP_INFO(logger_, "Stop the robot, because target_angle: %f, rival_angle: %f,angle_diff: %f, rival_distance: %f, target_distance: %f", target_angle, rival_angle,angle_diff, rival_distance, target_distance);
         return true;
     }
-    RCLCPP_INFO(logger_, "target pose x: %f, y: %f", target.position.x, target.position.y);
-    RCLCPP_INFO(logger_, "Don't Stop the robot, because target_angle: %f, rival_angle: %f,angle_diff: %f, rival_distance: %f, target_distance: %f",target_angle, rival_angle, angle_diff, rival_distance, target_distance);
+    // RCLCPP_INFO(logger_, "target pose x: %f, y: %f", target.position.x, target.position.y);
+    // RCLCPP_INFO(logger_, "Don't Stop the robot, because target_angle: %f, rival_angle: %f,angle_diff: %f, rival_distance: %f, target_distance: %f",target_angle, rival_angle, angle_diff, rival_distance, target_distance);
 
     return false;
 }

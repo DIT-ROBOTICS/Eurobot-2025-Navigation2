@@ -82,7 +82,8 @@ class Controller
     bool computeVelocityCommand(
       const geometry_msgs::msg::Pose & target, geometry_msgs::msg::Twist & cmd,
       bool backward = false);
-
+    
+    
     bool computeIfNeedStop(const geometry_msgs::msg::Pose & target, geometry_msgs::msg::Twist & cmd);
 
     /**
@@ -117,6 +118,7 @@ class Controller
 
     // see if need to stop
     double stop_degree_;
+    double rival_radius_;
 
     // Variables
     std::vector<RobotState> global_path_;
