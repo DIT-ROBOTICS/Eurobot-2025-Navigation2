@@ -89,7 +89,7 @@ controller_server:
     min_theta_velocity_threshold: 0.001
     failure_tolerance: 0.2
     progress_checker_plugin: "progress_checker"
-    current_goal_checker: "percise_goal_checker"
+    current_goal_checker: "percise_goal_checker"  
     goal_checker_plugins: ["percise_goal_checker"]
     controller_plugins: ["FollowPath", "Cautious"]
 
@@ -103,14 +103,16 @@ controller_server:
       stateful: True
       plugin: "nav2_controller::SimpleGoalChecker"
       xy_goal_tolerance: 0.01
-      yaw_goal_tolerance: 0.05
+      yaw_goal_tolerance: 0.03
       xy_debounce_threshold: 3
       yaw_debounce_threshold: 3
     # Controller parameters
     FollowPath:
       plugin: "custom_controller::CustomController"
-      max_linear_vel: 1.0
+      max_linear_vel: 1.1
+      max_angular_vel: 4.0
       linear_kp: 1.5
+      angular_kp: 3.8
       transform_tolerance: 0.1
       look_ahead_distance: 0.2
       speed_decade: 0.7
@@ -276,10 +278,10 @@ velocity_smoother:
     smoothing_frequency: 20.0
     scale_velocities: False
     feedback: "OPEN_LOOP"
-    max_velocity: [1.5, 1.5, 2.0]
-    min_velocity: [-1.5, -1.5, -2.0]
-    max_accel: [2.5, 2.5, 6.0]
-    max_decel: [-2.5, -2.5, -6.0]  
+    max_velocity: [1.1, 1.1, 4.0]
+    min_velocity: [-1.1, -1.1, -4.0]
+    max_accel: [2.2, 2.2, 18.0]
+    max_decel: [-2.8, -2.8, -18.0]  
     odom_topic: "/final_pose_nav"
     odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]
@@ -302,9 +304,9 @@ docking_server:
     dock_plugins: ["mission_dock_x", "mission_dock_y"]
     mission_dock_x:
       plugin: 'opennav_docking::SimpleChargingDock'
-      docking_threshold: 0.01
+      docking_threshold: 0.005
       use_debounce: true
-      xy_debounce_threshold: 2
+      xy_debounce_threshold: 4
       yaw_debounce_threshold: 2
       use_dynamic_offset: true
       staging_x_offset: 0.35
@@ -324,9 +326,9 @@ docking_server:
 
     mission_dock_y:
       plugin: 'opennav_docking::SimpleChargingDock'
-      docking_threshold: 0.01
+      docking_threshold: 0.005
       use_debounce: true
-      xy_debounce_threshold: 2
+      xy_debounce_threshold: 4
       yaw_debounce_threshold: 2
       use_dynamic_offset: true
       staging_x_offset: 0.0
@@ -362,7 +364,7 @@ docking_server:
 
     controller:
       max_linear_vel: 0.3
-      min_linear_vel: 0.07
+      min_linear_vel: 0.0
       linear_kp_accel_vel: 0.5
       linear_ki_accel_vel: 0.1
       linear_kp_decel_dis: 3.0

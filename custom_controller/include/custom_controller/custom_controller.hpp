@@ -123,7 +123,7 @@ class CustomController : public nav2_core::Controller{
         int check_index_;
         int current_index_;
         bool isObstacleExist_;
-        bool keep_palnning_;
+        bool keep_planning_;
         
 };
 
