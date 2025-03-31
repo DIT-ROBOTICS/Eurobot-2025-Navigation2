@@ -145,7 +145,9 @@ void CustomController::setPlan(const nav_msgs::msg::Path & path)
         || cur_goal_pose_.theta_ != tf2::getYaw(path.poses.back().pose.orientation)) update_plan_ = true;
     
     if(!update_plan_){
-        // RCLCPP_INFO(logger_, "The global plan is not updated");
+        RCLCPP_INFO(logger_, "cur_goal_pose_ is [%lf] [%lf] [%lf]", cur_goal_pose_.x_, cur_goal_pose_.y_, cur_goal_pose_.theta_);
+        RCLCPP_INFO(logger_, "path.poses.back().pose.position is [%lf] [%lf] [%lf]", path.poses.back().pose.position.x, path.poses.back().pose.position.y, tf2::getYaw(path.poses.back().pose.orientation));
+        RCLCPP_INFO(logger_, "The global plan is not updated");
         return;
     }
     
@@ -153,9 +155,10 @@ void CustomController::setPlan(const nav_msgs::msg::Path & path)
         global_plan_.poses.clear();
     }   
     global_plan_ = path;
-    RCLCPP_INFO(logger_, "Received a new plan");
+    // RCLCPP_INFO(logger_, "Received a new plan");
     cur_goal_pose_.x_ = global_plan_.poses.back().pose.position.x;
     cur_goal_pose_.y_ = global_plan_.poses.back().pose.position.y;
+    cur_goal_pose_.theta_ = tf2::getYaw(global_plan_.poses.back().pose.orientation);
     
     auto msg = std::make_unique<nav_msgs::msg::Path>(global_plan_);
     global_plan_.header.stamp = path.header.stamp;
@@ -163,13 +166,13 @@ void CustomController::setPlan(const nav_msgs::msg::Path & path)
     global_path_pub_->publish(std::move(msg));
   
     //RCLCPP_INFO(logger_, "global_plan_.orientation x y z w = [%lf] [%lf] [%lf] [%lf]", global_plan_.poses.back().pose.orientation.x, global_plan_.poses.back().pose.orientation.y, global_plan_.poses.back().pose.orientation.z, global_plan_.poses.back().pose.orientation.w);
-    tf2::Quaternion q;
-    tf2::fromMsg(global_plan_.poses.back().pose.orientation, q);
-    tf2::Matrix3x3 qt(q);
-    double pitch, row, yaw;
-    qt.getRPY(pitch, row, yaw);
+    // tf2::Quaternion q;
+    // tf2::fromMsg(global_plan_.poses.back().pose.orientation, q);
+    // tf2::Matrix3x3 qt(q);
+    // double pitch, row, yaw;
+    // qt.getRPY(pitch, row, yaw);
     // RCLCPP_INFO(logger_, "yaw is = [%lf]", yaw);
-    final_goal_angle_ = yaw;
+    final_goal_angle_ = tf2::getYaw(global_plan_.poses.back().pose.orientation);
 
     update_plan_ = keep_planning_;
     // update_plan_ = true;
@@ -292,36 +295,17 @@ RobotState CustomController::getLookAheadPoint(
 
 double CustomController::getGoalAngle(double cur_angle, double goal_angle) {
     double ang_diff_ = goal_angle - cur_angle;
-    double angular_max_vel_ = 2.0;
-    double angle_vel_ = 0.0;
-    double angular_kp_ = 4.0;
-    // RCLCPP_INFO(logger_, "cur_angle = [%lf] goal_angle = [%lf] ang_diff = [%lf]", cur_angle, goal_angle, ang_diff_);
-    if(cur_angle >= 0 && goal_angle >= 0){
-            if(ang_diff_ >= 0) angle_vel_ = std::min((ang_diff_ * angular_kp_), angular_max_vel_);
-            else angle_vel_ = std::max((ang_diff_ * angular_kp_), -angular_max_vel_);
-        }
-        else if(cur_angle < 0 && goal_angle < 0){
-           if(ang_diff_ >= 0) angle_vel_ = std::min((ang_diff_ * angular_kp_), angular_max_vel_);
-            else angle_vel_ = std::max((ang_diff_ * angular_kp_), -angular_max_vel_);
-        }
-        else if(cur_angle < 0 && goal_angle >= 0){
-            if((fabs(cur_angle) + goal_angle) >= M_PI) angle_vel_ = std::max((-ang_diff_ * angular_kp_), -angular_max_vel_);
-            else angle_vel_ = std::min((ang_diff_ * angular_kp_), angular_max_vel_); 
-        }
-        else{
-            if((cur_angle + fabs(goal_angle)) <= M_PI) angle_vel_ = std::max((ang_diff_ * angular_kp_), -angular_max_vel_);
-            else angle_vel_ = std::min((-ang_diff_ * angular_kp_), angular_max_vel_);
-        }
+
+    if (ang_diff_ > M_PI) {
+        ang_diff_ -= 2.0 * M_PI;
+    } else if (ang_diff_ < -M_PI) {
+        ang_diff_ += 2.0 * M_PI;
+    }
+
+    double angle_vel_ = std::clamp(ang_diff_ * angular_kp_, -max_angular_vel_, max_angular_vel_);
     return angle_vel_;
-    
-    // if(goal_angle - cur_angle >= 3.1415926) {
-    //     return (goal_angle - cur_angle - 3.1415926 * 2);
-    // } else if(goal_angle - cur_angle < -3.1415926) {
-    //     return (goal_angle - cur_angle + 3.1415926 * 2);
-    // } else {
-    //     return goal_angle;
-    // }
 }
+
 
 int CustomController::getIndex(RobotState cur_pose, std::vector<RobotState> &path, double look_ahead_distance){
     if (path.empty()) {
