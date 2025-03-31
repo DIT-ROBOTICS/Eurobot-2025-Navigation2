@@ -171,17 +171,17 @@ bool Controller::computeVelocityCommand(
 
 bool Controller::computeIfNeedStop(const geometry_msgs::msg::Pose & target, geometry_msgs::msg::Twist & cmd) {
     // Calculate the vector from the robot to the target
-    double target_dx = robot_pose_.x_ - target.position.x;
-    double target_dy = robot_pose_.y_ - target.position.y;
+    double target_dx = target.position.x - robot_pose_.x_;
+    double target_dy = target.position.y - robot_pose_.y_;
     double target_distance = std::sqrt(target_dx * target_dx + target_dy * target_dy);
     
     // Calculate the angle to the target
     double target_angle = std::atan2(target_dy, target_dx);
     
     // Calculate the vector from the robot to the rival
-    double rival_dx = robot_pose_.x_ - rival_pose_.y_;
-    double rival_dy = robot_pose_.y_ - rival_pose_.y_;
-    double rival_distance = std::sqrt(rival_dx * rival_dx + rival_dy * rival_dy);
+    double rival_dx = rival_pose_.x_ - robot_pose_.x_;
+    double rival_dy = rival_pose_.y_ - robot_pose_.y_;
+    double rival_distance = std::sqrt(rival_dx * rival_dx + rival_dy * rival_dy) - 0.22;  // 0.22 is the radius of the rival
     
     // Calculate the angle to the rival
     double rival_angle = std::atan2(rival_dy, rival_dx);
@@ -195,11 +195,11 @@ bool Controller::computeIfNeedStop(const geometry_msgs::msg::Pose & target, geom
         cmd.linear.x = 0.0;
         cmd.linear.y = 0.0;
         cmd.angular.z = 0.0;
-        RCLCPP_INFO(logger_, "Stop the robot, because angle_diff: %f, rival_distance: %f, target_distance: %f", angle_diff, rival_distance, target_distance);
+        RCLCPP_INFO(logger_, "Stop the robot, because target_angle: %f, rival_angle: %f,angle_diff: %f, rival_distance: %f, target_distance: %f", target_angle, rival_angle,angle_diff, rival_distance, target_distance);
         return true;
     }
     RCLCPP_INFO(logger_, "target pose x: %f, y: %f", target.position.x, target.position.y);
-    RCLCPP_INFO(logger_, "Don't Stop the robot, because angle_diff: %f, rival_distance: %f, target_distance: %f", std::fabs(angle_diff), rival_distance, target_distance);
+    RCLCPP_INFO(logger_, "Don't Stop the robot, because target_angle: %f, rival_angle: %f,angle_diff: %f, rival_distance: %f, target_distance: %f",target_angle, rival_angle, angle_diff, rival_distance, target_distance);
 
     return false;
 }

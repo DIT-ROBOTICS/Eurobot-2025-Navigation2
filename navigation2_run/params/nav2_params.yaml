@@ -370,7 +370,7 @@ docking_server:
       angular_kp: 4.0
       deceleration_distance: 0.1
       reserved_distance: 0.03
-      stop_degree: 45.0
+      stop_degree: 60.0
 
 final_pose_bridge:
   ros__parameters:
