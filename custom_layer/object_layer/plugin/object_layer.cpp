@@ -31,13 +31,13 @@ namespace Object_costmap_plugin {
         node->get_parameter(name_ + "." + "cost_scaling_factor", cost_scaling_factor);
 
         column_poseArray_sub = node->create_subscription<geometry_msgs::msg::PoseArray>(
-            "/column_pose_array", 100, std::bind(&ObjectLayer::columnPoseArrayCallback, this, std::placeholders::_1));
+            "/detected/global_center_poses/column", 100, std::bind(&ObjectLayer::columnPoseArrayCallback, this, std::placeholders::_1));
         board_poseArray_sub = node->create_subscription<geometry_msgs::msg::PoseArray>(
-            "/board_pose_array", 100, std::bind(&ObjectLayer::boardPoseArrayCallback, this, std::placeholders::_1));
+            "/detected/global_center_poses/platform", 100, std::bind(&ObjectLayer::boardPoseArrayCallback, this, std::placeholders::_1));
         
         columnList.clear();
         boardList.clear();
-        
+        clearTimer = 20;
     }
 
     void ObjectLayer::updateBounds(double robot_x, double robot_y, double robot_yaw,
@@ -64,6 +64,16 @@ namespace Object_costmap_plugin {
             ExpandPointWithRectangle(object.pose.position.x, object.pose.position.y, nav2_costmap_2d::LETHAL_OBSTACLE, board_inflation_radius, cost_scaling_factor, board_inscribed_radius, object);
         }
         updateWithMax(master_grid, 0, 0, getSizeInCellsX(), getSizeInCellsY());
+        checkClear();
+    }
+
+    void ObjectLayer::checkClear(){
+        if(clearTimer == 0){
+            boardList.clear();
+            columnList.clear();
+            clearTimer = 20;
+        }
+        clearTimer--;
     }
 
     bool ObjectLayer::isClearable(){
@@ -82,7 +92,7 @@ namespace Object_costmap_plugin {
     }
 
     void ObjectLayer::columnPoseArrayCallback(const geometry_msgs::msg::PoseArray::SharedPtr object_poseArray){
-        columnList.clear();
+        // columnList.clear();
         for(auto pose : object_poseArray->poses){
             geometry_msgs::msg::PoseStamped poseStamped;
             poseStamped.pose = pose;
@@ -91,7 +101,7 @@ namespace Object_costmap_plugin {
     }
 
     void ObjectLayer::boardPoseArrayCallback(const geometry_msgs::msg::PoseArray::SharedPtr object_poseArray){
-        boardList.clear();
+        // boardList.clear();
         for(auto pose : object_poseArray->poses){
             geometry_msgs::msg::PoseStamped poseStamped;
             poseStamped.pose = pose;
@@ -146,10 +156,13 @@ namespace Object_costmap_plugin {
         double cosy_cosp = 1.0 - 2.0 * (object.pose.orientation.y * object.pose.orientation.y +
                                         object.pose.orientation.z * object.pose.orientation.z);
         double angle = std::atan2(siny_cosp, cosy_cosp);
-        
+        // RCLCPP_WARN(
+        //     rclcpp::get_logger("ObjectLayer"), 
+        //     "my angle : %lf", angle);        
         // Precompute sine and cosine of the angle.
-        double cosAngle = std::cos(angle);
-        double sinAngle = std::sin(angle);
+        double receivedAngle = object.pose.orientation.x;
+        double cosAngle = std::cos(receivedAngle);
+        double sinAngle = std::sin(receivedAngle);
         
         unsigned int mx, my;
         double cost = 0.0;

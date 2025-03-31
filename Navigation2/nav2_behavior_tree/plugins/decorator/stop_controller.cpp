@@ -34,7 +34,7 @@ namespace nav2_behavior_tree
             cmd_vel.angular.z = 0.0;
             cmd_vel_pub->publish(cmd_vel);
             RCLCPP_INFO(node_->get_logger(), "running in stop_controller");
-            return BT::NodeStatus::RUNNING;
+            return BT::NodeStatus::FAILURE;
         }
         return child_node_->executeTick();
     }
