@@ -171,7 +171,7 @@ bool Controller::computeVelocityCommand(
 
 bool Controller::computeIfNeedStop(const geometry_msgs::msg::Pose & target, geometry_msgs::msg::Twist & cmd) {
     // Calculate the vector from the robot to the target
-    double target_dx = robot_pose_.x - target.position.x;
+    double target_dx = robot_pose_.x_ - target.position.x;
     double target_dy = robot_pose_.y_ - target.position.y;
     double target_distance = std::sqrt(target_dx * target_dx + target_dy * target_dy);
     
