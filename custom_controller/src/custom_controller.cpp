@@ -145,17 +145,15 @@ void CustomController::setPlan(const nav_msgs::msg::Path & path)
         || cur_goal_pose_.theta_ != tf2::getYaw(path.poses.back().pose.orientation)) update_plan_ = true;
     
     if(!update_plan_){
-        RCLCPP_INFO(logger_, "cur_goal_pose_ is [%lf] [%lf] [%lf]", cur_goal_pose_.x_, cur_goal_pose_.y_, cur_goal_pose_.theta_);
-        RCLCPP_INFO(logger_, "path.poses.back().pose.position is [%lf] [%lf] [%lf]", path.poses.back().pose.position.x, path.poses.back().pose.position.y, tf2::getYaw(path.poses.back().pose.orientation));
-        RCLCPP_INFO(logger_, "The global plan is not updated");
         return;
     }
     
     if(!global_plan_.poses.empty()){
         global_plan_.poses.clear();
     }   
+
     global_plan_ = path;
-    // RCLCPP_INFO(logger_, "Received a new plan");
+
     cur_goal_pose_.x_ = global_plan_.poses.back().pose.position.x;
     cur_goal_pose_.y_ = global_plan_.poses.back().pose.position.y;
     cur_goal_pose_.theta_ = tf2::getYaw(global_plan_.poses.back().pose.orientation);
@@ -165,13 +163,6 @@ void CustomController::setPlan(const nav_msgs::msg::Path & path)
     global_plan_.header.frame_id = path.header.frame_id;  // or "odom"
     global_path_pub_->publish(std::move(msg));
   
-    //RCLCPP_INFO(logger_, "global_plan_.orientation x y z w = [%lf] [%lf] [%lf] [%lf]", global_plan_.poses.back().pose.orientation.x, global_plan_.poses.back().pose.orientation.y, global_plan_.poses.back().pose.orientation.z, global_plan_.poses.back().pose.orientation.w);
-    // tf2::Quaternion q;
-    // tf2::fromMsg(global_plan_.poses.back().pose.orientation, q);
-    // tf2::Matrix3x3 qt(q);
-    // double pitch, row, yaw;
-    // qt.getRPY(pitch, row, yaw);
-    // RCLCPP_INFO(logger_, "yaw is = [%lf]", yaw);
     final_goal_angle_ = tf2::getYaw(global_plan_.poses.back().pose.orientation);
 
     update_plan_ = keep_planning_;
@@ -432,82 +423,53 @@ geometry_msgs::msg::TwistStamped CustomController::computeVelocityCommands(
     // if(!goal_checker->isGoalReached(pose.pose, global_plan_.poses.back().pose, velocity)){
         
         
-        local_goal_ = getLookAheadPoint(cur_pose_, vector_global_path_, look_ahead_distance_);
-        
-        check_index_ = 0;
-        current_index_ = 0;
+    local_goal_ = getLookAheadPoint(cur_pose_, vector_global_path_, look_ahead_distance_);
+    
+    check_index_ = 0;
+    current_index_ = 0;
 
-        //RCLCPP_INFO(logger_, "last_vel = []")
-        //RCLCPP_INFO(logger_, "vector_global_path_ final goal angle after get LAD is = [%lf]", vector_global_path_[vector_global_path_.size()-1].theta_);
-        //final_goal_angle_ = vector_global_path_[vector_global_path_.size()-1].theta_;
-        //RCLCPP_INFO(logger_, "final goal angle is [%lf]", final_goal_angle_); 
-        double global_distance = sqrt(pow(global_plan_.poses.back().pose.position.x - cur_pose_.x_, 2) + pow(global_plan_.poses.back().pose.position.y - cur_pose_.y_, 2));
-        local_goal_ = globalTOlocal(cur_pose_, local_goal_);
-        double local_angle = atan2(local_goal_.y_, local_goal_.x_);
-        // posetoRobotState(rival_pose_.pose, local_rival_pose_);
-        // local_rival_pose_ = globalTOlocal(cur_pose_, local_rival_pose_);
+    //final_goal_angle_ = vector_global_path_[vector_global_path_.size()-1].theta_;
+    double global_distance = sqrt(pow(global_plan_.poses.back().pose.position.x - cur_pose_.x_, 2) + pow(global_plan_.poses.back().pose.position.y - cur_pose_.y_, 2));
+    local_goal_ = globalTOlocal(cur_pose_, local_goal_);
+    double local_angle = atan2(local_goal_.y_, local_goal_.x_);
+    // posetoRobotState(rival_pose_.pose, local_rival_pose_);
+    // local_rival_pose_ = globalTOlocal(cur_pose_, local_rival_pose_);
 
-        // rival_to_move_angle = atan2(rival_pose_.pose.pose.position.y - cur_pose_.y_, rival_pose_.pose.pose.position.x - cur_pose_.x_);
-        // RCLCPP_INFO(logger_, "rival to move angle = [%lf]", rival_to_move_angle);
+    // rival_to_move_angle = atan2(rival_pose_.pose.pose.position.y - cur_pose_.y_, rival_pose_.pose.pose.position.x - cur_pose_.x_);
+    // RCLCPP_INFO(logger_, "rival to move angle = [%lf]", rival_to_move_angle);
 
-        // if(rival_distance_ < 1){
-        //     //RCLCPP_INFO(logger_, "Rival is too close");
-        //     max_linear_vel_ = 0.5;
-        //     // update_plan_ = true;
-        // }else{
-        //     max_linear_vel_ = 0.7;
-        // }
-        cmd_vel.twist.linear.x = last_vel_x_;
-        cmd_vel.twist.linear.y = last_vel_y_;
+    // if(rival_distance_ < 1){
+    //     //RCLCPP_INFO(logger_, "Rival is too close");
+    //     max_linear_vel_ = 0.5;
+    //     // update_plan_ = true;
+    // }else{
+    //     max_linear_vel_ = 0.7;
+    // }
+    cmd_vel.twist.linear.x = last_vel_x_;
+    cmd_vel.twist.linear.y = last_vel_y_;
 
-        double local_distance = sqrt(pow(local_goal_.x_ - cur_pose_.x_, 2) + pow(local_goal_.y_ - cur_pose_.y_, 2));
-        
-        //RCLCPP_INFO(logger_, "final goal angle is [%lf]", vector_global_path_[vector_global_path_.size()-1].theta_);
-        //RCLCPP_INFO(logger_, "cur_pose angle is [%lf]", cur_pose_.theta_);
+    double local_distance = sqrt(pow(local_goal_.x_ - cur_pose_.x_, 2) + pow(local_goal_.y_ - cur_pose_.y_, 2));
+    
+    cmd_vel.twist.linear.x = std::min(global_distance * linear_kp_, max_linear_vel_) * cos(local_angle);
+    cmd_vel.twist.linear.y = std::min(global_distance * linear_kp_, max_linear_vel_) * sin(local_angle);
 
-        cmd_vel.twist.linear.x = std::min(global_distance * linear_kp_, max_linear_vel_) * cos(local_angle);
-        cmd_vel.twist.linear.y = std::min(global_distance * linear_kp_, max_linear_vel_) * sin(local_angle);
-
-        cmd_vel.twist.angular.z = getGoalAngle(cur_pose_.theta_, final_goal_angle_);
-        double vel_ = sqrt(pow(cmd_vel.twist.linear.x, 2) + pow(cmd_vel.twist.linear.y, 2));
-        check_distance_ = std::max(vel_ * 2.5,look_ahead_distance_);
-        //RCLCPP_INFO(logger_, "check_distance is [%lf]", check_distance_);
-        check_index_ = getIndex(cur_pose_, vector_global_path_, check_distance_);
-        current_index_ = getIndex(cur_pose_, vector_global_path_, look_ahead_distance_);
-        last_vel_x_ = cmd_vel.twist.linear.x;
-        last_vel_y_ = cmd_vel.twist.linear.y;
-        // RCLCPP_INFO(logger_, "check_index is [%d]", check_index_);        
-        // RCLCPP_INFO(logger_, "current_index is [%d]", current_index_);
-        // RCLCPP_INFO(logger_, "vector_global_path size is [%d]", vector_global_path_.size());
-        // RCLCPP_INFO(logger_, "global_path size is [%d]", global_plan_.poses.size());
-        // RCLCPP_INFO(logger_, "final_goal_angle is [%lf]", final_goal_angle_);
-        // RCLCPP_INFO(logger_, "cmd_vel is [%lf] [%lf] [%lf]", cmd_vel.twist.linear.x, cmd_vel.twist.linear.y, cmd_vel.twist.angular.z);
-        // RCLCPP_INFO(logger_, "local_angle is [%lf]", local_angle);
-        isObstacleExist_ = checkObstacle(current_index_, check_index_);
-        if(isObstacleExist_){
-            cmd_vel.twist.linear.x = last_vel_x_ * speed_decade_;
-            cmd_vel.twist.linear.y = last_vel_y_ * speed_decade_;
-            cmd_vel.twist.angular.z = 0.0;
-            update_plan_ = true;
-            return cmd_vel;
-        }
-        
+    cmd_vel.twist.angular.z = getGoalAngle(cur_pose_.theta_, final_goal_angle_);
+    double vel_ = sqrt(pow(cmd_vel.twist.linear.x, 2) + pow(cmd_vel.twist.linear.y, 2));
+    check_distance_ = std::max(vel_ * 2.5,look_ahead_distance_);
+    check_index_ = getIndex(cur_pose_, vector_global_path_, check_distance_);
+    current_index_ = getIndex(cur_pose_, vector_global_path_, look_ahead_distance_);
+    last_vel_x_ = cmd_vel.twist.linear.x;
+    last_vel_y_ = cmd_vel.twist.linear.y;
+    isObstacleExist_ = checkObstacle(current_index_, check_index_);
+    if(isObstacleExist_){
+        cmd_vel.twist.linear.x = last_vel_x_ * speed_decade_;
+        cmd_vel.twist.linear.y = last_vel_y_ * speed_decade_;
+        cmd_vel.twist.angular.z = 0.0;
+        update_plan_ = true;
         return cmd_vel;
-    // }
-    // else if(fabs(final_goal_angle_ - cur_pose_.theta_) > 0.01){
-    //     cmd_vel.twist.linear.x = 0.0;
-    //     cmd_vel.twist.linear.y = 0.0;
-    //     cmd_vel.twist.angular.z = getGoalAngle(cur_pose_.theta_, final_goal_angle_);
-    //     return cmd_vel;
-    // }
-    // else{
-    //     RCLCPP_INFO(logger_, "[%s] Goal reached", plugin_name_.c_str());
-    //     cmd_vel.twist.linear.x = 0.0;
-    //     cmd_vel.twist.linear.y = 0.0;
-    //     cmd_vel.twist.angular.z = 0.0;
-    //     update_plan_ = true;
-    //     return cmd_vel;
-    // }
+    }
+    
+    return cmd_vel;
 }
 //test
 void CustomController::setSpeedLimit(
