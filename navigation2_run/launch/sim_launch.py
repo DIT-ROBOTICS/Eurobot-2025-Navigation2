@@ -35,11 +35,13 @@ def generate_launch_description():
 
     if ros_domain_id == '11':
         params_file_name = 'nav2_params_11.yaml'
+        print('ROS_DOMAIN_ID=11. Use nav2_params_11.yaml')
     elif ros_domain_id == '14':
         params_file_name = 'nav2_params_14.yaml'
+        print('ROS_DOMAIN_ID=14. Use nav2_params_14.yaml')
     else:
-        print('Unrecognized ROS_DOMAIN_ID={ros_domain_id}. Please set ROS_DOMAIN_ID to 11 or 14')
-        sys.exit(1)
+        params_file_name = 'nav2_params_default.yaml'
+        print('Unrecognized ROS_DOMAIN_ID={ros_domain_id}. Use default params file')
 
     namespace = LaunchConfiguration('namespace')
     use_namespace = LaunchConfiguration('use_namespace')
