@@ -71,6 +71,7 @@ void
 GoalCheckerSelector::callbackGoalCheckerSelect(const std_msgs::msg::String::SharedPtr msg)
 {
   last_selected_goal_checker_ = msg->data;
+  RCLCPP_INFO(node_->get_logger(), "Goal checker selected: %s", msg->data.c_str());
 }
 
 }  // namespace nav2_behavior_tree
