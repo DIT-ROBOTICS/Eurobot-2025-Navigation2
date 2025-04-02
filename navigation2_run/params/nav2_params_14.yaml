@@ -11,8 +11,8 @@ bt_navigator:
     # nav2_bt_navigator/navigate_to_pose_w_replanning_and_recovery.xml
     # nav2_bt_navigator/navigate_through_poses_w_replanning_and_recovery.xml
     # They can be set here or via a RewrittenYaml remap from a parent launch file to Nav2.
-    default_nav_through_poses_bt_xml: "$(find-pkg-share custom_nav_thru_poses)/behavior_trees/navigate_through_poses_w_controller_selector.xml"
-    default_nav_to_pose_bt_xml: "$(find-pkg-share nav2_bt_navigator)/behavior_trees/navigate_to_pose_w_replanning_and_recovery.xml"
+    default_nav_through_poses_bt_xml: "$(find-pkg-share custom_nav_thru_poses)/behavior_trees/navigate_through_poses_w_selector.xml"
+    default_nav_to_pose_bt_xml: "$(find-pkg-share custom_nav_to_pose)/behavior_trees/navigate_to_pose_w_selector.xml"
     plugin_lib_names:
       - nav2_stop_controller_bt_node
       - nav2_compute_path_to_pose_action_bt_node
@@ -67,8 +67,8 @@ bt_navigator:
 
 ControllerSelector:
   ros__parameters:
-    Fast_controller: "FollowPath"
-    Slow_controller: "Cautious"
+    Fast_controller: "Fast"
+    Slow_controller: "Slow"
 
 bt_navigator_navigate_through_poses_rclcpp_node:
   ros__parameters:
@@ -89,41 +89,58 @@ controller_server:
     min_theta_velocity_threshold: 0.001
     failure_tolerance: 0.2
     progress_checker_plugin: "progress_checker"
-    current_goal_checker: "percise_goal_checker"  
-    goal_checker_plugins: ["percise_goal_checker"]
-    controller_plugins: ["FollowPath", "Cautious"]
+    # TODO: Findout which one is the correct one
+    current_goal_checker: ["Percise", "Loose"]
+    goal_checker_plugins: ["Percise", "Loose"]
+    controller_plugins: ["Fast", "Slow"]
 
     # Progress checker parameters
     progress_checker:
       plugin: "nav2_controller::SimpleProgressChecker"
       required_movement_radius: 0.5
       movement_time_allowance: 10.0
+
     # Goal checker parameters
-    percise_goal_checker:
+    Percise:
       stateful: True
       plugin: "nav2_controller::SimpleGoalChecker"
       xy_goal_tolerance: 0.01
-      yaw_goal_tolerance: 0.03
-      xy_debounce_threshold: 3
-      yaw_debounce_threshold: 3
+      yaw_goal_tolerance: 0.05
+      xy_debounce_threshold: 1
+      yaw_debounce_threshold: 1
+
+    Loose:
+      stateful: True
+      plugin: "nav2_controller::SimpleGoalChecker"
+      xy_goal_tolerance: 0.03
+      yaw_goal_tolerance: 0.07
+      xy_debounce_threshold: 1
+      yaw_debounce_threshold: 1
+
     # Controller parameters
-    FollowPath:
+    Fast:
       plugin: "custom_controller::CustomController"
       max_linear_vel: 1.1
-      max_angular_vel: 4.0
-      linear_kp: 1.5
-      angular_kp: 3.8
+      max_angular_vel: 12.0
+      linear_kp: 2.2
+      angular_kp: 3.7
       transform_tolerance: 0.1
       look_ahead_distance: 0.2
       speed_decade: 0.7
       costmap_tolerance: 60
       keep_planning: false
       
-    Cautious:
+    Slow:
       plugin: "custom_controller::CustomController"
-      max_linear_vel: 0.5
+      max_linear_vel: 0.8
+      max_angular_vel: 5.0
+      linear_kp: 2.2
+      angular_kp: 3.7
       transform_tolerance: 0.1
-      look_ahead_distance: 0.1
+      look_ahead_distance: 0.2
+      speed_decade: 0.7
+      costmap_tolerance: 60
+      keep_planning: false
 
 local_costmap:
   local_costmap:
@@ -278,10 +295,10 @@ velocity_smoother:
     smoothing_frequency: 20.0
     scale_velocities: False
     feedback: "OPEN_LOOP"
-    max_velocity: [1.1, 1.1, 4.0]
-    min_velocity: [-1.1, -1.1, -4.0]
-    max_accel: [2.2, 2.2, 18.0]
-    max_decel: [-2.8, -2.8, -18.0]  
+    max_velocity: [1.1, 1.1, 12.0]
+    min_velocity: [-1.1, -1.1, -12.0]
+    max_accel: [3.3, 3.3, 120.0]
+    max_decel: [-4.4, -4.4, -120.0]  
     odom_topic: "/final_pose_nav"
     odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]
@@ -297,16 +314,16 @@ docking_server:
     base_frame: "base_footprint"
     fixed_frame: "map"
     dock_backwards: false
-    dock_prestaging_tolerance: 0.02
+    dock_prestaging_tolerance: 0.01
     velocity_smoother_wait: 0.12
 
     # Types of docks
-    dock_plugins: ["mission_dock_x", "mission_dock_y"]
-    mission_dock_x:
+    dock_plugins: ["dock_x_percise_fast", "dock_y_percise_fast", "dock_x_percise_slow", "dock_y_percise_slow", "dock_x_loose_fast", "dock_x_loose_fast"]
+    dock_x_percise_fast:
       plugin: 'opennav_docking::SimpleChargingDock'
-      docking_threshold: 0.01
+      docking_threshold: 0.005
       use_debounce: true
-      xy_debounce_threshold: 4
+      xy_debounce_threshold: 2
       yaw_debounce_threshold: 2
       use_dynamic_offset: true
       staging_x_offset: 0.35
@@ -316,19 +333,11 @@ docking_server:
       use_stall_detection: false
       base_frame: "base_footprint"
 
-      external_detection_timeout: 1.0
-      external_detection_translation_x: 0.0
-      external_detection_translation_y: 0.0
-      external_detection_rotation_roll: 0.0
-      external_detection_rotation_pitch: 0.0
-      external_detection_rotation_yaw: 0.0
-      filter_coef: 0.0
-
-    mission_dock_y:
+    dock_y_percise_fast:
       plugin: 'opennav_docking::SimpleChargingDock'
-      docking_threshold: 0.01
+      docking_threshold: 0.005
       use_debounce: true
-      xy_debounce_threshold: 4
+      xy_debounce_threshold: 2
       yaw_debounce_threshold: 2
       use_dynamic_offset: true
       staging_x_offset: 0.0
@@ -338,25 +347,73 @@ docking_server:
       use_stall_detection: false
       base_frame: "base_footprint"
 
-      external_detection_timeout: 1.0
-      external_detection_translation_x: 0.0
-      external_detection_translation_y: 0.0
-      external_detection_rotation_roll: 0.0
-      external_detection_rotation_pitch: 0.0
-      external_detection_rotation_yaw: 0.0
-      filter_coef: 0.0
+    dock_x_percise_slow:
+      plugin: 'opennav_docking::SimpleChargingDock'
+      docking_threshold: 0.005
+      use_debounce: true
+      xy_debounce_threshold: 2
+      yaw_debounce_threshold: 2
+      use_dynamic_offset: true
+      staging_x_offset: 0.35
+      staging_y_offset: 0.35
+      staging_yaw_offset: 1.57
+      use_battery_status: false
+      use_stall_detection: false
+      base_frame: "base_footprint"
+
+    dock_y_percise_slow:
+      plugin: 'opennav_docking::SimpleChargingDock'
+      docking_threshold: 0.005
+      use_debounce: true
+      xy_debounce_threshold: 2
+      yaw_debounce_threshold: 2
+      use_dynamic_offset: true
+      staging_x_offset: 0.0
+      staging_y_offset: 0.35
+      staging_yaw_offset: 0.0
+      use_battery_status: false
+      use_stall_detection: false
+      base_frame: "base_footprint"
+
+    dock_x_loose_fast:
+      plugin: 'opennav_docking::SimpleChargingDock'
+      docking_threshold: 0.02
+      use_debounce: true
+      xy_debounce_threshold: 1
+      yaw_debounce_threshold: 1
+      use_dynamic_offset: true
+      staging_x_offset: 0.35
+      staging_y_offset: 0.35
+      staging_yaw_offset: 1.57
+      use_battery_status: false
+      use_stall_detection: false
+      base_frame: "base_footprint"
+
+    dock_y_loose_fast:
+      plugin: 'opennav_docking::SimpleChargingDock'
+      docking_threshold: 0.02
+      use_debounce: true
+      xy_debounce_threshold: 1
+      yaw_debounce_threshold: 1
+      use_dynamic_offset: true
+      staging_x_offset: 0.0
+      staging_y_offset: 0.35
+      staging_yaw_offset: 0.0
+      use_battery_status: false
+      use_stall_detection: false
+      base_frame: "base_footprint"
 
     docks: ['home_dock', 'flex_dock1', 'flex_dock2']
     home_dock:
-      type: 'mission_dock_x'
+      type: 'dock_x_percise_fast'
       frame: map
       pose: [0.0, 0.0, 0.0]
     flex_dock1:
-      type: 'mission_dock_x'
+      type: 'dock_y_percise_fast'
       frame: map
       pose: [2.2, 1.4, 0.0]
     flex_dock2:
-      type: 'mission_dock_x'
+      type: 'dock_x_percise_slow'
       frame: map
       pose: [1.5, 1.0, 1.57]
     
@@ -364,7 +421,7 @@ docking_server:
 
     controller:
       max_linear_vel: 0.3
-      min_linear_vel: 0.07
+      min_linear_vel: 0.0
       linear_kp_accel_vel: 0.5
       linear_ki_accel_vel: 0.1
       linear_kp_decel_dis: 3.0

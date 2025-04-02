@@ -89,7 +89,8 @@ controller_server:
     min_theta_velocity_threshold: 0.001
     failure_tolerance: 0.2
     progress_checker_plugin: "progress_checker"
-    # current_goal_checker: "percise_goal_checker"
+    # TODO: Findout which one is the correct one
+    current_goal_checker: ["Percise", "Loose"]
     goal_checker_plugins: ["Percise", "Loose"]
     controller_plugins: ["Fast", "Slow"]
 
@@ -105,8 +106,8 @@ controller_server:
       plugin: "nav2_controller::SimpleGoalChecker"
       xy_goal_tolerance: 0.01
       yaw_goal_tolerance: 0.05
-      xy_debounce_threshold: 3
-      yaw_debounce_threshold: 3
+      xy_debounce_threshold: 1
+      yaw_debounce_threshold: 1
 
     Loose:
       stateful: True
@@ -114,15 +115,15 @@ controller_server:
       xy_goal_tolerance: 0.03
       yaw_goal_tolerance: 0.07
       xy_debounce_threshold: 1
-      yaw_debounce_threshold: 1 
+      yaw_debounce_threshold: 1
 
     # Controller parameters
     Fast:
       plugin: "custom_controller::CustomController"
-      max_linear_vel: 1.2
-      max_angular_vel: 6.0
-      linear_kp: 1.5
-      angular_kp: 6.0
+      max_linear_vel: 1.1
+      max_angular_vel: 12.0
+      linear_kp: 2.2
+      angular_kp: 3.7
       transform_tolerance: 0.1
       look_ahead_distance: 0.2
       speed_decade: 0.7
@@ -132,9 +133,9 @@ controller_server:
     Slow:
       plugin: "custom_controller::CustomController"
       max_linear_vel: 0.8
-      max_angular_vel: 3.0
-      linear_kp: 1.2
-      angular_kp: 3.0
+      max_angular_vel: 5.0
+      linear_kp: 2.2
+      angular_kp: 3.7
       transform_tolerance: 0.1
       look_ahead_distance: 0.2
       speed_decade: 0.7
@@ -294,10 +295,10 @@ velocity_smoother:
     smoothing_frequency: 20.0
     scale_velocities: False
     feedback: "OPEN_LOOP"
-    max_velocity: [1.2, 1.2, 6.0]
-    min_velocity: [-1.2, -1.2, -6.0]
-    max_accel: [2.5, 2.5, 15.0]
-    max_decel: [-2.5, -2.5, -15.0]  
+    max_velocity: [1.1, 1.1, 12.0]
+    min_velocity: [-1.1, -1.1, -12.0]
+    max_accel: [3.3, 3.3, 120.0]
+    max_decel: [-4.4, -4.4, -120.0]  
     odom_topic: "/final_pose_nav"
     odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]
@@ -313,7 +314,7 @@ docking_server:
     base_frame: "base_footprint"
     fixed_frame: "map"
     dock_backwards: false
-    dock_prestaging_tolerance: 0.0
+    dock_prestaging_tolerance: 0.01
     velocity_smoother_wait: 0.12
 
     # Types of docks
@@ -426,8 +427,10 @@ docking_server:
       linear_kp_decel_dis: 3.0
       # linear_kp_decel_vel: 0.6
       angular_kp: 4.0
-      deceleration_distance: 0.1
+      deceleration_distance: 0.05
       reserved_distance: 0.0
+      stop_degree: 120.0
+      rival_radius: 0.44
 
 final_pose_bridge:
   ros__parameters:
