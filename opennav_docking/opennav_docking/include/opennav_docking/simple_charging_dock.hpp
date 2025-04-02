@@ -28,6 +28,8 @@
 #include "opennav_docking_core/charging_dock.hpp"
 #include "opennav_docking/pose_filter.hpp"
 
+#include "nav_type_selector.hpp"
+
 namespace opennav_docking
 {
 
@@ -111,8 +113,7 @@ protected:
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr dock_pose_pub_;
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr filtered_dock_pose_pub_;
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr staging_pose_pub_;
-  rclcpp::Publisher<std_msgs::msg::string>::SharedPtr controller_selector_pub_;
-  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr goal_checker_selector_pub_;
+
   // If subscribed to a detected pose topic, will contain latest message
   geometry_msgs::msg::PoseStamped detected_dock_pose_;
   geometry_msgs::msg::PoseStamped detected_dock_pose_prev_;
@@ -154,11 +155,14 @@ protected:
   double staging_x_offset_;
   double staging_y_offset_;
   double staging_yaw_offset_;
-  std::string dock_type_;
+
   char offset_direction_;
 
   rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
   std::shared_ptr<tf2_ros::Buffer> tf2_buffer_;
+
+  // NavTypeSelector nav_type_selector_
+  std::shared_ptr<NavTypeSelector> nav_type_selector_;  
 };
 
 }  // namespace opennav_docking

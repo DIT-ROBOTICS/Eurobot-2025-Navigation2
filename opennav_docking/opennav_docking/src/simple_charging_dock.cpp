@@ -122,6 +122,9 @@ void SimpleChargingDock::configure(
   node_->get_parameter(name + ".filter_coef", filter_coef);
   filter_ = std::make_unique<PoseFilter>(filter_coef, external_detection_timeout_);
 
+  // Set up nav type selector
+  nav_type_selector_ = std::make_unique<NavTypeSelector>(node_);
+
   if (use_battery_status_) {
     battery_sub_ = node_->create_subscription<sensor_msgs::msg::BatteryState>(
       "battery_state", 1,
@@ -157,8 +160,6 @@ void SimpleChargingDock::configure(
   filtered_dock_pose_pub_ = node_->create_publisher<geometry_msgs::msg::PoseStamped>(
     "filtered_dock_pose", 1);
   staging_pose_pub_ = node_->create_publisher<geometry_msgs::msg::PoseStamped>("staging_pose", 1);
-  controller_selector_pub_ = node_->create_publisher<std_msgs::msg::String>("/controller_type", rclcpp::QoS(10).reliable().transient_local());
-  goal_checker_selector_pub_ = node_->create_publisher<std_msgs::msg::String>("/goal_checker_type", rclcpp::QoS(10).reliable().transient_local());
 }
 
 geometry_msgs::msg::PoseStamped SimpleChargingDock::getStagingPose(
@@ -182,50 +183,9 @@ geometry_msgs::msg::PoseStamped SimpleChargingDock::getStagingPose(
   staging_pose.pose = pose;
   staging_pose.pose.orientation = pose.orientation;
 
-  dock_tpye_ = dock_type;
-
-  // Apply x and y offsets
+  //** Apply x and y offsets
   if(use_dynamic_offset_) {
-    switch(dock_type_) {
-      case "dock_x_percise_fast":
-        staging_pose.pose.position.x -= pose.position.z;
-        offset_direction_ = "x";
-        controller_selector_pub_->publish("Fast");
-        goal_checker_selector_pub_->publish("Percise");
-        break;
-      case "dock_y_percise_fast":
-        staging_pose.pose.position.y -= pose.position.z;
-        offset_direction_ = "y";
-        controller_selector_pub_->publish("Fast");
-        goal_checker_selector_pub_->publish("Percise");
-        break;
-      case "dock_x_percise_slow":
-        staging_pose.pose.position.x -= pose.position.z;
-        offset_direction_ = "x";
-        controller_selector_pub_->publish("Slow");
-        goal_checker_selector_pub_->publish("Percise");
-        break;
-      case "dock_y_percise_slow":
-        staging_pose.pose.position.y -= pose.position.z;
-        offset_direction_ = "y";
-        controller_selector_pub_->publish("Slow");
-        goal_checker_selector_pub_->publish("Percise");
-        break;
-      case "dock_x_loose_fast":
-        staging_pose.pose.position.x -= pose.position.z;
-        offset_direction_ = "x";
-        controller_selector_pub_->publish("Fast");
-        goal_checker_selector_pub_->publish("Loose");
-        break;
-      case "dock_y_loose_fast":
-        staging_pose.pose.position.y -= pose.position.z;
-        offset_direction_ = "y";
-        controller_selector_pub_->publish("Fast");
-        goal_checker_selector_pub_->publish("Loose");
-        break;
-      default:
-        RCLCPP_WARN(node_->get_logger(), "Unknown dock type: %s", dock_type.c_str());
-    }
+    nav_type_selector_->setType(dock_type, offset_direction_, staging_pose, pose.position.z);
   } else {
     staging_pose.pose.position.x += cos(yaw) * staging_x_offset_ - sin(yaw) * staging_y_offset_;
     staging_pose.pose.position.y += sin(yaw) * staging_x_offset_ + cos(yaw) * staging_y_offset_;
@@ -342,10 +302,15 @@ bool SimpleChargingDock::isDocked()
   }
 
   // If we are close enough, pretend we are charging
-  if(offset_direction_ == "x") {
-    double d = fabs(base_pose.pose.position.x - dock_pose_.pose.position.x);
-  } else if(offset_direction_ == "y") {
-    double d = fabs(base_pose.pose.position.y - dock_pose_.pose.position.y);
+  double d = 0.0;
+  if(offset_direction_ == 'x') {
+    d = fabs(base_pose.pose.position.x - dock_pose_.pose.position.x);
+  } else if(offset_direction_ == 'y') {
+    d = fabs(base_pose.pose.position.y - dock_pose_.pose.position.y);
+  } else {
+    d = hypot(
+      base_pose.pose.position.x - dock_pose_.pose.position.x,
+      base_pose.pose.position.y - dock_pose_.pose.position.y);
   }
 
   if(use_debounce_) {
