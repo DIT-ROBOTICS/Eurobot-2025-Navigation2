@@ -19,8 +19,8 @@ class ControllerSelector : public rclcpp::Node {
             controller_selector_pub_ = this->create_publisher<std_msgs::msg::String>("/controller_type", rclcpp::QoS(10).reliable().transient_local());
             controller_selector_timer_ = this->create_wall_timer(std::chrono::milliseconds(50), std::bind(&ControllerSelector::timer_callback, this));
         
-            declare_parameter("Fast_controller", rclcpp::ParameterValue("FollowPath"));
-            declare_parameter("Slow_controller", rclcpp::ParameterValue("Cautious"));
+            declare_parameter("Fast_controller", rclcpp::ParameterValue("Fast"));
+            declare_parameter("Slow_controller", rclcpp::ParameterValue("Slow"));
 
             this->get_parameter("Fast_controller", fast_controller_);
             this->get_parameter("Slow_controller", slow_controller_);
