@@ -89,8 +89,6 @@ controller_server:
     min_theta_velocity_threshold: 0.001
     failure_tolerance: 0.2
     progress_checker_plugin: "progress_checker"
-    # TODO: Findout which one is the correct one
-    current_goal_checker: ["Percise", "Loose"]
     goal_checker_plugins: ["Percise", "Loose"]
     controller_plugins: ["Fast", "Slow"]
 
