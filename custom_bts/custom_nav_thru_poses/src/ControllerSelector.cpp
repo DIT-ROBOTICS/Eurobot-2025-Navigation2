@@ -22,8 +22,8 @@ class ControllerSelector : public rclcpp::Node {
             declare_parameter("Fast_controller", rclcpp::ParameterValue("FollowPath"));
             declare_parameter("Slow_controller", rclcpp::ParameterValue("Cautious"));
 
-            this->get_parameter("Fast_controller", fast_controller);
-            this->get_parameter("Slow_controller", slow_controller);
+            this->get_parameter("Fast_controller", fast_controller_);
+            this->get_parameter("Slow_controller", slow_controller_);
         }   
 
     private:
