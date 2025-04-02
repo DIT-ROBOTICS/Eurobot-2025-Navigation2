@@ -80,6 +80,9 @@ void
 ControllerSelector::callbackControllerSelect(const std_msgs::msg::String::SharedPtr msg)
 {
   last_selected_controller_ = msg->data;
+  RCLCPP_INFO(
+    node_->get_logger(), "ControllerSelector: selected controller: %s",
+    last_selected_controller_.c_str());
 }
 
 }  // namespace nav2_behavior_tree
