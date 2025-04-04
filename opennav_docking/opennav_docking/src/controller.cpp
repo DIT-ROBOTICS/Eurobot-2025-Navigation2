@@ -212,15 +212,15 @@ double Controller::ExtractVelocity(const double & velocity, const double & remai
     switch (state) {
         case VelocityState::ACCELERATION:
             Acceleration(vel, remaining_distance, state);
-            RCLCPP_INFO_ONCE(logger_, "Accelerating");
+            // RCLCPP_INFO_ONCE(logger_, "Accelerating");
             break;
         case VelocityState::CONSTANT:
             ConstantVelocity(vel, remaining_distance, state);
-            RCLCPP_INFO_ONCE(logger_, "Constant velocity");
+            // RCLCPP_INFO_ONCE(logger_, "Constant velocity");
             break;
         case VelocityState::DECELERATION:
             Deceleration(vel, remaining_distance, state);
-            RCLCPP_INFO_ONCE(logger_, "Decelerating");
+            // RCLCPP_INFO_ONCE(logger_, "Decelerating");
             break;
     }
 
