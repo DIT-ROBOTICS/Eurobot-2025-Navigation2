@@ -9,46 +9,40 @@ NavTypeSelector::NavTypeSelector(std::shared_ptr<rclcpp_lifecycle::LifecycleNode
 }
 
 void NavTypeSelector::setType(std::string const & mode, char & offset_direction, geometry_msgs::msg::PoseStamped & original_staging_pose, double const & offset) {
-    if (mode == "dock_x_percise_fast") {
-        original_staging_pose.pose.position.x -= offset;
-        offset_direction = 'x';
-        controller_selector_msg_.data = "Fast";
+    // Determine the goal checker type
+    if(strstr(mode.c_str(), "percise") != NULL) {
         goal_checker_selector_msg_.data = "Percise";
-    } else if (mode == "dock_y_percise_fast") {
-        original_staging_pose.pose.position.y -= offset;
-        offset_direction = 'y';
-        controller_selector_msg_.data = "Fast";
-        goal_checker_selector_msg_.data = "Percise";
-    } else if (mode == "dock_x_percise_slow") {
-        original_staging_pose.pose.position.x -= offset;
-        offset_direction = 'x';
-        controller_selector_msg_.data = "Slow";
-        goal_checker_selector_msg_.data = "Percise";
-    } else if (mode == "dock_y_percise_slow") {
-        original_staging_pose.pose.position.y -= offset;
-        offset_direction = 'y';
-        controller_selector_msg_.data = "Slow";
-        goal_checker_selector_msg_.data = "Percise";
-    } else if (mode == "dock_x_loose_fast") {
-        original_staging_pose.pose.position.x -= offset;
-        offset_direction = 'x';
-        controller_selector_msg_.data = "Fast";
-        goal_checker_selector_msg_.data = "Loose";
-    } else if (mode == "dock_y_loose_fast") {
-        original_staging_pose.pose.position.y -= offset;
-        offset_direction = 'y';
-        controller_selector_msg_.data = "Fast";
+    } else if(strstr(mode.c_str(), "loose") != NULL) {
         goal_checker_selector_msg_.data = "Loose";
     } else {
-        RCLCPP_WARN(node_->get_logger(), "Unknown dock type: %s. Use navigate Slow & Percise for default", mode.c_str());
+        goal_checker_selector_msg_.data = "percise";
+        RCLCPP_WARN(node_->get_logger(), "No goal checker type selected, defaulting to percise");
+    }
+    goal_checker_selector_pub_->publish(goal_checker_selector_msg_);    // Publish the goal checker type
+
+    // Determine the controller type
+    if(strstr(mode.c_str(), "fast") != NULL) {
+        controller_selector_msg_.data = "Fast";
+    } else if(strstr(mode.c_str(), "slow") != NULL) {
         controller_selector_msg_.data = "Slow";
-        goal_checker_selector_msg_.data = "Percise";
-        return;
+    } else {
+        controller_selector_msg_.data = "slow";
+        RCLCPP_WARN(node_->get_logger(), "No controller type selected, defaulting to fast");
+    }
+    controller_selector_pub_->publish(controller_selector_msg_);    // Publish the controller type
+
+    // Determine the offset direction & value
+    if(strchr(mode.c_str(), 'x') != NULL) {
+        offset_direction = 'x';
+        original_staging_pose.pose.position.x -= offset;
+    } else if(strchr(mode.c_str(), 'y') != NULL) {
+        offset_direction = 'y';
+        original_staging_pose.pose.position.y -= offset;
+    } else {
+        offset_direction = 'z';
+        original_staging_pose.pose.position.x -= offset;
+        original_staging_pose.pose.position.y -= offset;
+        RCLCPP_WARN(node_->get_logger(), "No offset direction selected, applying offset to both x and y");
     }
     
-    // Publish the selected controller and goal checker types
-    // ! goal checker must be published first
-    // TODO: check if the data received successfully
-    goal_checker_selector_pub_->publish(goal_checker_selector_msg_);
-    controller_selector_pub_->publish(controller_selector_msg_);
 }
