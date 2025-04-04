@@ -316,7 +316,7 @@ docking_server:
     velocity_smoother_wait: 0.12
 
     # Types of docks
-    dock_plugins: ["dock_x_percise_fast", "dock_y_percise_fast", "dock_x_percise_slow", "dock_y_percise_slow", "dock_x_loose_fast", "dock_x_loose_fast"]
+    dock_plugins: ["dock_x_percise_fast", "dock_y_percise_fast", "dock_x_percise_slow", "dock_y_percise_slow", "dock_x_loose_fast", "dock_y_loose_fast"]
     dock_x_percise_fast:
       plugin: 'opennav_docking::SimpleChargingDock'
       docking_threshold: 0.005
