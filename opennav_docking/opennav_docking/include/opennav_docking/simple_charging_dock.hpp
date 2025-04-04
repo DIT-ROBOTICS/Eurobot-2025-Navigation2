@@ -143,6 +143,9 @@ protected:
   // Filtering of detected poses
   std::shared_ptr<PoseFilter> filter_;
 
+  // NavTypeSelector nav_type_selector_
+  std::shared_ptr<NavTypeSelector> nav_type_selector_;  
+
   // Threshold that battery current must exceed to be "charging" (in Amperes)
   double charging_threshold_;
   // If not using an external pose reference, this is the distance threshold
@@ -155,14 +158,11 @@ protected:
   double staging_x_offset_;
   double staging_y_offset_;
   double staging_yaw_offset_;
-
+  // set offset direction for goal checking 
   char offset_direction_;
 
   rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
   std::shared_ptr<tf2_ros::Buffer> tf2_buffer_;
-
-  // NavTypeSelector nav_type_selector_
-  std::shared_ptr<NavTypeSelector> nav_type_selector_;  
 };
 
 }  // namespace opennav_docking
