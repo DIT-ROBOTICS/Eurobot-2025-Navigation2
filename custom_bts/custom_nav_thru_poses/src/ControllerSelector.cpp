@@ -16,7 +16,7 @@ class ControllerSelector : public rclcpp::Node {
                 });
 
             // Selected controller publisher
-            controller_selector_pub_ = this->create_publisher<std_msgs::msg::String>("/controller_type", rclcpp::QoS(10).reliable().transient_local());
+            controller_selector_pub_ = this->create_publisher<std_msgs::msg::String>("/controller_type_thru", rclcpp::QoS(10).reliable().transient_local());
         
             declare_parameter("Fast_controller", rclcpp::ParameterValue("Fast"));
             declare_parameter("Slow_controller", rclcpp::ParameterValue("Slow"));
