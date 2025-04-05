@@ -59,7 +59,11 @@ BT::NodeStatus GoalCheckerSelector::tick()
       return BT::NodeStatus::FAILURE;
     } else {
       last_selected_goal_checker_ = default_goal_checker;
+      RCLCPP_WARN(node_->get_logger(), "No goal checker type selected, defaulting to %s",
+        last_selected_goal_checker_.c_str());
     }
+  } else {
+    RCLCPP_INFO(node_->get_logger(), "\033[1;36mGoal checker \"%s\" has been selected\033[0m", last_selected_goal_checker_.c_str());
   }
 
   setOutput("selected_goal_checker", last_selected_goal_checker_);
@@ -71,7 +75,6 @@ void
 GoalCheckerSelector::callbackGoalCheckerSelect(const std_msgs::msg::String::SharedPtr msg)
 {
   last_selected_goal_checker_ = msg->data;
-  RCLCPP_INFO(node_->get_logger(), "Goal checker selected: %s", msg->data.c_str());
 }
 
 }  // namespace nav2_behavior_tree
