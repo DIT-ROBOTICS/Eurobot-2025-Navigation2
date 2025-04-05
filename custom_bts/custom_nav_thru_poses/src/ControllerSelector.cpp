@@ -27,15 +27,18 @@ class ControllerSelector : public rclcpp::Node {
 
     private:
         void feedback_callback(nav2_msgs::action::NavigateThroughPoses::Feedback feedback) {
+            // RCLCPP_INFO(this->get_logger(), "Feedback received: %d poses remaining", feedback.number_of_poses_remaining);
+            // TODO: Check if the feedback is stable
             if(feedback.number_of_poses_remaining <= 1) {
                 controller_type_.data = slow_controller_;
-                controller_selector_pub_->publish(controller_type_);
             } else {
                 controller_type_.data = fast_controller_;
-                controller_selector_pub_->publish(controller_type_);
             }
-
-            if(controller_type_prev_ != controller_type_.data)    RCLCPP_INFO(this->get_logger(), "Controller type has switch to '%s'", controller_type_.data.c_str());
+            
+            if(controller_type_prev_ != controller_type_.data) {
+                controller_selector_pub_->publish(controller_type_);
+                // RCLCPP_INFO(this->get_logger(), "Controller type has switch to '%s'", controller_type_.data.c_str());
+            }
 
             controller_type_prev_ = controller_type_.data;
         }
