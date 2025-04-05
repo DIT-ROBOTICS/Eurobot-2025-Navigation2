@@ -406,7 +406,7 @@ void ControllerServer::computeControl()
       computeAndPublishVelocity();
 
       if (isGoalReached()) {
-        RCLCPP_INFO(get_logger(), "Reached the goal!");
+        RCLCPP_DEBUG(get_logger(), "Reached the goal!");
         break;
       }
 

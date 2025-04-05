@@ -268,7 +268,7 @@ void DockingServer::dockRobot()
         // Approach the dock using control law
         if (approachDock(dock, dock_pose)) {
           if (waitForCharge(dock)) {
-            RCLCPP_INFO(get_logger(), "Robot is docked!");
+            RCLCPP_INFO(get_logger(), "\033[1;32mRobot is docked!\033[0m");
             result->success = true;
             result->num_retries = num_retries_;
             stashDockData(goal->use_dock_id, dock, true);
