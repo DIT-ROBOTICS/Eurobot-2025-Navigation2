@@ -17,7 +17,6 @@ class ControllerSelector : public rclcpp::Node {
 
             // Selected controller publisher
             controller_selector_pub_ = this->create_publisher<std_msgs::msg::String>("/controller_type", rclcpp::QoS(10).reliable().transient_local());
-            controller_selector_timer_ = this->create_wall_timer(std::chrono::milliseconds(50), std::bind(&ControllerSelector::timer_callback, this));
         
             declare_parameter("Fast_controller", rclcpp::ParameterValue("Fast"));
             declare_parameter("Slow_controller", rclcpp::ParameterValue("Slow"));
@@ -29,25 +28,16 @@ class ControllerSelector : public rclcpp::Node {
     private:
         void feedback_callback(nav2_msgs::action::NavigateThroughPoses::Feedback feedback) {
             if(feedback.number_of_poses_remaining <= 1) {
-                controller_type_ = slow_controller_;
+                controller_type_.data = slow_controller_;
+                controller_selector_pub_->publish(controller_type_);
             } else {
-                controller_type_ = fast_controller_;
+                controller_type_.data = fast_controller_;
+                controller_selector_pub_->publish(controller_type_);
             }
 
-            if(controller_type_prev_ != controller_type_)    RCLCPP_INFO(this->get_logger(), "Controller type has switch to '%s'", controller_type_.c_str());
+            if(controller_type_prev_ != controller_type_.data)    RCLCPP_INFO(this->get_logger(), "Controller type has switch to '%s'", controller_type_.data.c_str());
 
-            controller_type_prev_ = controller_type_;
-        }
-        
-        void timer_callback() {
-            auto message = std_msgs::msg::String();
-
-            // Hardcoded controller selection
-            message.data = controller_type_;
-
-            // RCLCPP_INFO(this->get_logger(), "Publishing: '%s'", message.data.c_str());
-
-            controller_selector_pub_->publish(message);
+            controller_type_prev_ = controller_type_.data;
         }
 
         // Navigate through poses feedback subscriber
@@ -55,10 +45,9 @@ class ControllerSelector : public rclcpp::Node {
 
         // Selected controller publisher
         rclcpp::Publisher<std_msgs::msg::String>::SharedPtr controller_selector_pub_;
-        rclcpp::TimerBase::SharedPtr controller_selector_timer_;
 
         // Hardcoded controller selection
-        std::string controller_type_;
+        std_msgs::msg::String controller_type_;
         std::string controller_type_prev_ = "None";
         std::string fast_controller_, slow_controller_;
 };
