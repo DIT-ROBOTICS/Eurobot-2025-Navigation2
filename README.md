@@ -8,7 +8,7 @@
 ## How to Use
 
 1. Download the latest version of `nav2_release_vX.X.X.zip` and extract it into the folder `~/Eurobot-2025/Eurobot-2025-ws`.  
-2. Start the container under `Eurobot-2025-Navigation2-envs`.  
+2. Start the container with `Eurobot-2025-Navigation2-envs`.  
 3. Launch the navigation packages by executing the appropriate launch files.  
 
 For more details, please refer to the README file at:  
