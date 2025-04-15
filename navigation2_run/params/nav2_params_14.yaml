@@ -173,7 +173,7 @@ global_costmap:
       trinary_costmap: false
       lethal_cost_threshold: 10
       unknown_cost_value: 255
-      plugins: ["static_layer", "inflation_layer", "rival_layer", "object_layer"]
+      plugins: ["static_layer", "inflation_layer", "rival_layer", "object_layer", "keepout_layer"]
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
         map_subscribe_transient_local: True
@@ -219,6 +219,14 @@ global_costmap:
         board_inscribed_radius: 0.01
         column_inflation_radius: 0.22
         board_inflation_radius: 0.22
+        cost_scaling_factor: 3.0
+      keepout_layer:
+        plugin: "keepout_costmap_plugin::KeepoutLayer"
+        enabled: True
+        keepout_zone_array: [1.5, 1.0, 0.3, 0.5,
+                             0.2, 0.2, 0.3, 0.3,
+                             2.3, 1.3, 0.4, 0.4,]
+        inflation_length: 0.2
         cost_scaling_factor: 3.0
       always_send_full_costmap: True
 
@@ -316,7 +324,7 @@ docking_server:
     velocity_smoother_wait: 0.12
 
     # Types of docks
-    dock_plugins: ["dock_x_percise_fast", "dock_y_percise_fast", "dock_x_percise_slow", "dock_y_percise_slow", "dock_x_loose_fast", "dock_x_loose_fast"]
+    dock_plugins: ["dock_x_percise_fast", "dock_y_percise_fast", "dock_x_percise_slow", "dock_y_percise_slow", "dock_x_loose_fast", "dock_y_loose_fast"]
     dock_x_percise_fast:
       plugin: 'opennav_docking::SimpleChargingDock'
       docking_threshold: 0.005
