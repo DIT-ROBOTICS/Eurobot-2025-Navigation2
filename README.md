@@ -1,7 +1,5 @@
 # Navigation Packages for DIT Robotics Eurobot 2025
 
-# Navigation Packages for DIT Robotics Eurobot 2025
-
 ## 🔧 Features
 
 ### 🧭 Basic Navigation  
