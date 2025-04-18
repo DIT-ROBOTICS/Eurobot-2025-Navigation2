@@ -11,7 +11,7 @@
             </RateController>
             <RecoveryNode number_of_retries="1" name="FollowPath">
               <Sequence>
-                <ControllerSelector topic_name="/controller_type" default_controller="Fast" selected_controller="{controller}"/>
+                <ControllerSelector topic_name="/controller_type" default_controller="Slow" selected_controller="{controller}"/>
                 <GoalCheckerSelector topic_name="/goal_checker_type" default_goal_checker="Precise" selected_goal_checker="{goal_checker}"/>
                 <FollowPath path="{path}" controller_id="{controller}" goal_checker_id="{goal_checker}"/>
               </Sequence>
