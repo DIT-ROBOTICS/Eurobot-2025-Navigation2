@@ -19,8 +19,10 @@ private:
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr controller_selector_pub_;
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr goal_checker_selector_pub_;
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr controller_function_pub_;
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr dock_controller_selector_pub_;
 
   std_msgs::msg::String controller_selector_msg_;
   std_msgs::msg::String goal_checker_selector_msg_;
   std_msgs::msg::String controller_function_msg_;
+  std_msgs::msg::String dock_controller_selector_msg_;
 };

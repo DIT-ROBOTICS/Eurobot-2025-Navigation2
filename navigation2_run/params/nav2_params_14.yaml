@@ -347,13 +347,36 @@ docking_server:
     
     # dock_database: /my/path/to/dock_database.yaml
 
-    controller:
+    Ordinary:
       max_linear_vel: 0.3
       min_linear_vel: 0.0
       linear_kp_accel_vel: 0.5
       linear_ki_accel_vel: 0.1
       linear_kp_decel_dis: 3.0
-      # linear_kp_decel_vel: 0.6
+      angular_kp: 4.0
+      deceleration_distance: 0.05
+      reserved_distance: 0.0
+      stop_degree: 120.0
+      rival_radius: 0.44
+
+    Gentle:
+      max_linear_vel: 0.3
+      min_linear_vel: 0.0
+      linear_kp_accel_vel: 0.5
+      linear_ki_accel_vel: 0.1
+      linear_kp_decel_dis: 3.0
+      angular_kp: 4.0
+      deceleration_distance: 0.05
+      reserved_distance: 0.0
+      stop_degree: 120.0
+      rival_radius: 0.44
+
+    Rush:
+      max_linear_vel: 0.3
+      min_linear_vel: 0.0
+      linear_kp_accel_vel: 0.5
+      linear_ki_accel_vel: 0.1
+      linear_kp_decel_dis: 3.0
       angular_kp: 4.0
       deceleration_distance: 0.05
       reserved_distance: 0.0

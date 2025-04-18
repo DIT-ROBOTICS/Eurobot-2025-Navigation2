@@ -32,6 +32,7 @@
 #include "nav_msgs/msg/odometry.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "tf2/utils.h"
+#include "std_msgs/msg/string.hpp"
 
 namespace opennav_docking
 {
@@ -100,8 +101,14 @@ class Controller
 
   protected:
     // Node configuration
+    rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
     rclcpp::Clock::SharedPtr clock_;
     rclcpp::Logger logger_{rclcpp::get_logger("CustomController")};
+    
+    // Parameter configuration
+    std::string param_name_ = "Ordinary";
+    void updateParams();
+    rclcpp::Subscription<std_msgs::msg::String>::SharedPtr dock_controller_selector_sub_;
 
     // Parameters from the config file
     double max_linear_vel_, min_linear_vel_;
