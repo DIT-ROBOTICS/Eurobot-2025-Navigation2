@@ -1,14 +1,14 @@
 # Navigation Packages for DIT Robotics Eurobot 2025
 
-# 🧭 Navigation Packages for DIT Robotics Eurobot 2025
+# Navigation Packages for DIT Robotics Eurobot 2025
 
 ## 🔧 Features
 
-### Basic Navigation  
+### 🧭 Basic Navigation  
 Enables smooth and efficient autonomous movement.  
 - Uses `/nav_to_pose` and `/nav_thru_poses` action servers for basic navigation.
 
-### Docking Integration  
+### 🧭 Docking Integration  
 Seamlessly integrates docking and navigation for autonomous charging or station return.  
 - Utilizes the `/dock_robot` action server to control the docking process.
 
