@@ -324,8 +324,9 @@ docking_server:
     velocity_smoother_wait: 0.12
 
     # Types of docks
-    dock_plugins: ["dock_x_percise_fast", "dock_y_percise_fast", "dock_x_percise_slow", "dock_y_percise_slow", "dock_x_loose_fast", "dock_y_loose_fast", "mission_dock_x", "mission_dock_y"]
-    mission_dock_x:
+    dock_plugins: ["dock"]
+    # dock_plugins: ["dock_x_percise_fast", "dock_y_percise_fast", "dock_x_percise_slow", "dock_y_percise_slow", "dock_x_loose_fast", "dock_y_loose_fast", "mission_dock_x", "mission_dock_y"]
+    dock:
       plugin: 'opennav_docking::SimpleChargingDock'
       docking_threshold: 0.005
       use_debounce: true
@@ -339,117 +340,11 @@ docking_server:
       use_stall_detection: false
       base_frame: "base_footprint"
 
-    mission_dock_y:
-      plugin: 'opennav_docking::SimpleChargingDock'
-      docking_threshold: 0.005
-      use_debounce: true
-      xy_debounce_threshold: 2
-      yaw_debounce_threshold: 2
-      use_dynamic_offset: true
-      staging_x_offset: 0.35
-      staging_y_offset: 0.35
-      staging_yaw_offset: 1.57
-      use_battery_status: false
-      use_stall_detection: false
-      base_frame: "base_footprint"
-
-    dock_x_percise_fast:
-      plugin: 'opennav_docking::SimpleChargingDock'
-      docking_threshold: 0.005
-      use_debounce: true
-      xy_debounce_threshold: 2
-      yaw_debounce_threshold: 2
-      use_dynamic_offset: true
-      staging_x_offset: 0.35
-      staging_y_offset: 0.35
-      staging_yaw_offset: 1.57
-      use_battery_status: false
-      use_stall_detection: false
-      base_frame: "base_footprint"
-
-    dock_y_percise_fast:
-      plugin: 'opennav_docking::SimpleChargingDock'
-      docking_threshold: 0.005
-      use_debounce: true
-      xy_debounce_threshold: 2
-      yaw_debounce_threshold: 2
-      use_dynamic_offset: true
-      staging_x_offset: 0.0
-      staging_y_offset: 0.35
-      staging_yaw_offset: 0.0
-      use_battery_status: false
-      use_stall_detection: false
-      base_frame: "base_footprint"
-
-    dock_x_percise_slow:
-      plugin: 'opennav_docking::SimpleChargingDock'
-      docking_threshold: 0.005
-      use_debounce: true
-      xy_debounce_threshold: 2
-      yaw_debounce_threshold: 2
-      use_dynamic_offset: true
-      staging_x_offset: 0.35
-      staging_y_offset: 0.35
-      staging_yaw_offset: 1.57
-      use_battery_status: false
-      use_stall_detection: false
-      base_frame: "base_footprint"
-
-    dock_y_percise_slow:
-      plugin: 'opennav_docking::SimpleChargingDock'
-      docking_threshold: 0.005
-      use_debounce: true
-      xy_debounce_threshold: 2
-      yaw_debounce_threshold: 2
-      use_dynamic_offset: true
-      staging_x_offset: 0.0
-      staging_y_offset: 0.35
-      staging_yaw_offset: 0.0
-      use_battery_status: false
-      use_stall_detection: false
-      base_frame: "base_footprint"
-
-    dock_x_loose_fast:
-      plugin: 'opennav_docking::SimpleChargingDock'
-      docking_threshold: 0.02
-      use_debounce: true
-      xy_debounce_threshold: 1
-      yaw_debounce_threshold: 1
-      use_dynamic_offset: true
-      staging_x_offset: 0.35
-      staging_y_offset: 0.35
-      staging_yaw_offset: 1.57
-      use_battery_status: false
-      use_stall_detection: false
-      base_frame: "base_footprint"
-
-    dock_y_loose_fast:
-      plugin: 'opennav_docking::SimpleChargingDock'
-      docking_threshold: 0.02
-      use_debounce: true
-      xy_debounce_threshold: 1
-      yaw_debounce_threshold: 1
-      use_dynamic_offset: true
-      staging_x_offset: 0.0
-      staging_y_offset: 0.35
-      staging_yaw_offset: 0.0
-      use_battery_status: false
-      use_stall_detection: false
-      base_frame: "base_footprint"
-
-    docks: ['home_dock', 'flex_dock1', 'flex_dock2']
+    docks: ['home_dock']
     home_dock:
-      type: 'dock_x_percise_fast'
+      type: 'dock'
       frame: map
       pose: [0.0, 0.0, 0.0]
-    flex_dock1:
-      type: 'dock_y_percise_fast'
-      frame: map
-      pose: [2.2, 1.4, 0.0]
-    flex_dock2:
-      type: 'dock_x_percise_slow'
-      frame: map
-      pose: [1.5, 1.0, 1.57]
     
     # dock_database: /my/path/to/dock_database.yaml
 

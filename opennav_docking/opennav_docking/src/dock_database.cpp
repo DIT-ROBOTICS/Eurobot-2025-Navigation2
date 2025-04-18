@@ -113,11 +113,31 @@ ChargingDock::Ptr DockDatabase::findDockPlugin(const std::string & type)
     return dock_plugins_.begin()->second;
   }
 
+  // Find the dock plugin directly by dock type
   auto it = dock_plugins_.find(type);
   if (it != dock_plugins_.end()) {
     return it->second;
   }
-  return nullptr;
+
+  // ** Find the base dock plugin by searching from dock type
+  for (const auto & dock_plugin : dock_plugins_) {
+    if (strstr(type.c_str(), dock_plugin.first.c_str()) != nullptr) {
+      RCLCPP_INFO(
+        node_.lock()->get_logger(),
+        "\033[1;35mDock plugin base templete \"%s\" found in dock type \"%s\".\033[0m",
+        dock_plugin.first.c_str(), type.c_str());    
+
+      // ** Return the first plugin that matches the type
+      return dock_plugin.second;
+    }
+  }
+
+  RCLCPP_ERROR(
+    node_.lock()->get_logger(),
+    "Dock plugin type %s not found in database.",
+    type.c_str());
+  
+    return nullptr;
 }
 
 bool DockDatabase::getDockPlugins(
