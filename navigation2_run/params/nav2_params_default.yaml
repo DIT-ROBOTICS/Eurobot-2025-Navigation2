@@ -89,7 +89,7 @@ controller_server:
     min_theta_velocity_threshold: 0.001
     failure_tolerance: 0.2
     progress_checker_plugin: "progress_checker"
-    goal_checker_plugins: ["Percise", "Loose"]
+    goal_checker_plugins: ["Precise", "Loose"]
     controller_plugins: ["Fast", "Slow"]
 
     # Progress checker parameters
@@ -99,7 +99,7 @@ controller_server:
       movement_time_allowance: 10.0
 
     # Goal checker parameters
-    Percise:
+    Precise:
       stateful: True
       plugin: "nav2_controller::SimpleGoalChecker"
       xy_goal_tolerance: 0.01
@@ -325,7 +325,6 @@ docking_server:
 
     # Types of docks
     dock_plugins: ["dock"]
-    # dock_plugins: ["dock_x_percise_fast", "dock_y_percise_fast", "dock_x_percise_slow", "dock_y_percise_slow", "dock_x_loose_fast", "dock_y_loose_fast", "mission_dock_x", "mission_dock_y"]
     dock:
       plugin: 'opennav_docking::SimpleChargingDock'
       docking_threshold: 0.005

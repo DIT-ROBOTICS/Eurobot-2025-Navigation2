@@ -10,13 +10,13 @@ NavTypeSelector::NavTypeSelector(std::shared_ptr<rclcpp_lifecycle::LifecycleNode
 
 void NavTypeSelector::setType(std::string const & mode, char & offset_direction, geometry_msgs::msg::PoseStamped & original_staging_pose, double const & offset) {
     // Determine the goal checker type
-    if(strstr(mode.c_str(), "percise") != NULL) {
-        goal_checker_selector_msg_.data = "Percise";
+    if(strstr(mode.c_str(), "precise") != NULL) {
+        goal_checker_selector_msg_.data = "Precise";
     } else if(strstr(mode.c_str(), "loose") != NULL) {
         goal_checker_selector_msg_.data = "Loose";
     } else {
-        goal_checker_selector_msg_.data = "Percise";
-        RCLCPP_WARN(node_->get_logger(), "No goal checker type selected, defaulting to percise");
+        goal_checker_selector_msg_.data = "Precise";
+        RCLCPP_WARN(node_->get_logger(), "No goal checker type selected, defaulting to precise");
     }
     goal_checker_selector_pub_->publish(goal_checker_selector_msg_);    // Publish the goal checker type
 
