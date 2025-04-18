@@ -19,7 +19,7 @@ namespace nav2_behavior_tree
             "/behavior_server"
         );
         shrink_client = node_->create_client<std_srvs::srv::SetBool>(
-            "/shrink/shrinkBack",
+            "/shrink/doneShrink",
             rmw_qos_profile_services_default);
         rclcpp::SubscriptionOptions sub_option;
         sub_option.callback_group = callback_group_;
@@ -37,8 +37,10 @@ namespace nav2_behavior_tree
     {
         callback_group_executor_.spin_some();
 
-        getShrinkParam();
-        if(checkShrinkBack()) doShrinkRequest();
+        if(shrinkBack) 
+            if(checkLongTimeout()) checkIfShrinkRequest();
+        else if(checkQuickTimeout()) checkIfShrinkRequest();
+        
         
         if (stop_robot)
         {
@@ -58,27 +60,7 @@ namespace nav2_behavior_tree
         stop_robot = msg->data;
     }
 
-    void StopController::getShrinkParam()
-    {
-        // if (param_client->service_is_ready())
-        // {
-        //     param_client->get_parameters({"shrinkBack"}, [this](std::shared_future<std::vector<rclcpp::Parameter>> future)
-        //     {
-        //         future.wait();
-        //         auto result = future.get();
-        //         shrinkBack = result[0].as_bool();
-        //         RCLCPP_INFO(node_->get_logger(), "get shrinkBack: %d", shrinkBack);
-        //     });
-        // }
-        // else
-        // {
-        //     RCLCPP_ERROR(node_->get_logger(), "Service is not ready");
-        // }
-        shrinkBack = node_->get_parameter("/behavior_server/shrinkBack", shrinkBack);
-        if(shrinkBack) RCLCPP_INFO(node_->get_logger(), "shrinkBack: %d, is true", shrinkBack);
-    }
-
-    void StopController::doShrinkRequest(){
+    void StopController::checkIfShrinkRequest(){
         if(!shrink_client->wait_for_service(std::chrono::milliseconds(100))){
             RCLCPP_ERROR(node_->get_logger(), "Service not available, waiting...");
         }
@@ -86,6 +68,7 @@ namespace nav2_behavior_tree
             auto request = std::make_shared<std_srvs::srv::SetBool::Request>();
             request->data = true;
             auto result = shrink_client->async_send_request(request);
+            shinkBack = result.get()->success;
             if(rclcpp::spin_until_future_complete(node_, result) == rclcpp::FutureReturnCode::SUCCESS){
                 if(result.get()->success) RCLCPP_INFO(node_->get_logger(), "Shrink request sent successfully");
                 else RCLCPP_ERROR(node_->get_logger(), "Failed to send shrink request");
@@ -94,30 +77,40 @@ namespace nav2_behavior_tree
         }
     }
     
-    bool StopController::checkShrinkBack(){
-        // RCLCPP_INFO(node_->get_logger(), "shrink_timer: %d", shrink_timer);
-        if(shrink_timer_start) shrink_timer++;
-        else if(shrink_timer> 30) {
-            shrink_timer_start = false;
-            shrink_timer = 0;
-            return true;
-        }
-
-        if(shrinkBack){
-            if(!shrink_timer_start) {
-                shrink_timer_start = true;
+    bool StopController::checkQuickTimeout(){
+        // return true every 5 seconds, consider ticking rate is 20Hz
+        if(shrink_timer_start){
+            if(shrink_timer > 100){
+                shrink_timer = 0;
+                return true;
+            }
+            else{
+                shrink_timer++;
                 return false;
             }
-            else {
-                if(shrink_timer >= 30){
-                    shrink_timer_start = false;
-                    shrink_timer = 0;
-                    return true;
-                }
+        }
+        else{
+            shrink_timer_start = true;
+            return false;
+        }
+    }
+
+    bool StopController::checkLongTimeout(){
+        // return true every 20 seconds, consider ticking rate is 20Hz
+        if(shrink_timer_start){
+            if(shrink_timer > 400){
+                shrink_timer = 0;
+                return true;
+            }
+            else{
+                shrink_timer++;
+                return false;
             }
         }
-        else return false;
-        return false;
+        else{
+            shrink_timer_start = true;
+            return false;
+        }
     }
 } // namespace nav2_behavior_tree
 

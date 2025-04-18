@@ -22,11 +22,6 @@ namespace nav2_behaviors
             "/global_costmap/global_costmap"
         );
 
-        shrinkBack_param_client = std::make_shared<rclcpp::AsyncParametersClient>(
-            node, 
-            "/behavior_server"
-        );
-
         sub_costmap = node->create_subscription<nav_msgs::msg::OccupancyGrid>(
             "/global_costmap/costmap", 
             rclcpp::QoS(10), 
@@ -37,9 +32,10 @@ namespace nav2_behaviors
         getOriginalParam();
 
         shrink_srv = node->create_service<std_srvs::srv::SetBool>(
-            "/shrink/shrinkBack",
+            "/shrink/doneShrink",
             std::bind(&Shrink::handleShrinkBack, this, std::placeholders::_1, std::placeholders::_2)
         );
+
     }
 
     Status Shrink::onRun(const std::shared_ptr<const ShrinkAction::Goal> command){
@@ -75,35 +71,14 @@ namespace nav2_behaviors
         else return Status::RUNNING;
     }
 
-    void Shrink::handleShrinkBack(
+    void Shrink::handleShrinkCheck(
         const std::shared_ptr<std_srvs::srv::SetBool::Request> request,
         const std::shared_ptr<std_srvs::srv::SetBool::Response> response)
     {
         if(request->data){
-            shrinkBack = false;
-            setToShrinkBack(shrinkBack);
-            setToOriginal();
-            response->success = true;
-            response->message = "shrinkBack is set to true";
-        }
-    }
-
-    // if get request, set back to false, if sending from me, set to true.
-    void Shrink::setToShrinkBack(bool ShrinkBack){
-        if(shrinkBack_param_client->service_is_ready()){
-            shrinkBack_param_client->set_parameters({rclcpp::Parameter("shrinkBack", ShrinkBack)},[this](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future){
-                future.wait();
-                auto result = future.get();
-                if(result[0].successful){
-                    RCLCPP_INFO(logger_, "Set shrinkBack successfully");
-                }
-                else{
-                    RCLCPP_ERROR(logger_, "Failed to set shrinkBack");
-                }
-            });
-        }
-        else{
-            RCLCPP_ERROR(logger_, "Service is not ready");
+            response->success = shrinkBack;
+            response->message = "getting message from the service";
+            if(shrinkBack) setToOriginal();
         }
     }
 

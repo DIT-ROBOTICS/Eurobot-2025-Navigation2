@@ -22,10 +22,11 @@ namespace nav2_behaviors
         Status onCycleUpdate() override;
         bool noCostInMiddle();
         bool noCostAtGoal();
-        rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr shrink_srv;
-        void handleShrinkBack(
+        rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr shrinkCheck_srv;
+        void handleShrinkCheck(
             const std::shared_ptr<std_srvs::srv::SetBool::Request> request,
             const std::shared_ptr<std_srvs::srv::SetBool::Response> response);
+
 
     protected:
         int times;
@@ -46,7 +47,6 @@ namespace nav2_behaviors
         nav_msgs::msg::OccupancyGrid costmap;
         rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr sub_costmap;
         rclcpp::AsyncParametersClient::SharedPtr radius_param_client;
-        rclcpp::AsyncParametersClient::SharedPtr shrinkBack_param_client;
         rclcpp::Duration command_time_allowance{0,0};
         rclcpp::Time end_time;
         void changeInflationLayer(bool doShrink);
@@ -55,7 +55,6 @@ namespace nav2_behaviors
         void getOriginalParam();
         void setToOriginal();
         void setToShrink();
-        void setToShrinkBack(bool ShrinkBack);
     };
 }
 

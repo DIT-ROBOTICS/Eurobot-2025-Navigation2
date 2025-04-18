@@ -34,9 +34,9 @@ namespace nav2_behavior_tree
             rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub;
             rclcpp::Client<std_srvs::srv::SetBool>::SharedPtr shrink_client;
             void stopCallback(const std_msgs::msg::Bool::SharedPtr msg);
-            void getShrinkParam();
-            void doShrinkRequest();
-            bool checkShrinkBack();
+            void checkIfShrinkRequest();
+            bool checkQuickTimeout();
+            bool checkLongTimeout();
     };
 }
 
