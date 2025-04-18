@@ -22,6 +22,7 @@ namespace nav2_behaviors
         Status onCycleUpdate() override;
         bool noCostInMiddle();
         bool noCostAtGoal();
+        rclcpp::Client<std_srvs::srv::SetBool>::SharedPtr shrinkback_client;
         rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr shrinkCheck_srv;
         void handleShrinkCheck(
             const std::shared_ptr<std_srvs::srv::SetBool::Request> request,
@@ -55,6 +56,7 @@ namespace nav2_behaviors
         void getOriginalParam();
         void setToOriginal();
         void setToShrink();
+        void tellStopToShrinkBack();
     };
 }
 

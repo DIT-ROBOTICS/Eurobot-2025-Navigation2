@@ -31,9 +31,14 @@ namespace nav2_behaviors
         node->get_parameter("/behavior_server/shrinkBack", shrinkBack);
         getOriginalParam();
 
-        shrink_srv = node->create_service<std_srvs::srv::SetBool>(
+        shrinkCheck_srv = node->create_service<std_srvs::srv::SetBool>(
             "/shrink/doneShrink",
-            std::bind(&Shrink::handleShrinkBack, this, std::placeholders::_1, std::placeholders::_2)
+            std::bind(&Shrink::handleShrinkCheck, this, std::placeholders::_1, std::placeholders::_2)
+        );
+
+        shrinkback_client = node->create_client<std_srvs::srv::SetBool>(
+            "/stop_controller/shrink_completed",
+            rmw_qos_profile_services_default
         );
 
     }
@@ -52,12 +57,11 @@ namespace nav2_behaviors
         times++;
         setToShrink();
         shrinkBack = false;
-        setToShrinkBack(shrinkBack);
         if(noCostInMiddle() && noCostAtGoal() && times > 20){
             // setToOriginal();
             times = 0;
             shrinkBack = true;
-            setToShrinkBack(shrinkBack);
+            tellStopToShrinkBack();
             return Status::SUCCEEDED;
         }
         else if(times > 20){
@@ -65,10 +69,22 @@ namespace nav2_behaviors
             // setToOriginal();
             times = 0;
             shrinkBack = true;
-            setToShrinkBack(shrinkBack);
+            tellStopToShrinkBack();
             return Status::FAILED;
         }
         else return Status::RUNNING;
+    }
+
+    void Shrink::tellStopToShrinkBack(){
+        if(shrinkback_client->service_is_ready()){
+            auto request = std::make_shared<std_srvs::srv::SetBool::Request>();
+            request->data = true;
+            auto result = shrinkback_client->async_send_request(request);
+            RCLCPP_INFO(logger_, "tell stop to shrink back");
+            if (result.wait_for(std::chrono::seconds(1)) == std::future_status::ready) {
+                RCLCPP_INFO(logger_, "shrinkBack is %s", (shrinkBack ? "true" : "false"));
+            }
+        }
     }
 
     void Shrink::handleShrinkCheck(
@@ -76,9 +92,9 @@ namespace nav2_behaviors
         const std::shared_ptr<std_srvs::srv::SetBool::Response> response)
     {
         if(request->data){
-            response->success = shrinkBack;
+            response->success = true;
             response->message = "getting message from the service";
-            if(shrinkBack) setToOriginal();
+            setToOriginal();
         }
     }
 
@@ -141,12 +157,14 @@ namespace nav2_behaviors
     }
 
     void Shrink::setToOriginal(){
+        RCLCPP_INFO(logger_, "set the inflation radius to original");
         changeInflationLayer(false);
         changeRivalLayer(false);
         changeObjectLayer(false);
     }
 
     void Shrink::setToShrink(){
+        RCLCPP_INFO(logger_, "shrink the inflation radius");
         changeInflationLayer(true);
         changeRivalLayer(true);
         changeObjectLayer(true);
