@@ -131,7 +131,7 @@ controller_server:
     Slow:
       plugin: "custom_controller::CustomController"
       max_linear_vel: 0.8
-      max_angular_vel: 2.0
+      max_angular_vel: 6.0
       linear_kp: 2.2
       angular_kp: 3.7
       transform_tolerance: 0.1
