@@ -44,5 +44,4 @@ void NavTypeSelector::setType(std::string const & mode, char & offset_direction,
         original_staging_pose.pose.position.y -= offset;
         RCLCPP_WARN(node_->get_logger(), "No offset direction selected, applying offset to both x and y");
     }
-    
 }
