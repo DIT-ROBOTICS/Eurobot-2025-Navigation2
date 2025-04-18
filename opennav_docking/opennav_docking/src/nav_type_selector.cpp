@@ -15,7 +15,7 @@ void NavTypeSelector::setType(std::string const & mode, char & offset_direction,
     } else if(strstr(mode.c_str(), "loose") != NULL) {
         goal_checker_selector_msg_.data = "Loose";
     } else {
-        goal_checker_selector_msg_.data = "percise";
+        goal_checker_selector_msg_.data = "Percise";
         RCLCPP_WARN(node_->get_logger(), "No goal checker type selected, defaulting to percise");
     }
     goal_checker_selector_pub_->publish(goal_checker_selector_msg_);    // Publish the goal checker type
@@ -26,7 +26,7 @@ void NavTypeSelector::setType(std::string const & mode, char & offset_direction,
     } else if(strstr(mode.c_str(), "slow") != NULL) {
         controller_selector_msg_.data = "Slow";
     } else {
-        controller_selector_msg_.data = "slow";
+        controller_selector_msg_.data = "Slow";
         RCLCPP_WARN(node_->get_logger(), "No controller type selected, defaulting to fast");
     }
     controller_selector_pub_->publish(controller_selector_msg_);    // Publish the controller type
