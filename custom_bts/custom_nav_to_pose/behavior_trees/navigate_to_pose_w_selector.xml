@@ -12,7 +12,7 @@
             <RecoveryNode number_of_retries="1" name="FollowPath">
               <Sequence>
                 <ControllerSelector topic_name="/controller_type" default_controller="Fast" selected_controller="{controller}"/>
-                <GoalCheckerSelector topic_name="/goal_checker_type" default_goal_checker="Percise" selected_goal_checker="{goal_checker}"/>
+                <GoalCheckerSelector topic_name="/goal_checker_type" default_goal_checker="Precise" selected_goal_checker="{goal_checker}"/>
                 <FollowPath path="{path}" controller_id="{controller}" goal_checker_id="{goal_checker}"/>
               </Sequence>
               <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
