@@ -9,6 +9,7 @@ find_package(ament_cmake REQUIRED)
 
 find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
 find_package(nav2_core REQUIRED)
 find_package(pluginlib REQUIRED)
 
@@ -16,7 +17,8 @@ set(dep_pkgs
     rclcpp
     nav2_core
     pluginlib
-    geometry_msgs)
+    geometry_msgs
+    std_msgs)
 
 include_directories(include)
 
@@ -29,6 +31,7 @@ ament_target_dependencies(custom_controller
   nav2_core
   pluginlib
   geometry_msgs
+  std_msgs
 )
 
 target_include_directories(custom_controller PUBLIC

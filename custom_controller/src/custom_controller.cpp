@@ -110,6 +110,14 @@ void CustomController::configure(
     
     node->get_parameter(plugin_name_ + ".transform_tolerance", transform_tolerance);
     transform_tolerance_ = rclcpp::Duration::from_seconds(transform_tolerance);
+
+    // Special function for controller
+    controller_function_sub_ = node->create_subscription<std_msgs::msg::String>(
+        "/controller_function",
+        rclcpp::QoS(10).reliable().transient_local(),
+        [this](const std_msgs::msg::String::SharedPtr msg) {
+            controller_function_ = msg->data;
+        });
 }
 
 // Lifecycle methods
@@ -147,7 +155,7 @@ void CustomController::setPlan(const nav_msgs::msg::Path & path)
     if(!update_plan_){
         return;
     }
-    
+
     if(!global_plan_.poses.empty()){
         global_plan_.poses.clear();
     }   
@@ -286,6 +294,14 @@ RobotState CustomController::getLookAheadPoint(
 
 double CustomController::getGoalAngle(double cur_angle, double goal_angle) {
     double ang_diff_ = goal_angle - cur_angle;
+
+    if(controller_function_ == "DelaySpin") {
+        if(cur_pose_.distanceTo(vector_global_path_[0]) < 0.15 && cur_pose_.distanceTo(vector_global_path_.back()) > 0.15) {
+            return 0.0;
+        } else {
+            controller_function_ = "None";
+        }
+    }
 
     if (ang_diff_ > M_PI) {
         ang_diff_ -= 2.0 * M_PI;
