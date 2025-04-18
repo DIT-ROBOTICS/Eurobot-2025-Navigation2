@@ -1,9 +1,36 @@
 # Navigation Packages for DIT Robotics Eurobot 2025
 
-## Features
+# 🧭 Navigation Packages for DIT Robotics Eurobot 2025
 
-- **Basic Navigation Functions** – Enables smooth and efficient robot movement.  
-- **Docking Process Integration** – Integrates the robot's docking and movement workflows for seamless autonomous docking.  
+## 🔧 Features
+
+### Basic Navigation  
+Enables smooth and efficient autonomous movement.  
+- Uses `/nav_to_pose` and `/nav_thru_poses` action servers for basic navigation.
+
+### Docking Integration  
+Seamlessly integrates docking and navigation for autonomous charging or station return.  
+- Utilizes the `/dock_robot` action server to control the docking process.
+
+### Multi-Functional Interfaces  
+Offers a variety of commands for enhanced control and flexibility:  
+- `/stopRobot`: Lock/unlock the robot.  
+- `/keepout_zone`: Dynamically set keepout zones to avoid certain areas.  
+- `/dock_robot` supports flexible keyword-based commands via the `dock_type` parameter.
+
+#### ✅ Supported Keywords
+(Keyword order does not matter and is designed for compatibility.)
+- **Template Keyword**:  
+  - `dock`: Triggers the docking process.
+
+- **Functional Tags**:  
+  - **Controller Type**: `fast`, `slow`  
+  - **Goal Checker Type**: `precise`, `loose`  
+  - **Offset Direction**: `x`, `y`, `z`  
+  - **Docking Style**: `ordinary`, `gentle`, `rush`  
+  - **Special Control**: `delaySpin`
+
+---
 
 ## How to Use
 
@@ -13,6 +40,8 @@
 
 For more details, please refer to the README file at:  
 [https://github.com/DIT-ROBOTICS/Eurobot-2025-Navigation2-envs](https://github.com/DIT-ROBOTICS/Eurobot-2025-Navigation2-envs)   
+
+---
 
 ## Repository Structure
 ```
@@ -32,6 +61,8 @@ Eurobot-2025
 
 ```
 
+---
+
 ## Contribution
 Contributions are welcome! Please follow these steps:
 1. Fork the repository.
@@ -39,8 +70,12 @@ Contributions are welcome! Please follow these steps:
 3. Commit your changes.
 4. Submit a pull request.
 
+---
+
 ## License
 This project is licensed under the MIT License. See the `LICENSE` file for details.
+
+---
 
 ## Contact
 For any issues or inquiries, please open an issue on GitHub or contact the DIT Robotics team.
