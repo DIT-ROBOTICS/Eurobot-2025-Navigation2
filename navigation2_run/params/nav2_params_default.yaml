@@ -324,7 +324,35 @@ docking_server:
     velocity_smoother_wait: 0.12
 
     # Types of docks
-    dock_plugins: ["dock_x_percise_fast", "dock_y_percise_fast", "dock_x_percise_slow", "dock_y_percise_slow", "dock_x_loose_fast", "dock_y_loose_fast"]
+    dock_plugins: ["dock_x_percise_fast", "dock_y_percise_fast", "dock_x_percise_slow", "dock_y_percise_slow", "dock_x_loose_fast", "dock_y_loose_fast", "mission_dock_x", "mission_dock_y"]
+    mission_dock_x:
+      plugin: 'opennav_docking::SimpleChargingDock'
+      docking_threshold: 0.005
+      use_debounce: true
+      xy_debounce_threshold: 2
+      yaw_debounce_threshold: 2
+      use_dynamic_offset: true
+      staging_x_offset: 0.35
+      staging_y_offset: 0.35
+      staging_yaw_offset: 1.57
+      use_battery_status: false
+      use_stall_detection: false
+      base_frame: "base_footprint"
+
+    mission_dock_y:
+      plugin: 'opennav_docking::SimpleChargingDock'
+      docking_threshold: 0.005
+      use_debounce: true
+      xy_debounce_threshold: 2
+      yaw_debounce_threshold: 2
+      use_dynamic_offset: true
+      staging_x_offset: 0.35
+      staging_y_offset: 0.35
+      staging_yaw_offset: 1.57
+      use_battery_status: false
+      use_stall_detection: false
+      base_frame: "base_footprint"
+
     dock_x_percise_fast:
       plugin: 'opennav_docking::SimpleChargingDock'
       docking_threshold: 0.005
