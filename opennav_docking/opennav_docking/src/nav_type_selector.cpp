@@ -27,6 +27,10 @@ void NavTypeSelector::setType(std::string const & mode, char & offset_direction,
         controller_selector_msg_.data = "Fast";
     } else if(strstr(mode.c_str(), "slow") != nullptr) {
         controller_selector_msg_.data = "Slow";
+    } else if(strstr(mode.c_str(), "linearBoost") != nullptr) {
+        controller_selector_msg_.data = "LinearBoost";
+    } else if(strstr(mode.c_str(), "angularBoost") != nullptr) {
+        controller_selector_msg_.data = "AngularBoost";
     } else {
         controller_selector_msg_.data = "Slow";
         RCLCPP_WARN(node_->get_logger(), "No controller type selected, defaulting to %s", controller_selector_msg_.data.c_str());
