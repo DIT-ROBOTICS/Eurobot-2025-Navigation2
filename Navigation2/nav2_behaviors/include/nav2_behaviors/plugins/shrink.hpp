@@ -7,6 +7,7 @@
 #include "nav2_util/node_utils.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "std_srvs/srv/set_bool.hpp"
+#include "std_msgs/msg/bool.hpp"
 
 namespace nav2_behaviors
 {
@@ -22,7 +23,7 @@ namespace nav2_behaviors
         Status onCycleUpdate() override;
         bool noCostInMiddle();
         bool noCostAtGoal();
-        rclcpp::Client<std_srvs::srv::SetBool>::SharedPtr shrinkback_client;
+        rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr shrinkback_pub;
         rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr shrinkCheck_srv;
         void handleShrinkCheck(
             const std::shared_ptr<std_srvs::srv::SetBool::Request> request,

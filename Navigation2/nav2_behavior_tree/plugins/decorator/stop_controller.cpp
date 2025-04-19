@@ -33,46 +33,29 @@ namespace nav2_behavior_tree
       rclcpp::SystemDefaultsQoS(),
       std::bind(&StopController::stopCallback, this, std::placeholders::_1),
       sub_options);
+    
+    shrinkback_sub = node_->create_subscription<std_msgs::msg::Bool>(
+      "/shrink/shrinkback", 
+      rclcpp::SystemDefaultsQoS(),
+      std::bind(&StopController::shrinkBackCallBack, this, std::placeholders::_1), // Match case with actual method name
+      sub_options);
 
-    // Create service for receiving shrink completed notification
-    // Try this version without the callback_group parameter
-    shrink_completed_srv = node_->create_service<std_srvs::srv::SetBool>(
-      "/stop_controller/shrink_completed",
-      std::bind(&StopController::shrinkCompletedCallback, this, std::placeholders::_1, std::placeholders::_2));
-
-    // Start a dedicated spin thread for the callback group executor
-    spin_thread_ = std::thread([this]() {
-      rclcpp::Rate rate(50);  // 50Hz spinning rate
-      while (rclcpp::ok()) {
-        callback_group_executor_.spin_some();
-        rate.sleep();
-      }
-    });
-  }
-
-  StopController::~StopController()
-  {
-    if (spin_thread_.joinable()) {
-      spin_thread_.join();
-    }
-  }
-
-  void StopController::shrinkCompletedCallback(
-    const std::shared_ptr<std_srvs::srv::SetBool::Request> request,
-    std::shared_ptr<std_srvs::srv::SetBool::Response> response)
-  {
-    (void)request;  // Mark parameter as unused
-    RCLCPP_INFO(node_->get_logger(), "Received shrink completed notification from shrink");
-    // Set the flag and reset associated timer
-    shrink_completed = true;
-    shrink_completed_timer = 0;
-    response->success = true;
-    response->message = "Shrink completed flag set";
+    nav2_util::declare_parameter_if_not_declared(node_, "shrink_timeout", rclcpp::ParameterValue(20));
+    node_->get_parameter("shrink_timeout", shrink_timeout);
+    shrink_timeout *= 20; // Convert to timer ticks
+    RCLCPP_INFO(node_->get_logger(), "Shrink timeout set to %d ticks", shrink_timeout);
   }
 
   void StopController::stopCallback(const std_msgs::msg::Bool::SharedPtr msg)
   {
     stop_robot = msg->data;
+  }
+
+  void StopController::shrinkBackCallBack(const std_msgs::msg::Bool::SharedPtr msg)
+  {
+    shrink_completed = msg->data;
+    RCLCPP_INFO(node_->get_logger(), "Received shrink back notification, shrink_completed: %s", msg->data ? "true" : "false");
+    shrink_completed_timer = 0;
   }
 
   void StopController::checkIfShrinkRequest()
@@ -104,8 +87,7 @@ namespace nav2_behavior_tree
     // If we received a shrink completed message, increment its timer.
     if (shrink_completed) {
       shrink_completed_timer++;
-      // If timer expires (e.g., 100 ticks ~ 5 seconds at 20Hz).
-      if (shrink_completed_timer > 100) {
+      if (shrink_completed_timer > shrink_timeout) {
         RCLCPP_INFO(node_->get_logger(), "Timer expired, requesting shrink service to set original");
         checkIfShrinkRequest();
         shrink_completed = false;

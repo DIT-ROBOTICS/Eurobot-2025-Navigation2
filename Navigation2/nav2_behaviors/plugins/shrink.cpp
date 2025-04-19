@@ -36,11 +36,10 @@ namespace nav2_behaviors
             std::bind(&Shrink::handleShrinkCheck, this, std::placeholders::_1, std::placeholders::_2)
         );
 
-        shrinkback_client = node->create_client<std_srvs::srv::SetBool>(
-            "/stop_controller/shrink_completed",
-            rmw_qos_profile_services_default
+        shrinkback_pub = node->create_publisher<std_msgs::msg::Bool>(
+            "/shrink/shrinkback", 
+            rclcpp::SystemDefaultsQoS()
         );
-
     }
 
     Status Shrink::onRun(const std::shared_ptr<const ShrinkAction::Goal> command){
@@ -57,6 +56,9 @@ namespace nav2_behaviors
         times++;
         setToShrink();
         shrinkBack = false;
+        std_msgs::msg::Bool msg;
+        msg.data = shrinkBack;
+        shrinkback_pub->publish(msg);
         if(noCostInMiddle() && noCostAtGoal() && times > 20){
             // setToOriginal();
             times = 0;
@@ -76,15 +78,10 @@ namespace nav2_behaviors
     }
 
     void Shrink::tellStopToShrinkBack(){
-        if(shrinkback_client->service_is_ready()){
-            auto request = std::make_shared<std_srvs::srv::SetBool::Request>();
-            request->data = true;
-            auto result = shrinkback_client->async_send_request(request);
-            RCLCPP_INFO(logger_, "tell stop to shrink back");
-            if (result.wait_for(std::chrono::seconds(1)) == std::future_status::ready) {
-                RCLCPP_INFO(logger_, "shrinkBack is %s", (shrinkBack ? "true" : "false"));
-            }
-        }
+        std_msgs::msg::Bool msg;
+        msg.data = shrinkBack;
+        shrinkback_pub->publish(msg);
+        RCLCPP_INFO(logger_, "tell stop to shrink back");
     }
 
     void Shrink::handleShrinkCheck(
