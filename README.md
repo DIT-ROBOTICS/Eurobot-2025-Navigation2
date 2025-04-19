@@ -22,7 +22,7 @@ Offers a variety of commands for enhanced control and flexibility:
   - `dock`: Triggers the docking process.
 
 - **Functional Tags**:  
-  - **Controller Type**: `fast`, `slow`  
+  - **Controller Type**: `fast`, `slow`, `linearBoost`, `angularBoost`
   - **Goal Checker Type**: `precise`, `loose`  
   - **Offset Direction**: `x`, `y`, `z`  
   - **Docking Style**: `ordinary`, `gentle`, `rush`  
