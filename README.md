@@ -18,7 +18,7 @@ Offers a variety of commands for enhanced control and flexibility:
 
 #### ✅ Supported Keywords
 (Keyword order does not matter and is designed for compatibility.)
-- **Template Keyword**:  
+- **Template Base**:  
   - `dock`: Triggers the docking process.
 
 - **Functional Tags**:  
