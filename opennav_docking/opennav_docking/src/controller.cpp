@@ -40,23 +40,12 @@ Controller::Controller(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node) 
     // Initialize node
     node_ = node;
 
+    // Declare & get controller profiles
+    node_->declare_parameter("controllers", rclcpp::ParameterValue(std::vector<std::string>()));
+    node_->get_parameter("controllers", profiles_);
+
     // Declare parameters if not declared
-    declare_parameter_if_not_declared(node_, param_name_ + ".max_linear_vel", rclcpp::ParameterValue(0.5));
-    declare_parameter_if_not_declared(node_, param_name_ + ".min_linear_vel", rclcpp::ParameterValue(0.1));
-    declare_parameter_if_not_declared(node_, param_name_ + ".max_angular_vel", rclcpp::ParameterValue(3.0));
-    declare_parameter_if_not_declared(node_, param_name_ + ".min_angular_vel", rclcpp::ParameterValue(0.0));
-    declare_parameter_if_not_declared(node_, param_name_ + ".max_linear_acc", rclcpp::ParameterValue(0.3));
-    declare_parameter_if_not_declared(node_, param_name_ + ".max_angular_acc", rclcpp::ParameterValue(1.0));
-    declare_parameter_if_not_declared(node_, param_name_ + ".linear_ki_accel_vel", rclcpp::ParameterValue(0.7));
-    declare_parameter_if_not_declared(node_, param_name_ + ".linear_kp_accel_vel", rclcpp::ParameterValue(0.5));
-    declare_parameter_if_not_declared(node_, param_name_ + ".linear_kp_decel_dis", rclcpp::ParameterValue(3.0));
-    declare_parameter_if_not_declared(node_, param_name_ + ".linear_kp_decel_vel", rclcpp::ParameterValue(0.9));
-    declare_parameter_if_not_declared(node_, param_name_ + ".angular_kp", rclcpp::ParameterValue(4.0));
-    declare_parameter_if_not_declared(node_, param_name_ + ".look_ahead_distance", rclcpp::ParameterValue(1.0));
-    declare_parameter_if_not_declared(node_, param_name_ + ".deceleration_distance", rclcpp::ParameterValue(0.1));
-    declare_parameter_if_not_declared(node_, param_name_ + ".reserved_distance", rclcpp::ParameterValue(0.03));
-    declare_parameter_if_not_declared(node_, param_name_ + ".stop_degree", rclcpp::ParameterValue(45.0));
-    declare_parameter_if_not_declared(node_, param_name_ + ".rival_radius", rclcpp::ParameterValue(0.44));
+    declareAllControlParams();
 
     // Get parameters from the config file
     updateParams();
@@ -158,7 +147,7 @@ bool Controller::computeVelocityCommand(
     double local_angle = atan2(target.position.y, target.position.x);
 
     publishLocalGoal();
-
+    
     cmd.linear.x = ExtractVelocity(cmd.linear.x, global_distance, state_x_) * cos(local_angle);
     cmd.linear.y = ExtractVelocity(cmd.linear.y, global_distance, state_y_) * sin(local_angle);
     cmd.angular.z = getGoalAngle(global_angle);
@@ -280,8 +269,41 @@ void Controller::publishLocalGoal() {
     local_goal_pub_->publish(local_goal);
 }
 
+void Controller::declareAllControlParams()
+{
+    std::vector<std::pair<std::string, rclcpp::ParameterValue>> params = {
+        {"max_linear_vel", rclcpp::ParameterValue(0.5)},
+        {"min_linear_vel", rclcpp::ParameterValue(0.1)},
+        {"max_angular_vel", rclcpp::ParameterValue(3.0)},
+        {"min_angular_vel", rclcpp::ParameterValue(0.0)},
+        {"max_linear_acc", rclcpp::ParameterValue(0.3)},
+        {"max_angular_acc", rclcpp::ParameterValue(1.0)},
+        {"linear_ki_accel_vel", rclcpp::ParameterValue(0.7)},
+        {"linear_kp_accel_vel", rclcpp::ParameterValue(0.5)},
+        {"linear_kp_decel_dis", rclcpp::ParameterValue(3.0)},
+        {"linear_kp_decel_vel", rclcpp::ParameterValue(0.9)},
+        {"angular_kp", rclcpp::ParameterValue(4.0)},
+        {"look_ahead_distance", rclcpp::ParameterValue(1.0)},
+        {"deceleration_distance", rclcpp::ParameterValue(0.1)},
+        {"reserved_distance", rclcpp::ParameterValue(0.03)},
+        {"stop_degree", rclcpp::ParameterValue(45.0)},
+        {"rival_radius", rclcpp::ParameterValue(0.44)},
+    };
+
+    for (const auto& profile : profiles_)
+    {
+        for (const auto& [name, default_value] : params)
+        {
+            const std::string full_name = profile + "." + name;
+            if (!node_->has_parameter(full_name))
+            {
+                node_->declare_parameter(full_name, default_value);
+            }
+        }
+    }
+}
+
 void Controller::updateParams() {
-    RCLCPP_INFO(logger_, "Update parameters from %s", param_name_.c_str());
     node_->get_parameter(param_name_ + ".max_linear_vel", max_linear_vel_);
     node_->get_parameter(param_name_ + ".min_linear_vel", min_linear_vel_);
     node_->get_parameter(param_name_ + ".max_angular_vel", max_angular_vel_);

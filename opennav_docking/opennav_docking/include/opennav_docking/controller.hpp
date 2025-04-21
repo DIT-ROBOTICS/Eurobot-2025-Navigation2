@@ -107,6 +107,8 @@ class Controller
     
     // Parameter configuration
     std::string param_name_ = "Ordinary";
+    std::vector<std::string> profiles_;
+    void declareAllControlParams();
     void updateParams();
     rclcpp::Subscription<std_msgs::msg::String>::SharedPtr dock_controller_selector_sub_;
 

@@ -60,6 +60,7 @@ void NavTypeSelector::setType(std::string const & mode, char & offset_direction,
         dock_controller_selector_msg_.data = "Ordinary";
         RCLCPP_WARN(node_->get_logger(), "No dock controller type selected, defaulting to %s", dock_controller_selector_msg_.data.c_str());
     }
+    dock_controller_selector_pub_->publish(dock_controller_selector_msg_);    // Publish the dock controller type
 
     // Determine the offset direction & value
     if(strchr(mode.c_str(), 'x') != nullptr) {
