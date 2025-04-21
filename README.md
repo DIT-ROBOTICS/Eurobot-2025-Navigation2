@@ -16,6 +16,10 @@ Offers a variety of commands for enhanced control and flexibility:
 - `/keepout_zone`: Dynamically set keepout zones to avoid certain areas.  
 - `/dock_robot` supports flexible keyword-based commands via the `dock_type` parameter.
 
+#### ✅ Stop Robot
+- True to lock & stop the robot
+- False to unlock the robot
+
 #### ✅ Keepout Zone Index
 
 The keepout zones correspond to specific regions on the Eurobot 2025 field, used to restrict robot access dynamically via `/keepout_zone`.
