@@ -17,8 +17,12 @@ Offers a variety of commands for enhanced control and flexibility:
 - `/dock_robot` supports flexible keyword-based commands via the `dock_type` parameter.
 
 #### ✅ Stop Robot
-- True to lock & stop the robot
-- False to unlock the robot
+
+Control the robot's emergency stop or resume behavior via the `/stopRobot` topic.
+
+- `true`: Immediately stops and locks the robot.
+- `false`: Unlocks and resumes normal operation.
+- **Message Type**: `std_msgs/msg/Bool`
 
 #### ✅ Keepout Zone Index
 
@@ -29,9 +33,7 @@ The keepout zones correspond to specific regions on the Eurobot 2025 field, used
 - Zones are labeled **A** through **J** on the field map.
 - These zones can be toggled at runtime using the `/keepout_zone` topic.
 - Suitable for strategic behaviors like avoiding opponent areas or obstacle fields.
-
-👉 Make sure the `Keepout_zones_Index.png` file is located at:  
-`custom_layer/keepout_layer/Keepout_zones_Index.png`
+- - **Message Type**: `std_msgs/msg/String`
 
 #### ✅ Supported Keywords
 (Keyword order does not matter and is designed for compatibility.)
