@@ -16,6 +16,19 @@ Offers a variety of commands for enhanced control and flexibility:
 - `/keepout_zone`: Dynamically set keepout zones to avoid certain areas.  
 - `/dock_robot` supports flexible keyword-based commands via the `dock_type` parameter.
 
+#### ✅ Keepout Zone Index
+
+The keepout zones correspond to specific regions on the Eurobot 2025 field, used to restrict robot access dynamically via `/keepout_zone`.
+
+![Keepout Zones Index](Eurobot-2025-Navigation2/custom_layer/keepout_layer/Keepout_zones_Index.png)
+
+- Zones are labeled **A** through **J** on the field map.
+- These zones can be toggled at runtime using the `/keepout_zone` topic.
+- Suitable for strategic behaviors like avoiding opponent areas or obstacle fields.
+
+👉 Make sure the `Keepout_zones_Index.png` file is located at:  
+`Eurobot-2025-Navigation2/custom_layer/keepout_layer/Keepout_zones_Index.png`
+
 #### ✅ Supported Keywords
 (Keyword order does not matter and is designed for compatibility.)
 - **Template Base**:  
