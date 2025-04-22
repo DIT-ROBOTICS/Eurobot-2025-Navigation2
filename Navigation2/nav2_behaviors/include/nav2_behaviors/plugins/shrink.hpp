@@ -34,6 +34,7 @@ namespace nav2_behaviors
         int times;
         int unused_shrink;
         bool shrinkBack;
+        double costmap_tolerance;
         double original_inflation_radius;
         double original_rival_halted_radius;
         double original_rival_wandering_radius;
@@ -43,11 +44,13 @@ namespace nav2_behaviors
         double original_object_column_radius;
         double getOneGridCost(double x, double y);
         void costmapCallback(const nav_msgs::msg::OccupancyGrid& msg);
+        void goalPoseCallback(const geometry_msgs::msg::PoseStamped& msg);
         void worldToMap(double wx, double wy, int & mx, int & my);
         geometry_msgs::msg::PoseStamped robotPose;
         geometry_msgs::msg::PoseStamped goalPose;
         nav_msgs::msg::OccupancyGrid costmap;
         rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr sub_costmap;
+        rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_pose_sub;
         rclcpp::AsyncParametersClient::SharedPtr radius_param_client;
         rclcpp::Duration command_time_allowance{0,0};
         rclcpp::Time end_time;

@@ -27,8 +27,14 @@ namespace nav2_behaviors
             rclcpp::QoS(10), 
             std::bind(&Shrink::costmapCallback, this, std::placeholders::_1)
         );
-        node->declare_parameter("shrinkBack", rclcpp::ParameterValue(false));
-        node->get_parameter("/behavior_server/shrinkBack", shrinkBack);
+
+        goal_pose_sub = node->create_subscription<geometry_msgs::msg::PoseStamped>(
+            "/move_base_simple/goal", 
+            rclcpp::SystemDefaultsQoS(), 
+            std::bind(&Shrink::goalPoseCallback, this, std::placeholders::_1)
+        );
+        shrinkBack = false;
+        node->get_parameter("costmap_tolerance", costmap_tolerance);
         getOriginalParam();
 
         shrinkCheck_srv = node->create_service<std_srvs::srv::SetBool>(
@@ -48,7 +54,6 @@ namespace nav2_behaviors
         // Get the current robot pose (already done)
         nav2_util::getCurrentPose(robotPose, *tf_, global_frame_, robot_base_frame_, transform_tolerance_);
 
-        goalPose = robotPose;
         return Status::SUCCEEDED;
     }
 
@@ -60,7 +65,6 @@ namespace nav2_behaviors
         msg.data = shrinkBack;
         shrinkback_pub->publish(msg);
         if(noCostInMiddle() && noCostAtGoal() && times > 20){
-            // setToOriginal();
             times = 0;
             shrinkBack = true;
             tellStopToShrinkBack();
@@ -68,7 +72,6 @@ namespace nav2_behaviors
         }
         else if(times > 20){
             RCLCPP_ERROR(logger_, "shrink the inflation radius is not working");
-            // setToOriginal();
             times = 0;
             shrinkBack = true;
             tellStopToShrinkBack();
@@ -180,6 +183,10 @@ namespace nav2_behaviors
 
     void Shrink::costmapCallback(const nav_msgs::msg::OccupancyGrid& msg){
         costmap = msg;
+    }
+
+    void Shrink::goalPoseCallback(const geometry_msgs::msg::PoseStamped& msg){
+        goalPose = msg;
     }
 
     void Shrink::changeInflationLayer(bool doShrink){
@@ -297,7 +304,7 @@ namespace nav2_behaviors
 
     bool Shrink::noCostInMiddle(){
         int cost = getOneGridCost(robotPose.pose.position.x, robotPose.pose.position.y);
-        if(cost > 50){
+        if(cost > costmap_tolerance){
             RCLCPP_INFO(logger_, "obstacle detected at the center of the robot: the center %f, %f; the cost: %d", robotPose.pose.position.x, robotPose.pose.position.y, cost);
             return false;
         }
@@ -308,8 +315,8 @@ namespace nav2_behaviors
 
     bool Shrink::noCostAtGoal(){
         int cost = getOneGridCost(goalPose.pose.position.x, goalPose.pose.position.y);
-        if(cost > 50){
-            RCLCPP_INFO(logger_, "obstacle detected at the center of the robot: the center %f, %f; the cost: %d", robotPose.pose.position.x, robotPose.pose.position.y, cost);
+        if(cost > costmap_tolerance){
+            RCLCPP_INFO(logger_, "obstacle detected at the center of the goal: the center %f, %f; the cost: %d", robotPose.pose.position.x, robotPose.pose.position.y, cost);
             return false;
         }
         else{
