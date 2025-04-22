@@ -23,14 +23,14 @@ namespace nav2_behavior_tree
   private:
     bool stop_robot;
     bool shrink_completed;
-    int shrink_completed_timer;
-    int shrink_timeout; // in second
+    bool do_shrinkback;
     rclcpp::Node::SharedPtr node_;
     rclcpp::CallbackGroup::SharedPtr callback_group_;
     rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
 
     rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr stop_sub;
     rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr shrinkback_sub;
+    rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr goal_reach_sub;
     rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub;
     rclcpp::Client<std_srvs::srv::SetBool>::SharedPtr shrink_client;
 
@@ -38,6 +38,7 @@ namespace nav2_behavior_tree
     void stopCallback(const std_msgs::msg::Bool::SharedPtr msg);
     void checkIfShrinkRequest();
     void shrinkBackCallBack(const std_msgs::msg::Bool::SharedPtr msg);
+    void goalReachCallBack(const std_msgs::msg::Bool::SharedPtr msg);
   };
 }
 

@@ -8,7 +8,7 @@ namespace nav2_behavior_tree
     : BT::DecoratorNode(name, conf),
       stop_robot(false),
       shrink_completed(false),
-      shrink_completed_timer(0)
+      do_shrinkback(false)
   {
     // Retrieve node from the blackboard
     node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
@@ -40,10 +40,12 @@ namespace nav2_behavior_tree
       std::bind(&StopController::shrinkBackCallBack, this, std::placeholders::_1), // Match case with actual method name
       sub_options);
 
-    nav2_util::declare_parameter_if_not_declared(node_, "shrink_timeout", rclcpp::ParameterValue(20));
-    node_->get_parameter("shrink_timeout", shrink_timeout);
-    shrink_timeout *= 20; // Convert to timer ticks
-    RCLCPP_INFO(node_->get_logger(), "Shrink timeout set to %d ticks", shrink_timeout);
+    goal_reach_sub = node_->create_subscription<std_msgs::msg::Bool>(
+      "/goal_reached", 
+      rclcpp::SystemDefaultsQoS(),
+      std::bind(&StopController::goalReachCallBack, this, std::placeholders::_1), // Match case with actual method name
+      sub_options);
+
   }
 
   void StopController::stopCallback(const std_msgs::msg::Bool::SharedPtr msg)
@@ -54,8 +56,11 @@ namespace nav2_behavior_tree
   void StopController::shrinkBackCallBack(const std_msgs::msg::Bool::SharedPtr msg)
   {
     shrink_completed = msg->data;
-    RCLCPP_INFO(node_->get_logger(), "Received shrink back notification, shrink_completed: %s", msg->data ? "true" : "false");
-    shrink_completed_timer = 0;
+  }
+
+  void StopController::goalReachCallBack(const std_msgs::msg::Bool::SharedPtr msg)
+  {
+    do_shrinkback = msg->data;
   }
 
   void StopController::checkIfShrinkRequest()
@@ -86,12 +91,10 @@ namespace nav2_behavior_tree
 
     // If we received a shrink completed message, increment its timer.
     if (shrink_completed) {
-      shrink_completed_timer++;
-      if (shrink_completed_timer > shrink_timeout) {
-        RCLCPP_INFO(node_->get_logger(), "Timer expired, requesting shrink service to set original");
+      if(do_shrinkback){
         checkIfShrinkRequest();
+        do_shrinkback = false;
         shrink_completed = false;
-        shrink_completed_timer = 0;
       }
     }
 
