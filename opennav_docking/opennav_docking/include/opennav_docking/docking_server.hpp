@@ -30,6 +30,7 @@
 #include "opennav_docking/navigator.hpp"
 #include "opennav_docking_core/charging_dock.hpp"
 #include "tf2_ros/transform_listener.h"
+#include "std_msgs/msg/bool.hpp"
 
 namespace opennav_docking
 {
@@ -248,6 +249,9 @@ protected:
   rclcpp::Time action_start_time_;
 
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr vel_publisher_;
+
+  rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr stop_robot_sub_;
+  bool stop_robot_ = false;
 
   std::unique_ptr<DockingActionServer> docking_action_server_;
   std::unique_ptr<UndockingActionServer> undocking_action_server_;

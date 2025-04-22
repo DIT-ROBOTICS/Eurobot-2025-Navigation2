@@ -64,6 +64,13 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Controller frequency set to %.4fHz", controller_frequency_);
 
   vel_publisher_ = create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 1);
+
+  stop_robot_sub_ = create_subscription<std_msgs::msg::Bool>(
+    "/stopRobot", 1,
+    [this](const std_msgs::msg::Bool::SharedPtr msg) {
+        stop_robot_ = msg->data;
+    });
+
   tf2_buffer_ = std::make_shared<tf2_ros::Buffer>(node->get_clock());
 
   double action_server_result_timeout;
@@ -306,6 +313,9 @@ void DockingServer::dockRobot()
   } catch (const tf2::TransformException & e) {
     RCLCPP_ERROR(get_logger(), "Transform error: %s", e.what());
     result->error_code = DockRobot::Result::UNKNOWN;
+  } catch (opennav_docking_core::StopRobot & e) {
+    RCLCPP_ERROR(get_logger(), "%s", e.what());
+    result->error_code = DockRobot::Result::STOP_ROBOT;    
   } catch (opennav_docking_core::DockNotInDB & e) {
     RCLCPP_ERROR(get_logger(), "%s", e.what());
     result->error_code = DockRobot::Result::DOCK_NOT_IN_DB;
@@ -393,6 +403,13 @@ bool DockingServer::approachDock(Dock * dock, geometry_msgs::msg::PoseStamped & 
   while (rclcpp::ok()) {
     publishDockingFeedback(DockRobot::Feedback::CONTROLLING);
 
+    // Determine if we want to stop
+    if(stop_robot_) {
+      publishZeroVelocity();
+      throw opennav_docking_core::StopRobot(
+        "StopRobot activate, stop the robot");
+    }
+
     // Stop and report success if connected to dock
     if (dock->plugin->isDocked() || dock->plugin->isCharging()) {
       publishZeroVelocity();
@@ -423,18 +440,19 @@ bool DockingServer::approachDock(Dock * dock, geometry_msgs::msg::PoseStamped & 
       throw opennav_docking_core::FailedToControl("Failed to get control");
     }
     
-    // Compute if rival is on the way
-    if(controller_->computeIfNeedStop(dock_pose.pose)) {
-      throw opennav_docking_core::BlockByRival(
-              "Goal blocked by rival, stop the robot");
-      publishZeroVelocity();
-    }
-    vel_publisher_->publish(command);
-
     if (this->now() - start > timeout) {
       throw opennav_docking_core::FailedToControl(
-              "Timed out approaching dock; dock nor charging detected");
+              "Timed out approaching dock");
     }
+
+    // Compute if rival is on the way
+    if (controller_->computeIfNeedStop(dock_pose.pose)) {
+      publishZeroVelocity();
+      throw opennav_docking_core::BlockByRival(
+        "Goal blocked by rival, stop the robot");
+    }
+
+    vel_publisher_->publish(command);
 
     loop_rate.sleep();
   }

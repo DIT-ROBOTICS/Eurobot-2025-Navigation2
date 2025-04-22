@@ -15,6 +15,7 @@ bool navigate_to_staging_pose True  # Whether or not to navigate to staging pose
 # Error codes
 # Note: The expected priority order of the errors should match the message order
 uint16 NONE=0
+uint16 STOP_ROBOT=900
 uint16 DOCK_NOT_IN_DB=901
 uint16 DOCK_NOT_VALID=902
 uint16 FAILED_TO_STAGE=903

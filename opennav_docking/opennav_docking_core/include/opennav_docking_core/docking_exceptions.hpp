@@ -33,6 +33,17 @@ public:
 };
 
 /**
+ * @class StopRobot
+ * @brief Stop the robot
+ */
+class StopRobot : public DockingException
+{
+public:
+  explicit StopRobot(const std::string & description)
+  : DockingException(description) {}
+};
+
+/**
  * @class DockNotInDB
  * @brief Dock was not found in the provided dock database
  */
