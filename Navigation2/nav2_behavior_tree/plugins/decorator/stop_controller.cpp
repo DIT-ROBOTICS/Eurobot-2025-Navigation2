@@ -60,7 +60,8 @@ namespace nav2_behavior_tree
 
   void StopController::goalReachCallBack(const std_msgs::msg::Bool::SharedPtr msg)
   {
-    do_shrinkback = msg->data;
+    if(!shrink_completed) do_shrinkback = false;
+    else do_shrinkback = msg->data;
   }
 
   void StopController::checkIfShrinkRequest()
@@ -97,6 +98,8 @@ namespace nav2_behavior_tree
         shrink_completed = false;
       }
     }
+
+
 
     if (stop_robot) {
       geometry_msgs::msg::Twist cmd_vel;
