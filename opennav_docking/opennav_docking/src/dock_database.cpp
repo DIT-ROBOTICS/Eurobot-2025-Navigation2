@@ -124,7 +124,7 @@ ChargingDock::Ptr DockDatabase::findDockPlugin(const std::string & type)
     if (strstr(type.c_str(), dock_plugin.first.c_str()) != nullptr) {
       RCLCPP_INFO(
         node_.lock()->get_logger(),
-        "\033[1;35m Dock plugin base templete \"%s\" found in dock type \"%s\". \033[0m",
+        "\033[1;36m Dock plugin base templete \"%s\" found in dock type \"%s\". \033[0m",
         dock_plugin.first.c_str(), type.c_str());    
 
       // ** Return the first plugin that matches the type
