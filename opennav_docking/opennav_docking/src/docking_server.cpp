@@ -227,12 +227,12 @@ void DockingServer::dockRobot()
     if (goal->use_dock_id) {
       RCLCPP_INFO(
         get_logger(),
-        "Attempting to dock robot at charger %s.", goal->dock_id.c_str());
+        "\033[1;35m Attempting to dock robot at target %s. \033[0m", goal->dock_id.c_str());
       dock = dock_db_->findDock(goal->dock_id);
     } else {
       RCLCPP_INFO(
         get_logger(),
-        "Attempting to dock robot at charger at position (%0.2f, %0.2f).",
+        "\033[1;35m Attempting to dock robot at position (%0.2f, %0.2f). \033[0m",
         goal->dock_pose.pose.position.x, goal->dock_pose.pose.position.y);
       dock = generateGoalDock(goal);
     }
@@ -245,11 +245,11 @@ void DockingServer::dockRobot()
     if (!goal->navigate_to_staging_pose ||
       utils::l2Norm(robot_pose.pose, initial_staging_pose.pose) < dock_prestaging_tolerance_)
     {
-      RCLCPP_INFO(get_logger(), "Robot already within pre-staging pose tolerance for dock");
+      RCLCPP_INFO(get_logger(), "\033[0;32m Robot already within pre-staging pose tolerance for dock \033[0m");
     } else {
       navigator_->goToPose(
         initial_staging_pose, rclcpp::Duration::from_seconds(goal->max_staging_time));
-      RCLCPP_INFO(get_logger(), "Successful navigation to staging pose");
+      // RCLCPP_INFO(get_logger(), "Successful navigation to staging pose");
     }
 
     // Construct initial estimate of where the dock is located in fixed_frame
@@ -258,11 +258,12 @@ void DockingServer::dockRobot()
 
     // Get initial detection of dock before proceeding to move
     doInitialPerception(dock, dock_pose);
-    RCLCPP_INFO(get_logger(), "Successful initial dock detection");
+    // RCLCPP_INFO(get_logger(), "Successful initial dock detection");
 
     // ** Docking control loop: while not docked, run controller
     rclcpp::Time dock_contact_time;
     controller_->velocityInit(dock_pose.pose);  // ** Set total distance for velocity control
+    RCLCPP_INFO(get_logger(), "\033[1;90m Starting docking control loop. \033[0m");
     while (rclcpp::ok()) {
       try {
         // Approach the dock using control law
@@ -285,21 +286,22 @@ void DockingServer::dockRobot()
         return;
       } catch (opennav_docking_core::DockingException & e) {
         if (++num_retries_ > max_retries_) {
-          RCLCPP_ERROR(get_logger(), "Failed to dock, all retries have been used");
+          RCLCPP_ERROR(get_logger(), "Failed to dock");
           throw;
         }
         RCLCPP_WARN(get_logger(), "Docking failed, will retry: %s", e.what());
       }
 
-      // Reset to staging pose to try again
-      if (!resetApproach(dock->getStagingPose())) {
-        // Cancelled, preempted, or shutting down
-        stashDockData(goal->use_dock_id, dock, false);
-        publishZeroVelocity();
-        docking_action_server_->terminate_all(result);
-        return;
-      }
-      RCLCPP_INFO(get_logger(), "Returned to staging pose, attempting docking again");
+      // ** No need to reset to staging pose
+      // // Reset to staging pose to try again
+      // if (!resetApproach(dock->getStagingPose())) {
+      //   // Cancelled, preempted, or shutting down
+      //   stashDockData(goal->use_dock_id, dock, false);
+      //   publishZeroVelocity();
+      //   docking_action_server_->terminate_all(result);
+      //   return;
+      // }
+      // RCLCPP_INFO(get_logger(), "Returned to staging pose, attempting docking again");
     }
   } catch (const tf2::TransformException & e) {
     RCLCPP_ERROR(get_logger(), "Transform error: %s", e.what());
@@ -322,6 +324,9 @@ void DockingServer::dockRobot()
   } catch (opennav_docking_core::FailedToCharge & e) {
     RCLCPP_ERROR(get_logger(), "%s", e.what());
     result->error_code = DockRobot::Result::FAILED_TO_CHARGE;
+  } catch (opennav_docking_core::BlockByRival & e) {
+    RCLCPP_ERROR(get_logger(), "%s", e.what());
+    result->error_code = DockRobot::Result::BLOCK_BY_RIVAL;
   } catch (opennav_docking_core::DockingException & e) {
     RCLCPP_ERROR(get_logger(), "%s", e.what());
     result->error_code = DockRobot::Result::UNKNOWN;
@@ -417,13 +422,12 @@ bool DockingServer::approachDock(Dock * dock, geometry_msgs::msg::PoseStamped & 
     if (!controller_->computeVelocityCommand(target_pose.pose, command, dock_backwards_)) {
       throw opennav_docking_core::FailedToControl("Failed to get control");
     }
-    // test to stop
-    controller_->computeIfNeedStop(dock_pose.pose, command);
-    if(command.linear.x == 0 && command.linear.y == 0 && command.angular.z == 0) {
-      RCLCPP_INFO(get_logger(), "Stopping robot to avoid collision with rival");
-      success_ = false;
-      vel_publisher_->publish(command);
-      return false;
+    
+    // Compute if rival is on the way
+    if(controller_->computeIfNeedStop(dock_pose.pose)) {
+      throw opennav_docking_core::BlockByRival(
+              "Goal blocked by rival, stop the robot");
+      publishZeroVelocity();
     }
     vel_publisher_->publish(command);
 

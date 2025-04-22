@@ -155,7 +155,7 @@ bool Controller::computeVelocityCommand(
     return true;
 }
 
-bool Controller::computeIfNeedStop(const geometry_msgs::msg::Pose & target, geometry_msgs::msg::Twist & cmd) {
+bool Controller::computeIfNeedStop(const geometry_msgs::msg::Pose & target) {
     // Calculate the vector from the robot to the target
     double target_dx = target.position.x - robot_pose_.x_;
     double target_dy = target.position.y - robot_pose_.y_;
@@ -175,19 +175,15 @@ bool Controller::computeIfNeedStop(const geometry_msgs::msg::Pose & target, geom
     // Calculate the angle difference
     double angle_diff = angles::shortest_angular_distance(target_angle, rival_angle);
     
+    // if (std::fabs(angle_diff) <= angles::from_degrees(stop_degree_ / 2.0) && rival_distance <= target_distance) {
+    //     RCLCPP_INFO(logger_, "Stop the robot, because target_angle: %f, rival_angle: %f,angle_diff: %f, rival_distance: %f, target_distance: %f", target_angle, rival_angle,angle_diff, rival_distance, target_distance);
+    // }
+    
     // Check if the rival is within the stop degree from the robot to the target
-    if (std::fabs(angle_diff) <= angles::from_degrees(stop_degree_ / 2.0) && rival_distance <= target_distance) {
-        // Rival is within the stop sector, stop the robot
-        cmd.linear.x = 0.0;
-        cmd.linear.y = 0.0;
-        cmd.angular.z = 0.0;
-        RCLCPP_INFO(logger_, "Stop the robot, because target_angle: %f, rival_angle: %f,angle_diff: %f, rival_distance: %f, target_distance: %f", target_angle, rival_angle,angle_diff, rival_distance, target_distance);
-        return true;
-    }
+    return (std::fabs(angle_diff) <= angles::from_degrees(stop_degree_ / 2.0) && rival_distance <= target_distance);
+
     // RCLCPP_INFO(logger_, "target pose x: %f, y: %f", target.position.x, target.position.y);
     // RCLCPP_INFO(logger_, "Don't Stop the robot, because target_angle: %f, rival_angle: %f,angle_diff: %f, rival_distance: %f, target_distance: %f",target_angle, rival_angle, angle_diff, rival_distance, target_distance);
-
-    return false;
 }
 
 double Controller::ExtractVelocity(const double & velocity, const double & remaining_distance, VelocityState & state) {

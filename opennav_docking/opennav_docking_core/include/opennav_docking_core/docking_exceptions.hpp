@@ -98,6 +98,17 @@ public:
   : DockingException(description) {}
 };
 
+/**
+ * @class BlockByRival
+ * @brief Rival is blocking the docking goal
+ */
+class BlockByRival : public DockingException
+{
+public:
+  explicit BlockByRival(const std::string & description)
+  : DockingException(description) {}
+};
+
 }  // namespace opennav_docking_core
 
 #endif  // OPENNAV_DOCKING_CORE__DOCKING_EXCEPTIONS_HPP_

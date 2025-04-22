@@ -84,8 +84,12 @@ class Controller
       const geometry_msgs::msg::Pose & target, geometry_msgs::msg::Twist & cmd,
       bool backward = false);
     
-    
-    bool computeIfNeedStop(const geometry_msgs::msg::Pose & target, geometry_msgs::msg::Twist & cmd);
+    /**
+     * @brief Compute if rival is on the way.
+     * @param target Target pose, in global coordinates.
+     * @returns True if rival is on the way, false otherwise.
+     */
+    bool computeIfNeedStop(const geometry_msgs::msg::Pose & target);
 
     /**
      * @brief Set the total distance for velocity control & Set velocity state to acceleration.
