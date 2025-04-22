@@ -52,6 +52,8 @@ Controller::Controller(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node) 
     declare_parameter_if_not_declared(node, "controller.look_ahead_distance", rclcpp::ParameterValue(1.0));
     declare_parameter_if_not_declared(node, "controller.deceleration_distance", rclcpp::ParameterValue(0.1));
     declare_parameter_if_not_declared(node, "controller.reserved_distance", rclcpp::ParameterValue(0.03));
+    declare_parameter_if_not_declared(node, "controller.stop_degree", rclcpp::ParameterValue(45.0));
+    declare_parameter_if_not_declared(node, "controller.rival_radius", rclcpp::ParameterValue(0.44));
 
     // Get parameters from the config file
     node->get_parameter("controller.max_linear_vel", max_linear_vel_);
@@ -68,6 +70,8 @@ Controller::Controller(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node) 
     node->get_parameter("controller.look_ahead_distance", look_ahead_distance_);
     node->get_parameter("controller.deceleration_distance", deceleration_distance_);
     node->get_parameter("controller.reserved_distance", reserved_distance_);
+    node->get_parameter("controller.stop_degree", stop_degree_);
+    node->get_parameter("controller.rival_radius", rival_radius_);
 
     logger_ = node->get_logger();
     clock_ = node->get_clock();
@@ -79,6 +83,15 @@ Controller::Controller(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node) 
         [this](const nav_msgs::msg::Odometry::SharedPtr msg) {
             robot_pose_.x_ = (*msg).pose.pose.position.x;
             robot_pose_.y_ = (*msg).pose.pose.position.y;
+        });
+    
+    // Subscribe to the rival's pose
+    rival_pose_sub_ = node->create_subscription<nav_msgs::msg::Odometry>(
+        "/rival/final_pose",
+        rclcpp::QoS(10).durability_volatile(),
+        [this](const nav_msgs::msg::Odometry::SharedPtr msg) {
+            rival_pose_.x_ = (*msg).pose.pose.position.x;
+            rival_pose_.y_ = (*msg).pose.pose.position.y;
         });
 
     // Publish the local goal
@@ -158,6 +171,41 @@ bool Controller::computeVelocityCommand(
     return true;
 }
 
+bool Controller::computeIfNeedStop(const geometry_msgs::msg::Pose & target, geometry_msgs::msg::Twist & cmd) {
+    // Calculate the vector from the robot to the target
+    double target_dx = target.position.x - robot_pose_.x_;
+    double target_dy = target.position.y - robot_pose_.y_;
+    double target_distance = std::sqrt(target_dx * target_dx + target_dy * target_dy);
+    
+    // Calculate the angle to the target
+    double target_angle = std::atan2(target_dy, target_dx);
+    
+    // Calculate the vector from the robot to the rival
+    double rival_dx = rival_pose_.x_ - robot_pose_.x_;
+    double rival_dy = rival_pose_.y_ - robot_pose_.y_;
+    double rival_distance = std::sqrt(rival_dx * rival_dx + rival_dy * rival_dy) - rival_radius_;  // 0.44 is the radius of the rival
+    
+    // Calculate the angle to the rival
+    double rival_angle = std::atan2(rival_dy, rival_dx);
+    
+    // Calculate the angle difference
+    double angle_diff = angles::shortest_angular_distance(target_angle, rival_angle);
+    
+    // Check if the rival is within the stop degree from the robot to the target
+    if (std::fabs(angle_diff) <= angles::from_degrees(stop_degree_ / 2.0) && rival_distance <= target_distance) {
+        // Rival is within the stop sector, stop the robot
+        cmd.linear.x = 0.0;
+        cmd.linear.y = 0.0;
+        cmd.angular.z = 0.0;
+        RCLCPP_INFO(logger_, "Stop the robot, because target_angle: %f, rival_angle: %f,angle_diff: %f, rival_distance: %f, target_distance: %f", target_angle, rival_angle,angle_diff, rival_distance, target_distance);
+        return true;
+    }
+    // RCLCPP_INFO(logger_, "target pose x: %f, y: %f", target.position.x, target.position.y);
+    // RCLCPP_INFO(logger_, "Don't Stop the robot, because target_angle: %f, rival_angle: %f,angle_diff: %f, rival_distance: %f, target_distance: %f",target_angle, rival_angle, angle_diff, rival_distance, target_distance);
+
+    return false;
+}
+
 double Controller::ExtractVelocity(const double & velocity, const double & remaining_distance, VelocityState & state) {
     double vel = velocity;
 
@@ -215,6 +263,10 @@ void Controller::Deceleration(double & vel, const double & remaining_distance, V
 
 void Controller::robotPoseCallback(const nav_msgs::msg::Odometry::SharedPtr robot_pose) {
     posetoRobotState(robot_pose->pose.pose, robot_pose_); 
+}
+
+void Controller::rivalPoseCallback(const nav_msgs::msg::Odometry::SharedPtr rival_pose) {
+    posetoRobotState(rival_pose->pose.pose, rival_pose_);
 }
 
 void Controller::publishLocalGoal() {
