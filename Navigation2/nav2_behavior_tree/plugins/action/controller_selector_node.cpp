@@ -68,11 +68,7 @@ BT::NodeStatus ControllerSelector::tick()
       return BT::NodeStatus::FAILURE;
     } else {
       last_selected_controller_ = default_controller;
-      RCLCPP_WARN(node_->get_logger(), "No controller type selected, defaulting to %s",
-        last_selected_controller_.c_str());
     }
-  } else {
-    RCLCPP_INFO(node_->get_logger(), "\033[1;36mController \"%s\" has been selected\033[0m", last_selected_controller_.c_str());
   }
 
   setOutput("selected_controller", last_selected_controller_);
