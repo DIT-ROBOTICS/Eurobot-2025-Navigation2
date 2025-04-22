@@ -349,7 +349,7 @@ docking_server:
     initial_perception_timeout: 5.0
     wait_charge_timeout: 5.0
     dock_approach_timeout: 30.0
-    max_retries: 3
+    max_retries: 0
     base_frame: "base_footprint"
     fixed_frame: "map"
     dock_backwards: false
