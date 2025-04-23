@@ -252,7 +252,7 @@ void DockingServer::dockRobot()
     if (!goal->navigate_to_staging_pose ||
       utils::l2Norm(robot_pose.pose, initial_staging_pose.pose) < dock_prestaging_tolerance_)
     {
-      RCLCPP_INFO(get_logger(), "\033[0;32m Robot already within pre-staging pose tolerance for dock \033[0m");
+      RCLCPP_INFO(get_logger(), "\033[1;32m Robot already within pre-staging pose tolerance for dock \033[0m");
     } else {
       navigator_->goToPose(
         initial_staging_pose, rclcpp::Duration::from_seconds(goal->max_staging_time));
