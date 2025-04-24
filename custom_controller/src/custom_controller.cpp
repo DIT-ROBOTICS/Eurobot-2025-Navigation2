@@ -74,6 +74,7 @@ void CustomController::configure(
     global_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("received_global_plan", 5);
     check_goal_pub_ = node->create_publisher<geometry_msgs::msg::PoseStamped>("check_goal", 5);
     rival_distance_pub_ = node->create_publisher<std_msgs::msg::Float64>("rival_distance", 5);
+    goal_reach_pub_ = node->create_publisher<std_msgs::msg::Bool>("goal_reached", 5);
 
     // Declare parameters if not declared
     declare_parameter_if_not_declared(node, plugin_name_ + ".max_linear_vel", rclcpp::ParameterValue(0.7));
@@ -477,6 +478,13 @@ geometry_msgs::msg::TwistStamped CustomController::computeVelocityCommands(
     last_vel_x_ = cmd_vel.twist.linear.x;
     last_vel_y_ = cmd_vel.twist.linear.y;
     isObstacleExist_ = checkObstacle(current_index_, check_index_);
+  
+    if(goal_checker->isGoalReached(pose.pose, global_plan_.poses.back().pose, velocity)){
+            std_msgs::msg::Bool goal_reach;
+            goal_reach.data = true;
+            goal_reach_pub_->publish(goal_reach);
+    }
+  
     if(isObstacleExist_){
         cmd_vel.twist.linear.x = last_vel_x_ * speed_decade_;
         cmd_vel.twist.linear.y = last_vel_y_ * speed_decade_;
