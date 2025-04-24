@@ -21,6 +21,7 @@ namespace Object_costmap_plugin {
         declareParameter("column_inflation_radius", rclcpp::ParameterValue(0.22));
         declareParameter("board_inflation_radius", rclcpp::ParameterValue(0.22));
         declareParameter("cost_scaling_factor", rclcpp::ParameterValue(3.0));
+        declareParameter("delay_mode", rclcpp::ParameterValue(false));
 
         
         node->get_parameter(name_ + "." + "enabled", enabled_);
@@ -29,11 +30,13 @@ namespace Object_costmap_plugin {
         node->get_parameter(name_ + "." + "column_inflation_radius", column_inflation_radius);
         node->get_parameter(name_ + "." + "board_inflation_radius", board_inflation_radius);
         node->get_parameter(name_ + "." + "cost_scaling_factor", cost_scaling_factor);
-
+        node->get_parameter(name_ + "." + "delay_mode", delay_mode);
         column_poseArray_sub = node->create_subscription<geometry_msgs::msg::PoseArray>(
             "/detected/global_center_poses/column", 100, std::bind(&ObjectLayer::columnPoseArrayCallback, this, std::placeholders::_1));
         board_poseArray_sub = node->create_subscription<geometry_msgs::msg::PoseArray>(
             "/detected/global_center_poses/platform", 100, std::bind(&ObjectLayer::boardPoseArrayCallback, this, std::placeholders::_1));
+        robot_pose_sub = node->create_subscription<geometry_msgs::msg::PoseStamped>(
+            "/robot_pose", 100, std::bind(&ObjectLayer::robotPoseCallback, this, std::placeholders::_1));
         
         columnList.clear();
         boardList.clear();
@@ -68,12 +71,18 @@ namespace Object_costmap_plugin {
     }
 
     void ObjectLayer::checkClear(){
-        if(clearTimer == 0){
+        if(!delay_mode){
             boardList.clear();
             columnList.clear();
-            clearTimer = 20;
         }
-        clearTimer--;
+        else if(delay_mode){
+            if(clearTimer == 0){
+                boardList.clear();
+                columnList.clear();
+                clearTimer = 20;
+            }
+            clearTimer--;
+        }
     }
 
     bool ObjectLayer::isClearable(){
@@ -89,6 +98,10 @@ namespace Object_costmap_plugin {
         RCLCPP_WARN(
             rclcpp::get_logger("ObjectLayer"), 
             "Resetting ObjectLayer");
+    }
+
+    void ObjectLayer::robotPoseCallback(const geometry_msgs::msg::PoseStamped::SharedPtr object_pose){
+        robot_pose = *object_pose;
     }
 
     void ObjectLayer::columnPoseArrayCallback(const geometry_msgs::msg::PoseArray::SharedPtr object_poseArray){

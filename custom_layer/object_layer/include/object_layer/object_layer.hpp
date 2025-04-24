@@ -37,13 +37,17 @@ namespace Object_costmap_plugin {
             // data processes
             void columnPoseArrayCallback(const geometry_msgs::msg::PoseArray::SharedPtr object_poseArray);
             void boardPoseArrayCallback(const geometry_msgs::msg::PoseArray::SharedPtr object_poseArray);
+            void robotPoseCallback(const geometry_msgs::msg::PoseStamped::SharedPtr object_pose);
             void checkClear();        
         private:
             std::deque<geometry_msgs::msg::PoseStamped> columnList;
             std::deque<geometry_msgs::msg::PoseStamped> boardList;
             rclcpp::Subscription<geometry_msgs::msg::PoseArray>::SharedPtr column_poseArray_sub;
             rclcpp::Subscription<geometry_msgs::msg::PoseArray>::SharedPtr board_poseArray_sub;
+            rclcpp::Subscription<geometry_msgs::msg::PoseStamped>SharedPtr robot_pose_sub;
+            geometry_msgs::msg::PoseStamped robot_pose;
             int clearTimer;
+            bool delay_mode;
             double column_inscribed_radius, board_inscribed_radius;
             double column_inflation_radius, board_inflation_radius;
             double cost_scaling_factor;
