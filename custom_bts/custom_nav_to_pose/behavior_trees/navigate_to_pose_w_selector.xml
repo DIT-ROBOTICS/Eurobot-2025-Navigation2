@@ -23,7 +23,7 @@
           <ReactiveFallback name="RecoveryFallback">
             <GoalUpdated/>
             <RoundRobin name="RecoveryActions">
-              <Wait wait_duration="3"/>
+              <Wait wait_duration="1"/>
               <Shrink shrink_to="0.05"/>
               <Wait wait_duration="1"/>
               <Escape run_dist="5" time_allowance="5" is_recovery="1"/>
