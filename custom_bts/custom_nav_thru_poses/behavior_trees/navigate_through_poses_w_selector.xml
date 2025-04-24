@@ -1,0 +1,34 @@
+<root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <RecoveryNode number_of_retries="4" name="NavigateRecovery">
+      <PipelineSequence name="NavigateWithReplanning">
+        <RateController hz="1.0">
+          <RecoveryNode number_of_retries="1" name="ComputePathThroughPoses">
+            <ReactiveSequence> 
+              <RemovePassedGoals input_goals="{goals}" output_goals="{goals}" radius="0.3" robot_base_frame="base_footprint"/>
+              <ComputePathThroughPoses goals="{goals}" path="{path}" planner_id="GridBased"/>
+            </ReactiveSequence>
+            <ClearEntireCostmap name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_entirely_global_costmap"/>
+          </RecoveryNode>
+        </RateController>
+        <RecoveryNode number_of_retries="1" name="FollowPath">
+          <ReactiveSequence>
+            <ControllerSelector topic_name="/controller_type_thru" default_controller="Slow" selected_controller="{controller}"/>
+            <GoalCheckerSelector topic_name="/goal_checker_type_thru" default_goal_checker="Loose" selected_goal_checker="{goal_checker}"/>
+            <FollowPath path="{path}" controller_id="{controller}" goal_checker_id="{goal_checker}"/>
+          </ReactiveSequence>
+          <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
+        </RecoveryNode>
+      </PipelineSequence>
+      <ReactiveFallback name="RecoveryFallback">
+        <GoalUpdated/>
+        <RoundRobin name="RecoveryActions">
+          <Wait wait_duration="1"/>
+          <Shrink shrink_to="0.05"/>
+          <Wait wait_duration="1"/>
+          <Escape run_dist="5" time_allowance="5" is_recovery="1"/>
+        </RoundRobin>
+      </ReactiveFallback>
+    </RecoveryNode>
+  </BehaviorTree>
+</root>

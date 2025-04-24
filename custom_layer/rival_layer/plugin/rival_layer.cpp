@@ -12,6 +12,12 @@ namespace custom_path_costmap_plugin {
         current_ = true;
         resetMapToValue(0, 0, getSizeInCellsX(), getSizeInCellsY(), nav2_costmap_2d::FREE_SPACE);
 
+        // Get the node
+        auto node = node_.lock();
+        if (!node) {
+            throw std::runtime_error{"Failed to lock node"};
+        }
+
         // Declare the parameters
         declareParameter("enabled", rclcpp::ParameterValue(true));
 
@@ -54,12 +60,6 @@ namespace custom_path_costmap_plugin {
         declareParameter("safe_distance", rclcpp::ParameterValue(0.5));
         declareParameter("expand_vel_factor_weight_localization", rclcpp::ParameterValue(0.20));
         declareParameter("use_statistic_method", rclcpp::ParameterValue(false));
-      
-        // Get the node
-        auto node = node_.lock();
-        if (!node) {
-            throw std::runtime_error{"Failed to lock node"};
-        }
     
         // Get the parameters
         node->get_parameter(name_ + "." + "enabled", enabled_);
@@ -426,19 +426,19 @@ namespace custom_path_costmap_plugin {
         }
     }
 
-    // Subscribe to the rival's pose
     void RivalLayer::activate() {
         RCLCPP_INFO(
             rclcpp::get_logger("RivalLayer"), 
             "Activating RivalLayer");
     }
-
+        
     void RivalLayer::deactivate() {
         RCLCPP_INFO(
             rclcpp::get_logger("RivalLayer"), 
             "Deactivating RivalLayer");
     }
-
+            
+    // Subscribe to the rival's pose
     void RivalLayer::rivalPoseCallback(const nav_msgs::msg::Odometry::SharedPtr rival_pose) {
         // Store the rival's pose
         rival_x_ = rival_pose->pose.pose.position.x;

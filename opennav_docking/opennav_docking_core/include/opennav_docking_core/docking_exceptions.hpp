@@ -33,6 +33,17 @@ public:
 };
 
 /**
+ * @class StopRobot
+ * @brief Stop the robot
+ */
+class StopRobot : public DockingException
+{
+public:
+  explicit StopRobot(const std::string & description)
+  : DockingException(description) {}
+};
+
+/**
  * @class DockNotInDB
  * @brief Dock was not found in the provided dock database
  */
@@ -95,6 +106,17 @@ class FailedToCharge : public DockingException
 {
 public:
   explicit FailedToCharge(const std::string & description)
+  : DockingException(description) {}
+};
+
+/**
+ * @class BlockByRival
+ * @brief Rival is blocking the docking goal
+ */
+class BlockByRival : public DockingException
+{
+public:
+  explicit BlockByRival(const std::string & description)
   : DockingException(description) {}
 };
 

@@ -32,6 +32,7 @@
 #include "nav_msgs/msg/odometry.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "tf2/utils.h"
+#include "std_msgs/msg/string.hpp"
 
 namespace opennav_docking
 {
@@ -82,6 +83,13 @@ class Controller
     bool computeVelocityCommand(
       const geometry_msgs::msg::Pose & target, geometry_msgs::msg::Twist & cmd,
       bool backward = false);
+    
+    /**
+     * @brief Compute if rival is on the way.
+     * @param target Target pose, in global coordinates.
+     * @returns True if rival is on the way, false otherwise.
+     */
+    bool computeIfNeedStop(const geometry_msgs::msg::Pose & target);
 
     /**
      * @brief Set the total distance for velocity control & Set velocity state to acceleration.
@@ -97,8 +105,16 @@ class Controller
 
   protected:
     // Node configuration
+    rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
     rclcpp::Clock::SharedPtr clock_;
     rclcpp::Logger logger_{rclcpp::get_logger("CustomController")};
+    
+    // Parameter configuration
+    std::string param_name_ = "Ordinary";
+    std::vector<std::string> profiles_;
+    void declareAllControlParams();
+    void updateParams();
+    rclcpp::Subscription<std_msgs::msg::String>::SharedPtr dock_controller_selector_sub_;
 
     // Parameters from the config file
     double max_linear_vel_, min_linear_vel_;
@@ -113,10 +129,15 @@ class Controller
     double look_ahead_distance_;
     double final_goal_angle_;
 
+    // see if need to stop
+    double stop_degree_;
+    double rival_radius_;
+
     // Variables
     std::vector<RobotState> global_path_;
     std::vector<RobotState> vector_global_path_;
     RobotState robot_pose_;
+    RobotState rival_pose_;
     RobotState local_goal_;
     double total_distance_;
     double deceleration_distance_;
@@ -124,7 +145,9 @@ class Controller
 
     // Robot pose subscibtion
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr robot_pose_sub_;
+    rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr rival_pose_sub_;
     void robotPoseCallback(const nav_msgs::msg::Odometry::SharedPtr robot_pose);
+    void rivalPoseCallback(const nav_msgs::msg::Odometry::SharedPtr rival_pose);
 
     // Local goal publisher
     rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr local_goal_pub_;

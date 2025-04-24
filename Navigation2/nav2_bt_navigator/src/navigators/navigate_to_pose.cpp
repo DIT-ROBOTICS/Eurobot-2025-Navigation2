@@ -210,10 +210,10 @@ NavigateToPoseNavigator::initializeGoalPose(ActionT::Goal::ConstSharedPtr goal)
     feedback_utils_.global_frame, feedback_utils_.robot_frame,
     feedback_utils_.transform_tolerance);
 
-  RCLCPP_INFO(
-    logger_, "Begin navigating from current location (%.2f, %.2f) to (%.2f, %.2f)",
-    current_pose.pose.position.x, current_pose.pose.position.y,
-    goal->pose.pose.position.x, goal->pose.pose.position.y);
+    RCLCPP_INFO(
+      logger_, "\033[1;35mBegin navigating from current location (%.2f, %.2f) to (%.2f, %.2f)\033[0m",
+      current_pose.pose.position.x, current_pose.pose.position.y,
+      goal->pose.pose.position.x, goal->pose.pose.position.y);  
 
   // Reset state for new action feedback
   start_time_ = clock_->now();
