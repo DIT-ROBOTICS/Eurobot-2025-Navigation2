@@ -33,7 +33,7 @@ The keepout zones correspond to specific regions on the Eurobot 2025 field, used
 - Zones are labeled **A** through **J** on the field map.
 - These zones can be toggled at runtime using the `/keepout_zone` topic.
 - Suitable for strategic behaviors like avoiding opponent areas or obstacle fields.
-- - **Message Type**: `std_msgs/msg/String`
+- **Message Type**: `std_msgs/msg/String`
 
 #### ✅ Supported Keywords
 (Keyword order does not matter and is designed for compatibility.)
