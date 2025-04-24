@@ -1,0 +1,35 @@
+<root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+      <RecoveryNode number_of_retries="4" name="NavigateRecovery">
+        <StopController>
+          <PipelineSequence name="NavigateWithReplanning">
+            <RateController hz="5">
+              <RecoveryNode number_of_retries="1" name="ComputePathToPose">
+                <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
+                <ClearEntireCostmap name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_entirely_global_costmap"/>
+              </RecoveryNode>
+            </RateController>
+            <RecoveryNode number_of_retries="1" name="FollowPath">
+              <Sequence>
+                <ControllerSelector topic_name="/controller_type" default_controller="Slow" selected_controller="{controller}"/>
+                <GoalCheckerSelector topic_name="/goal_checker_type" default_goal_checker="Loose" selected_goal_checker="{goal_checker}"/>
+                <FollowPath path="{path}" controller_id="{controller}" goal_checker_id="{goal_checker}"/>
+              </Sequence>
+              <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
+            </RecoveryNode>
+          </PipelineSequence>
+        </StopController>
+        <StopController>
+          <ReactiveFallback name="RecoveryFallback">
+            <GoalUpdated/>
+            <RoundRobin name="RecoveryActions">
+              <Wait wait_duration="3"/>
+              <Shrink shrink_to="0.05"/>
+              <Wait wait_duration="1"/>
+              <Escape run_dist="5" time_allowance="5" is_recovery="1"/>
+            </RoundRobin>
+          </ReactiveFallback>
+        </StopController>
+      </RecoveryNode>
+  </BehaviorTree>
+</root>

@@ -28,6 +28,8 @@
 #include "opennav_docking_core/charging_dock.hpp"
 #include "opennav_docking/pose_filter.hpp"
 
+#include "nav_type_selector.hpp"
+
 namespace opennav_docking
 {
 
@@ -111,6 +113,7 @@ protected:
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr dock_pose_pub_;
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr filtered_dock_pose_pub_;
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr staging_pose_pub_;
+
   // If subscribed to a detected pose topic, will contain latest message
   geometry_msgs::msg::PoseStamped detected_dock_pose_;
   geometry_msgs::msg::PoseStamped detected_dock_pose_prev_;
@@ -140,6 +143,9 @@ protected:
   // Filtering of detected poses
   std::shared_ptr<PoseFilter> filter_;
 
+  // NavTypeSelector nav_type_selector_
+  std::shared_ptr<NavTypeSelector> nav_type_selector_;  
+
   // Threshold that battery current must exceed to be "charging" (in Amperes)
   double charging_threshold_;
   // If not using an external pose reference, this is the distance threshold
@@ -152,6 +158,8 @@ protected:
   double staging_x_offset_;
   double staging_y_offset_;
   double staging_yaw_offset_;
+  // set offset direction for goal checking 
+  char offset_direction_;
 
   rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
   std::shared_ptr<tf2_ros::Buffer> tf2_buffer_;

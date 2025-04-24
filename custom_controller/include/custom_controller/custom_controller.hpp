@@ -11,6 +11,7 @@
 #include "pluginlib/class_list_macros.hpp"
 #include "std_msgs/msg/float64.hpp"
 #include "nav_msgs/msg/odometry.hpp"
+#include "std_msgs/msg/string.hpp"
 #include "std_msgs/msg/bool.hpp"
 
 namespace custom_controller{
@@ -116,7 +117,6 @@ class CustomController : public nav2_core::Controller{
         RobotState goal_pose_;
         RobotState local_goal_;
         RobotState cur_pose_;
-        RobotState cur_odom_;
         RobotState velocity_state_;
         RobotState local_rival_pose_;
         RobotState cur_goal_pose_;
@@ -126,7 +126,10 @@ class CustomController : public nav2_core::Controller{
         int current_index_;
         bool isObstacleExist_;
         bool keep_planning_;
-        
+
+        // Special function for controller
+        rclcpp::Subscription<std_msgs::msg::String>::SharedPtr controller_function_sub_;
+        std::string controller_function_;
 };
 
 }  // namespace custom_controller
