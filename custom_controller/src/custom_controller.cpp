@@ -74,7 +74,7 @@ void CustomController::configure(
     global_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("received_global_plan", 5);
     check_goal_pub_ = node->create_publisher<geometry_msgs::msg::PoseStamped>("check_goal", 5);
     rival_distance_pub_ = node->create_publisher<std_msgs::msg::Float64>("rival_distance", 5);
-
+    robot_pose_pub_ = node->create_publisher<geometry_msgs::msg::PoseStamped>("/robot_pose", 5);
     // Declare parameters if not declared
     declare_parameter_if_not_declared(node, plugin_name_ + ".max_linear_vel", rclcpp::ParameterValue(0.7));
     declare_parameter_if_not_declared(node, plugin_name_ + ".min_linear_vel", rclcpp::ParameterValue(0.0));
@@ -126,19 +126,21 @@ void CustomController::cleanup(){
     global_path_pub_.reset();
     check_goal_pub_.reset();
     rival_distance_pub_.reset();
+    robot_pose_pub_.reset();
 }
 void CustomController::activate(){
     RCLCPP_INFO(logger_, "[%s] Activating controller", plugin_name_.c_str());
     global_path_pub_->on_activate();
     check_goal_pub_->on_activate();
     // rival_distance_pub_->on_activate();
-
+    robot_pose_pub_->on_activate();
 }
 void CustomController::deactivate(){
     RCLCPP_INFO(logger_, "[%s] Deactivating controller", plugin_name_.c_str());
     global_path_pub_->on_deactivate();
     check_goal_pub_->on_deactivate();
     // rival_distance_pub_->on_deactivate();
+    robot_pose_pub_->on_deactivate();
 }
 
 // void CustomController::setSpeedLimit(double speed_limit, double speed_limit_yaw){
@@ -210,7 +212,7 @@ void CustomController::posetoRobotState(geometry_msgs::msg::Pose pose, RobotStat
 }
 
 void CustomController::pathToVector(nav_msgs::msg::Path path, std::vector<RobotState> &vector_path) {
-    for (int i = 0; i < path.poses.size(); i++) {
+    for (size_t i = 0; i < path.poses.size(); i++) {
         RobotState state;
         posetoRobotState(path.poses[i].pose, state);
         vector_path.push_back(state);
@@ -240,7 +242,7 @@ RobotState CustomController::getLookAheadPoint(
     RobotState local_goal;
     
     int nearest_index = 0;
-    int next_index = 0;
+    size_t next_index = 0;
     
     //RCLCPP_INFO(logger_, "path size [%d]", path.size());
     for(int i=path.size()-1; i>=0; --i){
@@ -428,6 +430,8 @@ geometry_msgs::msg::TwistStamped CustomController::computeVelocityCommands(
   const geometry_msgs::msg::Twist & velocity,
   nav2_core::GoalChecker * goal_checker)
 {
+    auto robot_pose_ = std::make_unique<geometry_msgs::msg::PoseStamped>(pose);
+    robot_pose_pub_->publish(std::move(robot_pose_));
     vector_global_path_.clear();
     posetoRobotState(pose.pose, cur_pose_);
     pathToVector(global_plan_, vector_global_path_);

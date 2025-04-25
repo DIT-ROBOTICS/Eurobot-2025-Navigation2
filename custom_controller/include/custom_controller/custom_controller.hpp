@@ -12,7 +12,7 @@
 #include "std_msgs/msg/float64.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "std_msgs/msg/string.hpp"
-
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 namespace custom_controller{
 class RobotState {
    public:
@@ -75,7 +75,7 @@ class CustomController : public nav2_core::Controller{
 
         rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr local_goal_pub_;
         rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr rival_distance_pub_;
-        
+        std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseStamped>> robot_pose_pub_;
         rcl_interfaces::msg::SetParametersResult
         dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
 
