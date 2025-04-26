@@ -113,7 +113,6 @@ namespace Object_costmap_plugin {
     }
 
     bool ObjectLayer::checkInBox(double x, double y){
-        RCLCPP_WARN(rclcpp::get_logger("ObjectLayer"),"checkInBox: x: %lf, y: %lf", x, y);
         if(y < y_range && y > -y_range){
             if(x>= 0 && x < upper_x_range){
                 if(x > lower_x_range) return true;
@@ -147,7 +146,6 @@ namespace Object_costmap_plugin {
             base_frame,
             tf2::durationFromSec(0.01) // 10ms
         );
-        RCLCPP_WARN(rclcpp::get_logger("ObjectLayer"),"transformed pose: x: %lf, y: %lf", transformed_pose.pose.position.x, transformed_pose.pose.position.y);
         if(checkInBox(transformed_pose.pose.position.x, transformed_pose.pose.position.y)) return true;
         else return false;
         
