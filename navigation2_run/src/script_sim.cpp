@@ -23,6 +23,10 @@ public:
         nav_to_pose_client_ = rclcpp_action::create_client<NavigateToPose>(this, "/navigate_to_pose");
         dock_robot_client_ = rclcpp_action::create_client<DockRobot>(this, "/dock_robot");
 
+        // Create publisher for controller & goal checker selector
+        auto controller_selector = this->create_publisher<std_msgs::msg::String>("/controller_type", qos(10).reliable().transient_local());
+        auto goal_checker_selector = this->create_publisher<std_msgs::msg::String>("/goal_checker_type", qos(10).reliable().transient_local());
+
         // Parse points file
         parse_points_file("/home/user/Eurobot-2025-Navigation2-ws/install/navigation2_run/share/navigation2_run/params/script.yaml");
         // parse_points_file(points_file_);
@@ -44,6 +48,8 @@ public:
 
             if (moving_type == "path" && !halt_)
             {
+                controller_selector->publish(std_msgs::msg::String("Fast"));
+                goal_checker_selector->publish(std_msgs::msg::String("Precise"));
                 send_navigation_goal(x, y, w);
             }
             else if (moving_type == "dock" && !halt_)
