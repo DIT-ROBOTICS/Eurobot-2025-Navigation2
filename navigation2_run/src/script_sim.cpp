@@ -7,6 +7,7 @@
 #include <opennav_docking_msgs/action/dock_robot.hpp>
 #include <rclcpp_action/rclcpp_action.hpp>
 #include <yaml-cpp/yaml.h>
+#include <std_msgs/msg/string.hpp>
 
 class ScriptSim : public rclcpp::Node
 {
@@ -24,8 +25,8 @@ public:
         dock_robot_client_ = rclcpp_action::create_client<DockRobot>(this, "/dock_robot");
 
         // Create publisher for controller & goal checker selector
-        auto controller_selector = this->create_publisher<std_msgs::msg::String>("/controller_type", qos(10).reliable().transient_local());
-        auto goal_checker_selector = this->create_publisher<std_msgs::msg::String>("/goal_checker_type", qos(10).reliable().transient_local());
+        controller_selector_pub_ = this->create_publisher<std_msgs::msg::String>("/controller_type", rclcpp::QoS(10).reliable().transient_local());
+        goal_checker_selector_pub_ = this->create_publisher<std_msgs::msg::String>("/goal_checker_type", rclcpp::QoS(10).reliable().transient_local());
 
         // Parse points file
         parse_points_file("/home/user/Eurobot-2025-Navigation2-ws/install/navigation2_run/share/navigation2_run/params/script.yaml");
@@ -48,8 +49,12 @@ public:
 
             if (moving_type == "path" && !halt_)
             {
-                controller_selector->publish(std_msgs::msg::String("Fast"));
-                goal_checker_selector->publish(std_msgs::msg::String("Precise"));
+                std_msgs::msg::String controller_type;
+                std_msgs::msg::String goal_checker_type;
+                controller_type.data = "Fast";
+                goal_checker_type.data = "Precise";
+                controller_selector_pub_->publish(controller_type);
+                goal_checker_selector_pub_->publish(goal_checker_type);
                 send_navigation_goal(x, y, w);
             }
             else if (moving_type == "dock" && !halt_)
@@ -177,6 +182,9 @@ private:
     rclcpp_action::Client<NavigateToPose>::SharedPtr nav_to_pose_client_;
     rclcpp_action::Client<DockRobot>::SharedPtr dock_robot_client_;
     bool halt_ = false;
+
+    rclcpp::Publisher<std_msgs::msg::String>::SharedPtr controller_selector_pub_;
+    rclcpp::Publisher<std_msgs::msg::String>::SharedPtr goal_checker_selector_pub_;
 };
 
 int main(int argc, char ** argv)
