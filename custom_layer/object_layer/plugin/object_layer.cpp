@@ -9,7 +9,7 @@ namespace Object_costmap_plugin {
         
         enabled_ = true;
         current_ = true;
-
+        resetMapToValue(0, 0, getSizeInCellsX(), getSizeInCellsY(), nav2_costmap_2d::FREE_SPACE);
         auto node = node_.lock();
         if(!node){
             throw std::runtime_error{"Failed to lock node"};
@@ -22,8 +22,12 @@ namespace Object_costmap_plugin {
         declareParameter("board_inflation_radius", rclcpp::ParameterValue(0.22));
         declareParameter("cost_scaling_factor", rclcpp::ParameterValue(3.0));
         declareParameter("delay_mode", rclcpp::ParameterValue(false));
-
+        declareParameter("upper_x_range", rclcpp::ParameterValue(0.23));
+        declareParameter("lower_x_range", rclcpp::ParameterValue(0.11));
+        declareParameter("y_range", rclcpp::ParameterValue(0.22));
+        declareParameter("base_frame", rclcpp::ParameterValue("base_footprint"));
         
+        node->get_parameter(name_ + "." + "base_frame", base_frame);
         node->get_parameter(name_ + "." + "enabled", enabled_);
         node->get_parameter(name_ + "." + "column_inscribed_radius", column_inscribed_radius);
         node->get_parameter(name_ + "." + "board_inscribed_radius", board_inscribed_radius);
@@ -31,21 +35,34 @@ namespace Object_costmap_plugin {
         node->get_parameter(name_ + "." + "board_inflation_radius", board_inflation_radius);
         node->get_parameter(name_ + "." + "cost_scaling_factor", cost_scaling_factor);
         node->get_parameter(name_ + "." + "delay_mode", delay_mode);
+        node->get_parameter(name_ + "." + "upper_x_range", upper_x_range);
+        node->get_parameter(name_ + "." + "lower_x_range", lower_x_range);
+        node->get_parameter(name_ + "." + "y_range", y_range);
         column_poseArray_sub = node->create_subscription<geometry_msgs::msg::PoseArray>(
             "/detected/global_center_poses/column", 100, std::bind(&ObjectLayer::columnPoseArrayCallback, this, std::placeholders::_1));
         board_poseArray_sub = node->create_subscription<geometry_msgs::msg::PoseArray>(
             "/detected/global_center_poses/platform", 100, std::bind(&ObjectLayer::boardPoseArrayCallback, this, std::placeholders::_1));
-        robot_pose_sub = node->create_subscription<geometry_msgs::msg::PoseStamped>(
-            "/robot_pose", 100, std::bind(&ObjectLayer::robotPoseCallback, this, std::placeholders::_1));
-        
-        columnList.clear();
-        boardList.clear();
+        robot_pose_sub = node->create_subscription<nav_msgs::msg::Odometry>(
+            "/final_pose_nav", 100, std::bind(&ObjectLayer::robotPoseCallback, this, std::placeholders::_1)); //need to change to "/final_pose" when on the real robot
+        tf2_buffer_ = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+        tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf2_buffer_);
+        tf2_buffer_->setUsingDedicatedThread(true);
+        reset();
         clearTimer = 20;
+
+        // Initialize robot pose with default values to prevent empty frame_id
+        robot_pose.header.frame_id = "map";
+        robot_pose.header.stamp = node->now();
+        robot_pose.pose.orientation.w = 1.0;  // Identity quaternion
+
     }
 
     void ObjectLayer::updateBounds(double robot_x, double robot_y, double robot_yaw,
                                    double *min_x, double *min_y, double *max_x, double *max_y){
         // Assuming min_x_, min_y_, max_x_, and max_y_ are inherited member variables.
+        (void) robot_x;
+        (void) robot_y;
+        (void) robot_yaw;
         *min_x = std::min(min_x_, *min_x);
         *min_y = std::min(min_y_, *min_y);
         *max_x = std::max(max_x_, *max_x);
@@ -59,15 +76,25 @@ namespace Object_costmap_plugin {
         auto node = node_.lock();
         node->get_parameter(name_ + "." + "column_inflation_radius", column_inflation_radius);
         node->get_parameter(name_ + "." + "board_inflation_radius", board_inflation_radius);
-        resetMapToValue(0, 0, getSizeInCellsX(), getSizeInCellsY(), nav2_costmap_2d::FREE_SPACE);
+
         for(auto object : columnList){
-            ExpandPointWithCircle(object.pose.position.x, object.pose.position.y, nav2_costmap_2d::LETHAL_OBSTACLE, column_inflation_radius, cost_scaling_factor, column_inscribed_radius);
+            if(eliminateObject(object)){
+                continue;
+            }
+            else ExpandPointWithCircle(object.pose.position.x, object.pose.position.y, nav2_costmap_2d::LETHAL_OBSTACLE, column_inflation_radius, cost_scaling_factor, column_inscribed_radius);
+            updateWithMax(master_grid, 0, 0, getSizeInCellsX(), getSizeInCellsY());
+
         }
         for(auto object : boardList){
-            ExpandPointWithRectangle(object.pose.position.x, object.pose.position.y, nav2_costmap_2d::LETHAL_OBSTACLE, board_inflation_radius, cost_scaling_factor, board_inscribed_radius, object);
+            if(eliminateObject(object)){
+                continue;
+            }
+            else ExpandPointWithRectangle(object.pose.position.x, object.pose.position.y, nav2_costmap_2d::LETHAL_OBSTACLE, board_inflation_radius, cost_scaling_factor, board_inscribed_radius, object);
+            updateWithMax(master_grid, 0, 0, getSizeInCellsX(), getSizeInCellsY());
+
         }
-        updateWithMax(master_grid, 0, 0, getSizeInCellsX(), getSizeInCellsY());
-        checkClear();
+        // updateWithMax(master_grid, 0, 0, getSizeInCellsX(), getSizeInCellsY());
+        // checkClear();
     }
 
     void ObjectLayer::checkClear(){
@@ -85,6 +112,47 @@ namespace Object_costmap_plugin {
         }
     }
 
+    bool ObjectLayer::checkInBox(double x, double y){
+        RCLCPP_WARN(rclcpp::get_logger("ObjectLayer"),"checkInBox: x: %lf, y: %lf", x, y);
+        if(y < y_range && y > -y_range){
+            if(x>= 0 && x < upper_x_range){
+                if(x > lower_x_range) return true;
+                else return false;
+            }
+            else if(x < 0 && x > -upper_x_range){
+                if(x < -lower_x_range) return true;
+                else return false;
+            }
+            else return false;
+            }
+        else return false;
+
+    }
+
+    bool ObjectLayer::eliminateObject(geometry_msgs::msg::PoseStamped column){ 
+        if (!tf2_buffer_) {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("ObjectLayer"),
+                "TF2 buffer is null, cannot transform poses");
+            return false;
+        }
+
+        if(column.header.frame_id.empty()){
+            column.header.frame_id = "map";
+        }
+
+        geometry_msgs::msg::PoseStamped transformed_pose;
+        transformed_pose = tf2_buffer_->transform(
+            column, 
+            base_frame,
+            tf2::durationFromSec(0.01) // 10ms
+        );
+        RCLCPP_WARN(rclcpp::get_logger("ObjectLayer"),"transformed pose: x: %lf, y: %lf", transformed_pose.pose.position.x, transformed_pose.pose.position.y);
+        if(checkInBox(transformed_pose.pose.position.x, transformed_pose.pose.position.y)) return true;
+        else return false;
+        
+    }
+
     bool ObjectLayer::isClearable(){
         return true;
     }
@@ -94,32 +162,48 @@ namespace Object_costmap_plugin {
         current_ = true;
         columnList.clear();
         boardList.clear();
+        tf2_buffer_->clear();
         resetMapToValue(0, 0, getSizeInCellsX(), getSizeInCellsY(), nav2_costmap_2d::FREE_SPACE);
         RCLCPP_WARN(
             rclcpp::get_logger("ObjectLayer"), 
             "Resetting ObjectLayer");
     }
 
-    void ObjectLayer::robotPoseCallback(const geometry_msgs::msg::PoseStamped::SharedPtr object_pose){
-        robot_pose = *object_pose;
+    void ObjectLayer::robotPoseCallback(const nav_msgs::msg::Odometry::SharedPtr object_pose){
+        robot_pose.header.frame_id = object_pose->header.frame_id;
+        robot_pose.header.stamp = object_pose->header.stamp;
+        robot_pose.pose.position.x = object_pose->pose.pose.position.x;
+        robot_pose.pose.position.y = object_pose->pose.pose.position.y;
+        robot_pose.pose.position.z = object_pose->pose.pose.position.z;
+        robot_pose.pose.orientation.x = object_pose->pose.pose.orientation.x;
+        robot_pose.pose.orientation.y = object_pose->pose.pose.orientation.y;
+        robot_pose.pose.orientation.z = object_pose->pose.pose.orientation.z;
+        robot_pose.pose.orientation.w = object_pose->pose.pose.orientation.w;
+
+        // log and check if frame id is set
     }
 
     void ObjectLayer::columnPoseArrayCallback(const geometry_msgs::msg::PoseArray::SharedPtr object_poseArray){
-        // columnList.clear();
+        columnList.clear();
         for(auto pose : object_poseArray->poses){
             geometry_msgs::msg::PoseStamped poseStamped;
             poseStamped.pose = pose;
+            poseStamped.header.frame_id = "map";
             columnList.push_back(poseStamped);
         }
+        resetMapToValue(0, 0, getSizeInCellsX(), getSizeInCellsY(), nav2_costmap_2d::FREE_SPACE);
+
     }
 
     void ObjectLayer::boardPoseArrayCallback(const geometry_msgs::msg::PoseArray::SharedPtr object_poseArray){
-        // boardList.clear();
+        boardList.clear();
         for(auto pose : object_poseArray->poses){
             geometry_msgs::msg::PoseStamped poseStamped;
             poseStamped.pose = pose;
+            poseStamped.header.frame_id = "map";
             boardList.push_back(poseStamped);
         }
+        resetMapToValue(0, 0, getSizeInCellsX(), getSizeInCellsY(), nav2_costmap_2d::FREE_SPACE);
     }
     // 0.22
     void ObjectLayer::ExpandPointWithCircle(double x, double y, double MaxCost, double InflationRadius, double CostScalingFactor, double InscribedRadius){
@@ -169,6 +253,7 @@ namespace Object_costmap_plugin {
         double cosy_cosp = 1.0 - 2.0 * (object.pose.orientation.y * object.pose.orientation.y +
                                         object.pose.orientation.z * object.pose.orientation.z);
         double angle = std::atan2(siny_cosp, cosy_cosp);
+        (void) angle;
         // RCLCPP_WARN(
         //     rclcpp::get_logger("ObjectLayer"), 
         //     "my angle : %lf", angle);        

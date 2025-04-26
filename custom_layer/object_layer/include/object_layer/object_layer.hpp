@@ -12,12 +12,19 @@
 #include "geometry_msgs/msg/pose_array.hpp"
 #include <cmath>
 #include <algorithm>
-#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 #include "tf2/utils.h"
+#include "geometry_msgs/msg/pose_stamped.hpp"
+#include <string>
+#include <tf2_ros/buffer.h>
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
+#include "tf2_ros/transform_listener.h"
+#include "nav_msgs/msg/odometry.hpp"
+
+
 
 
 namespace Object_costmap_plugin {
-    class ObjectLayer : public nav2_costmap_2d::CostmapLayer {
+    class ObjectLayer :  public nav2_costmap_2d::CostmapLayer {
         public:
             ObjectLayer(){}
             ~ObjectLayer(){}
@@ -37,17 +44,24 @@ namespace Object_costmap_plugin {
             // data processes
             void columnPoseArrayCallback(const geometry_msgs::msg::PoseArray::SharedPtr object_poseArray);
             void boardPoseArrayCallback(const geometry_msgs::msg::PoseArray::SharedPtr object_poseArray);
-            void robotPoseCallback(const geometry_msgs::msg::PoseStamped::SharedPtr object_pose);
-            void checkClear();        
+            void robotPoseCallback(const nav_msgs::msg::Odometry::SharedPtr object_pose);
+            void checkClear();    
+            bool eliminateObject(geometry_msgs::msg::PoseStamped column);
+            bool checkInBox(double x, double y);
         private:
             std::deque<geometry_msgs::msg::PoseStamped> columnList;
             std::deque<geometry_msgs::msg::PoseStamped> boardList;
             rclcpp::Subscription<geometry_msgs::msg::PoseArray>::SharedPtr column_poseArray_sub;
             rclcpp::Subscription<geometry_msgs::msg::PoseArray>::SharedPtr board_poseArray_sub;
-            rclcpp::Subscription<geometry_msgs::msg::PoseStamped>SharedPtr robot_pose_sub;
+            rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr robot_pose_sub;
             geometry_msgs::msg::PoseStamped robot_pose;
             int clearTimer;
             bool delay_mode;
+            std::string base_frame;
+            double lower_x_range, upper_x_range;
+            double y_range;
+            std::shared_ptr<tf2_ros::Buffer> tf2_buffer_;   
+            std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
             double column_inscribed_radius, board_inscribed_radius;
             double column_inflation_radius, board_inflation_radius;
             double cost_scaling_factor;
