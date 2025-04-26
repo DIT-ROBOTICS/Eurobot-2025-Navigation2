@@ -206,6 +206,7 @@ global_costmap:
         board_inflation_radius: 0.22
         cost_scaling_factor: 3.0
         delay_mode: false
+        base_frame: base_footprint
       always_send_full_costmap: True
 
 map_server:
