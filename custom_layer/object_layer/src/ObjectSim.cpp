@@ -15,16 +15,18 @@ class ObjectSimPub : public rclcpp::Node {
         int change_position_board = 90;
         geometry_msgs::msg::PoseArray column_message;
         geometry_msgs::msg::PoseArray board_message;
-        int mode = 0;
-        std::vector<double> column_pos_x {0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 2.9, 2.9, 2.9, 2.9, 2.9, 2.9, 2.9, 2.9, 1.35, 1.3, 1.25, 1.2, 1.65, 1.7, 1.75, 1.8, 0.85, 0.8, 0.75, 0.7, 2.15, 2.2, 2.25, 2.3, 0.85, 0.8, 0.75, 0.7, 2.15, 2.2, 2.25, 2.3};
-        std::vector<double> column_pos_y {0.75, 0.7, 0.65, 0.6, 1.75, 1.7, 1.65, 1.6, 0.75, 0.7, 0.65, 0.6, 1.75, 1.7, 1.65, 1.6, 1, 1, 1, 1, 1, 1, 1, 1, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 1.8, 1.8, 1.8, 1.8, 1.8, 1.8, 1.8, 1.8};
-        std::vector<double> board_pos_x {};
-        std::vector<double> board_pos_y { /* fill with desired values */ };
+        int mode = 2;
+        std::vector<double> column_pos_x {1.5, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 2.9, 2.9, 2.9, 2.9, 2.9, 2.9, 2.9, 2.9, 1.35, 1.3, 1.25, 1.2, 1.65, 1.7, 1.75, 1.8, 0.85, 0.8, 0.75, 0.7, 2.15, 2.2, 2.25, 2.3, 0.85, 0.8, 0.75, 0.7, 2.15, 2.2, 2.25, 2.3};
+        std::vector<double> column_pos_y {1, 0.75, 0.7, 0.65, 0.6, 1.75, 1.7, 1.65, 1.6, 0.75, 0.7, 0.65, 0.6, 1.75, 1.7, 1.65, 1.6, 1, 1, 1, 1, 1, 1, 1, 1, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 1.8, 1.8, 1.8, 1.8, 1.8, 1.8, 1.8, 1.8};
+        std::vector<double> custom_column_pos_x {1.5};
+        std::vector<double> custom_column_pos_y {1};
+        std::vector<double> board_pos_x {1.8};
+        std::vector<double> board_pos_y {1};
         std::vector<double> board_orientation { /* fill with desired values */ };
         ObjectSimPub() : Node("object_sim_pub") {
             column_pub_ = this->create_publisher<geometry_msgs::msg::PoseArray>("/detected/global_center_poses/column", 100);
             board_pub_ = this->create_publisher<geometry_msgs::msg::PoseArray>("/detected/global_center_poses/platform", 100);
-            column_timer_ = this->create_wall_timer(std::chrono::milliseconds(50), std::bind(&ObjectSimPub::column_timer_callback, this));
+            column_timer_ = this->create_wall_timer(std::chrono::milliseconds(1000), std::bind(&ObjectSimPub::column_timer_callback, this));
             board_timer_ = this->create_wall_timer(std::chrono::milliseconds(50), std::bind(&ObjectSimPub::board_timer_callback, this));
         }
     private:
@@ -48,10 +50,26 @@ class ObjectSimPub : public rclcpp::Node {
                 column_message = geometry_msgs::msg::PoseArray();
                 column_message.header.stamp = this->now();
                 column_message.header.frame_id = "column";
-                for(int i = 0; i < 40; i++){    
+                for(int i = 0; i < column_pos_x.size(); i++){
                     geometry_msgs::msg::Pose pose;
                     pose.position.x = column_pos_x[i];
                     pose.position.y = column_pos_y[i];
+                    pose.orientation.z = std::sin(0.0 / 2.0);
+                    pose.orientation.w = std::cos(0.0 / 2.0);
+                    column_message.poses.push_back(pose);
+                }
+                column_pub_->publish(column_message);
+            }
+            else if(mode == 2){
+                column_message = geometry_msgs::msg::PoseArray();
+                column_message.header.stamp = this->now();
+                column_message.header.frame_id = "column";
+                for(int i = 0; i < custom_column_pos_x.size(); i++){
+                    geometry_msgs::msg::Pose pose;
+                    pose.position.x = custom_column_pos_x[i];
+                    pose.position.y = custom_column_pos_y[i];
+                    pose.orientation.z = std::sin(0.0 / 2.0);
+                    pose.orientation.w = std::cos(0.0 / 2.0);
                     column_message.poses.push_back(pose);
                 }
                 column_pub_->publish(column_message);
@@ -74,7 +92,21 @@ class ObjectSimPub : public rclcpp::Node {
                 change_position_board--;
             }
             else if(mode == 1){
-
+                return;
+            }
+            else if(mode == 2) {
+                board_message = geometry_msgs::msg::PoseArray();
+                board_message.header.stamp = this->now();
+                board_message.header.frame_id = "board";
+                for(int i = 0; i < board_pos_x.size(); i++){
+                    geometry_msgs::msg::Pose pose;
+                    pose.position.x = board_pos_x[i];
+                    pose.position.y = board_pos_y[i];
+                    pose.orientation.z = std::sin(0.0 / 2.0);
+                    pose.orientation.w = std::cos(0.0 / 2.0);
+                    board_message.poses.push_back(pose);
+                }
+                board_pub_->publish(board_message);
             }
         }
 
