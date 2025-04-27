@@ -130,6 +130,7 @@ class CustomController : public nav2_core::Controller{
         // Special function for controller
         rclcpp::Subscription<std_msgs::msg::String>::SharedPtr controller_function_sub_;
         std::string controller_function_;
+        double spin_delay_threshold_;
 };
 
 }  // namespace custom_controller
