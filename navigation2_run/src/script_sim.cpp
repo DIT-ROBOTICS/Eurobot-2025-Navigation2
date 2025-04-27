@@ -51,7 +51,7 @@ public:
             {
                 std_msgs::msg::String controller_type;
                 std_msgs::msg::String goal_checker_type;
-                controller_type.data = "Fast";
+                controller_type.data = "Slow";
                 goal_checker_type.data = "Precise";
                 controller_selector_pub_->publish(controller_type);
                 goal_checker_selector_pub_->publish(goal_checker_type);
