@@ -104,8 +104,8 @@ controller_server:
       plugin: "nav2_controller::SimpleGoalChecker"
       xy_goal_tolerance: 0.01
       yaw_goal_tolerance: 0.05
-      xy_debounce_threshold: 1
-      yaw_debounce_threshold: 1
+      xy_debounce_threshold: 2
+      yaw_debounce_threshold: 2
 
     Loose:
       stateful: True
@@ -127,11 +127,12 @@ controller_server:
       speed_decade: 0.7
       costmap_tolerance: 60
       keep_planning: false
+      spin_delay_threshold: 0.5
       
     Slow:
       plugin: "custom_controller::CustomController"
       max_linear_vel: 0.8
-      max_angular_vel: 4.5
+      max_angular_vel: 2.0
       linear_kp: 2.2
       angular_kp: 3.7
       transform_tolerance: 0.1
@@ -139,6 +140,7 @@ controller_server:
       speed_decade: 0.7
       costmap_tolerance: 60
       keep_planning: false
+      spin_delay_threshold: 0.5
 
     LinearBoost:
       plugin: "custom_controller::CustomController"
@@ -151,6 +153,7 @@ controller_server:
       speed_decade: 0.7
       costmap_tolerance: 60
       keep_planning: false
+      spin_delay_threshold: 0.5
 
     AngularBoost:
       plugin: "custom_controller::CustomController"
@@ -163,6 +166,7 @@ controller_server:
       speed_decade: 0.7
       costmap_tolerance: 60
       keep_planning: false
+      spin_delay_threshold: 0.5
 
 local_costmap:
   local_costmap:
@@ -238,7 +242,7 @@ global_costmap:
         safe_distance: 0.5
       object_layer:
         plugin: "Object_costmap_plugin::ObjectLayer"
-        enabled: True
+        enabled: False
         column_inscribed_radius: 0.075
         board_inscribed_radius: 0.01
         column_inflation_radius: 0.22
