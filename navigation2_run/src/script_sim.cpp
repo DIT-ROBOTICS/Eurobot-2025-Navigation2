@@ -73,7 +73,7 @@ public:
         if (!file_.is_open()) {
             RCLCPP_ERROR(this->get_logger(), "Failed to open CSV file.");
         } else if (is_empty) {
-            file_ << "timestamp,mode,goal_x,goal_y,final_x,final_y,beacon1_x,beacon1_y,beacon2_x,beacon2_y,beacon3_x,beacon3_y\n";
+            file_ << "index,timestamp,mode,goal_x,goal_y,final_x,final_y,beacon1_x,beacon1_y,beacon2_x,beacon2_y,beacon3_x,beacon3_y\n";
         }
     }
 
@@ -168,10 +168,10 @@ private:
         send_goal_options.result_callback = [this, x, y](const GoalHandleNavigate::WrappedResult & result) {
             if (result.code == rclcpp_action::ResultCode::SUCCEEDED) {
                 RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Navigation succeeded");
-
+                index_++;
                 if (file_.is_open() && beacon_pose_array_.poses.size() >= 3) {
                     auto stamp = this->now().seconds();
-                    file_ << stamp << ",Path,"
+                    file_ << index_ << "," << stamp << ",Path,"
                         << x << "," << y << ","
                         << final_pose_data_.pose.pose.position.x << "," << final_pose_data_.pose.pose.position.y << ","
                         << beacon_pose_array_.poses[0].position.x << "," << beacon_pose_array_.poses[0].position.y << ","
@@ -252,6 +252,7 @@ private:
     rclcpp::Subscription<geometry_msgs::msg::PoseArray>::SharedPtr beacon_pose_array_sub_;
 
     std::ofstream file_;
+    int index_ = 0;
 };
 
 int main(int argc, char ** argv)
