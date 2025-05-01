@@ -50,6 +50,12 @@ public:
             [this](const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg) {
                 final_pose_data_ = *msg;
             });
+        
+        lidar_pose_sub_ = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
+            "/lidar_pose", rclcpp::QoS(10),
+            [this](const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg) {
+                lidar_pose_data_ = *msg;
+            });
 
         beacon_pose_array_sub_ = this->create_subscription<geometry_msgs::msg::PoseArray>(
             "/beacons_guaguagua", rclcpp::QoS(10),
@@ -73,7 +79,7 @@ public:
         if (!file_.is_open()) {
             RCLCPP_ERROR(this->get_logger(), "Failed to open CSV file.");
         } else if (is_empty) {
-            file_ << "index,timestamp,mode,goal_x,goal_y,final_x,final_y,beacon1_x,beacon1_y,beacon2_x,beacon2_y,beacon3_x,beacon3_y\n";
+            file_ << "index,timestamp,mode,goal_x,goal_y,final_x,final_y,lidar_x,lidar_y,beacon1_x,beacon1_y,beacon2_x,beacon2_y,beacon3_x,beacon3_y\n";
         }
     }
 
@@ -174,6 +180,7 @@ private:
                     file_ << index_ << "," << stamp << ",Path,"
                         << x << "," << y << ","
                         << final_pose_data_.pose.pose.position.x << "," << final_pose_data_.pose.pose.position.y << ","
+                        << lidar_pose_data_.pose.pose.position.x << "," << lidar_pose_data_.pose.pose.position.y << ","
                         << beacon_pose_array_.poses[0].position.x << "," << beacon_pose_array_.poses[0].position.y << ","
                         << beacon_pose_array_.poses[1].position.x << "," << beacon_pose_array_.poses[1].position.y << ","
                         << beacon_pose_array_.poses[2].position.x << "," << beacon_pose_array_.poses[2].position.y
@@ -250,6 +257,8 @@ private:
     rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr final_pose_sub_;
     geometry_msgs::msg::PoseArray beacon_pose_array_;
     rclcpp::Subscription<geometry_msgs::msg::PoseArray>::SharedPtr beacon_pose_array_sub_;
+    geometry_msgs::msg::PoseWithCovarianceStamped lidar_pose_data_;
+    rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr lidar_pose_sub_;
 
     std::ofstream file_;
     int index_ = 0;
