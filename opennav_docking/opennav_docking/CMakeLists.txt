@@ -70,7 +70,15 @@ add_library(pose_filter SHARED
   src/pose_filter.cpp
 )
 
+add_library(nav_type_selector SHARED
+  src/nav_type_selector.cpp
+)
+
 ament_target_dependencies(pose_filter
+  ${dependencies}
+)
+
+ament_target_dependencies(nav_type_selector
   ${dependencies}
 )
 
@@ -92,11 +100,11 @@ add_library(simple_charging_dock SHARED
 ament_target_dependencies(simple_charging_dock
   ${dependencies}
 )
-target_link_libraries(simple_charging_dock pose_filter)
+target_link_libraries(simple_charging_dock pose_filter nav_type_selector)
 
 pluginlib_export_plugin_description_file(opennav_docking_core plugins.xml)
 
-install(TARGETS ${library_name} pose_filter simple_charging_dock
+install(TARGETS ${library_name} nav_type_selector pose_filter simple_charging_dock
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin

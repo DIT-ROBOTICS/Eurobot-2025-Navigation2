@@ -260,17 +260,17 @@ void BtActionServer<ActionT>::executeCallback()
 
   switch (rc) {
     case nav2_behavior_tree::BtStatus::SUCCEEDED:
-      RCLCPP_INFO(logger_, "Goal succeeded");
+      RCLCPP_INFO(logger_, "\033[1;32mGoal succeeded\033[0m");
       action_server_->succeeded_current(result);
       break;
 
     case nav2_behavior_tree::BtStatus::FAILED:
-      RCLCPP_ERROR(logger_, "Goal failed");
+      RCLCPP_ERROR(logger_, "\033[1;31mGoal failed\033[0m");
       action_server_->terminate_current(result);
       break;
 
     case nav2_behavior_tree::BtStatus::CANCELED:
-      RCLCPP_INFO(logger_, "Goal canceled");
+      RCLCPP_INFO(logger_, "\033[1;33mGoal canceled\033[0m");
       action_server_->terminate_all(result);
       break;
   }

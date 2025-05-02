@@ -122,6 +122,9 @@ void SimpleChargingDock::configure(
   node_->get_parameter(name + ".filter_coef", filter_coef);
   filter_ = std::make_unique<PoseFilter>(filter_coef, external_detection_timeout_);
 
+  // Set up nav type selector
+  nav_type_selector_ = std::make_unique<NavTypeSelector>(node_);
+
   if (use_battery_status_) {
     battery_sub_ = node_->create_subscription<sensor_msgs::msg::BatteryState>(
       "battery_state", 1,
@@ -180,15 +183,9 @@ geometry_msgs::msg::PoseStamped SimpleChargingDock::getStagingPose(
   staging_pose.pose = pose;
   staging_pose.pose.orientation = pose.orientation;
 
-  // Apply x and y offsets
+  //** Apply x and y offsets
   if(use_dynamic_offset_) {
-    if(dock_type == "mission_dock_x") {
-      staging_pose.pose.position.x -= pose.position.z;
-    } else if(dock_type == "mission_dock_y") {
-      staging_pose.pose.position.y -= pose.position.z;
-    } else {
-      RCLCPP_WARN(node_->get_logger(), "Unknown dock type: %s", dock_type.c_str());
-    }
+    nav_type_selector_->setType(dock_type, offset_direction_, staging_pose, pose.position.z);
   } else {
     staging_pose.pose.position.x += cos(yaw) * staging_x_offset_ - sin(yaw) * staging_y_offset_;
     staging_pose.pose.position.y += sin(yaw) * staging_x_offset_ + cos(yaw) * staging_y_offset_;
@@ -199,6 +196,7 @@ geometry_msgs::msg::PoseStamped SimpleChargingDock::getStagingPose(
   }
 
   // Publish staging pose for debugging purposes
+
   staging_pose_pub_->publish(staging_pose);
 
 return staging_pose;
@@ -304,9 +302,16 @@ bool SimpleChargingDock::isDocked()
   }
 
   // If we are close enough, pretend we are charging
-  double d = std::hypot(
-    base_pose.pose.position.x - dock_pose_.pose.position.x,
-    base_pose.pose.position.y - dock_pose_.pose.position.y);
+  double d = 0.0;
+  if(offset_direction_ == 'x') {
+    d = fabs(base_pose.pose.position.x - dock_pose_.pose.position.x);
+  } else if(offset_direction_ == 'y') {
+    d = fabs(base_pose.pose.position.y - dock_pose_.pose.position.y);
+  } else {
+    d = hypot(
+      base_pose.pose.position.x - dock_pose_.pose.position.x,
+      base_pose.pose.position.y - dock_pose_.pose.position.y);
+  }
 
   if(use_debounce_) {
     if (d < docking_threshold_) {

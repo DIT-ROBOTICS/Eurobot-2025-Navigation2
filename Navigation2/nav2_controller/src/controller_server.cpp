@@ -356,7 +356,7 @@ void ControllerServer::computeControl()
 {
   std::lock_guard<std::mutex> lock(dynamic_params_lock_);
 
-  RCLCPP_INFO(get_logger(), "Received a goal, begin computing control effort.");
+  RCLCPP_INFO(get_logger(), "\033[1;90m Begin computing control effort. \033[0m");
 
   try {
     std::string c_name = action_server_->get_current_goal()->controller_id;
@@ -406,7 +406,7 @@ void ControllerServer::computeControl()
       computeAndPublishVelocity();
 
       if (isGoalReached()) {
-        RCLCPP_INFO(get_logger(), "Reached the goal!");
+        RCLCPP_DEBUG(get_logger(), "Reached the goal!");
         break;
       }
 

@@ -37,41 +37,18 @@ using rcl_interfaces::msg::ParameterType;
 namespace opennav_docking
 {
 Controller::Controller(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node) {
+    // Initialize node
+    node_ = node;
+
+    // Declare & get controller profiles
+    node_->declare_parameter("controllers", rclcpp::ParameterValue(std::vector<std::string>()));
+    node_->get_parameter("controllers", profiles_);
+
     // Declare parameters if not declared
-    declare_parameter_if_not_declared(node, "controller.max_linear_vel", rclcpp::ParameterValue(0.5));
-    declare_parameter_if_not_declared(node, "controller.min_linear_vel", rclcpp::ParameterValue(0.1));
-    declare_parameter_if_not_declared(node, "controller.max_angular_vel", rclcpp::ParameterValue(3.0));
-    declare_parameter_if_not_declared(node, "controller.min_angular_vel", rclcpp::ParameterValue(0.0));
-    declare_parameter_if_not_declared(node, "controller.max_linear_acc", rclcpp::ParameterValue(0.3));
-    declare_parameter_if_not_declared(node, "controller.max_angular_acc", rclcpp::ParameterValue(1.0));
-    declare_parameter_if_not_declared(node, "controller.linear_ki_accel_vel", rclcpp::ParameterValue(0.7));
-    declare_parameter_if_not_declared(node, "controller.linear_kp_accel_vel", rclcpp::ParameterValue(0.5));
-    declare_parameter_if_not_declared(node, "controller.linear_kp_decel_dis", rclcpp::ParameterValue(3.0));
-    declare_parameter_if_not_declared(node, "controller.linear_kp_decel_vel", rclcpp::ParameterValue(0.9));
-    declare_parameter_if_not_declared(node, "controller.angular_kp", rclcpp::ParameterValue(4.0));
-    declare_parameter_if_not_declared(node, "controller.look_ahead_distance", rclcpp::ParameterValue(1.0));
-    declare_parameter_if_not_declared(node, "controller.deceleration_distance", rclcpp::ParameterValue(0.1));
-    declare_parameter_if_not_declared(node, "controller.reserved_distance", rclcpp::ParameterValue(0.03));
-    declare_parameter_if_not_declared(node, "controller.stop_degree", rclcpp::ParameterValue(45.0));
-    declare_parameter_if_not_declared(node, "controller.rival_radius", rclcpp::ParameterValue(0.44));
+    declareAllControlParams();
 
     // Get parameters from the config file
-    node->get_parameter("controller.max_linear_vel", max_linear_vel_);
-    node->get_parameter("controller.min_linear_vel", min_linear_vel_);
-    node->get_parameter("controller.max_angular_vel", max_angular_vel_);
-    node->get_parameter("controller.min_angular_vel", min_angular_vel_);
-    node->get_parameter("controller.max_linear_acc", max_linear_acc_);
-    node->get_parameter("controller.max_angular_acc", max_angular_acc_);
-    node->get_parameter("controller.linear_ki_accel_vel", linear_ki_accel_vel_);
-    node->get_parameter("controller.linear_kp_accel_vel", linear_kp_accel_vel_);
-    node->get_parameter("controller.linear_kp_decel_dis", linear_kp_decel_dis_);
-    node->get_parameter("controller.linear_kp_decel_vel", linear_kp_decel_vel_);
-    node->get_parameter("controller.angular_kp", angular_kp_);
-    node->get_parameter("controller.look_ahead_distance", look_ahead_distance_);
-    node->get_parameter("controller.deceleration_distance", deceleration_distance_);
-    node->get_parameter("controller.reserved_distance", reserved_distance_);
-    node->get_parameter("controller.stop_degree", stop_degree_);
-    node->get_parameter("controller.rival_radius", rival_radius_);
+    updateParams();
 
     logger_ = node->get_logger();
     clock_ = node->get_clock();
@@ -98,6 +75,15 @@ Controller::Controller(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node) 
     local_goal_pub_ = node->create_publisher<geometry_msgs::msg::PoseStamped>(
         "local_goal",
         rclcpp::QoS(10));
+
+    // Subscribe to dock controller selector
+    dock_controller_selector_sub_ = node->create_subscription<std_msgs::msg::String>(
+        "/dock_controller_type",
+        rclcpp::QoS(10).reliable().transient_local(),
+        [this](const std_msgs::msg::String::SharedPtr msg) {
+            param_name_ = msg->data;
+            updateParams();
+        });
 }
 
 RobotState::RobotState(double x, double y, double theta) {
@@ -135,8 +121,6 @@ double Controller::getGoalAngle(double ang_diff) {
     double angular_max_vel_ = 2.0;
     double angle_vel_ = 0.0;
 
-    // RCLCPP_INFO(logger_, "Goal angle: %f", ang_diff);
-
     if(ang_diff >= 0) {
         angle_vel_ = std::min((ang_diff * angular_kp_), angular_max_vel_);
     } else {
@@ -163,7 +147,7 @@ bool Controller::computeVelocityCommand(
     double local_angle = atan2(target.position.y, target.position.x);
 
     publishLocalGoal();
-
+    
     cmd.linear.x = ExtractVelocity(cmd.linear.x, global_distance, state_x_) * cos(local_angle);
     cmd.linear.y = ExtractVelocity(cmd.linear.y, global_distance, state_y_) * sin(local_angle);
     cmd.angular.z = getGoalAngle(global_angle);
@@ -171,7 +155,7 @@ bool Controller::computeVelocityCommand(
     return true;
 }
 
-bool Controller::computeIfNeedStop(const geometry_msgs::msg::Pose & target, geometry_msgs::msg::Twist & cmd) {
+bool Controller::computeIfNeedStop(const geometry_msgs::msg::Pose & target) {
     // Calculate the vector from the robot to the target
     double target_dx = target.position.x - robot_pose_.x_;
     double target_dy = target.position.y - robot_pose_.y_;
@@ -191,19 +175,15 @@ bool Controller::computeIfNeedStop(const geometry_msgs::msg::Pose & target, geom
     // Calculate the angle difference
     double angle_diff = angles::shortest_angular_distance(target_angle, rival_angle);
     
+    // if (std::fabs(angle_diff) <= angles::from_degrees(stop_degree_ / 2.0) && rival_distance <= target_distance) {
+    //     RCLCPP_INFO(logger_, "Stop the robot, because target_angle: %f, rival_angle: %f,angle_diff: %f, rival_distance: %f, target_distance: %f", target_angle, rival_angle,angle_diff, rival_distance, target_distance);
+    // }
+    
     // Check if the rival is within the stop degree from the robot to the target
-    if (std::fabs(angle_diff) <= angles::from_degrees(stop_degree_ / 2.0) && rival_distance <= target_distance) {
-        // Rival is within the stop sector, stop the robot
-        cmd.linear.x = 0.0;
-        cmd.linear.y = 0.0;
-        cmd.angular.z = 0.0;
-        RCLCPP_INFO(logger_, "Stop the robot, because target_angle: %f, rival_angle: %f,angle_diff: %f, rival_distance: %f, target_distance: %f", target_angle, rival_angle,angle_diff, rival_distance, target_distance);
-        return true;
-    }
+    return (std::fabs(angle_diff) <= angles::from_degrees(stop_degree_ / 2.0) && rival_distance <= target_distance);
+
     // RCLCPP_INFO(logger_, "target pose x: %f, y: %f", target.position.x, target.position.y);
     // RCLCPP_INFO(logger_, "Don't Stop the robot, because target_angle: %f, rival_angle: %f,angle_diff: %f, rival_distance: %f, target_distance: %f",target_angle, rival_angle, angle_diff, rival_distance, target_distance);
-
-    return false;
 }
 
 double Controller::ExtractVelocity(const double & velocity, const double & remaining_distance, VelocityState & state) {
@@ -212,15 +192,15 @@ double Controller::ExtractVelocity(const double & velocity, const double & remai
     switch (state) {
         case VelocityState::ACCELERATION:
             Acceleration(vel, remaining_distance, state);
-            RCLCPP_INFO_ONCE(logger_, "Accelerating");
+            // RCLCPP_INFO_ONCE(logger_, "Accelerating");
             break;
         case VelocityState::CONSTANT:
             ConstantVelocity(vel, remaining_distance, state);
-            RCLCPP_INFO_ONCE(logger_, "Constant velocity");
+            // RCLCPP_INFO_ONCE(logger_, "Constant velocity");
             break;
         case VelocityState::DECELERATION:
             Deceleration(vel, remaining_distance, state);
-            RCLCPP_INFO_ONCE(logger_, "Decelerating");
+            // RCLCPP_INFO_ONCE(logger_, "Decelerating");
             break;
     }
 
@@ -283,6 +263,59 @@ void Controller::publishLocalGoal() {
     local_goal.pose.orientation.z = q.z();
     local_goal.pose.orientation.w = q.w();
     local_goal_pub_->publish(local_goal);
+}
+
+void Controller::declareAllControlParams()
+{
+    std::vector<std::pair<std::string, rclcpp::ParameterValue>> params = {
+        {"max_linear_vel", rclcpp::ParameterValue(0.5)},
+        {"min_linear_vel", rclcpp::ParameterValue(0.1)},
+        {"max_angular_vel", rclcpp::ParameterValue(3.0)},
+        {"min_angular_vel", rclcpp::ParameterValue(0.0)},
+        {"max_linear_acc", rclcpp::ParameterValue(0.3)},
+        {"max_angular_acc", rclcpp::ParameterValue(1.0)},
+        {"linear_ki_accel_vel", rclcpp::ParameterValue(0.7)},
+        {"linear_kp_accel_vel", rclcpp::ParameterValue(0.5)},
+        {"linear_kp_decel_dis", rclcpp::ParameterValue(3.0)},
+        {"linear_kp_decel_vel", rclcpp::ParameterValue(0.9)},
+        {"angular_kp", rclcpp::ParameterValue(4.0)},
+        {"look_ahead_distance", rclcpp::ParameterValue(1.0)},
+        {"deceleration_distance", rclcpp::ParameterValue(0.1)},
+        {"reserved_distance", rclcpp::ParameterValue(0.03)},
+        {"stop_degree", rclcpp::ParameterValue(45.0)},
+        {"rival_radius", rclcpp::ParameterValue(0.44)},
+    };
+
+    for (const auto& profile : profiles_)
+    {
+        for (const auto& [name, default_value] : params)
+        {
+            const std::string full_name = profile + "." + name;
+            if (!node_->has_parameter(full_name))
+            {
+                node_->declare_parameter(full_name, default_value);
+            }
+        }
+    }
+}
+
+void Controller::updateParams() {
+    node_->get_parameter(param_name_ + ".max_linear_vel", max_linear_vel_);
+    node_->get_parameter(param_name_ + ".min_linear_vel", min_linear_vel_);
+    node_->get_parameter(param_name_ + ".max_angular_vel", max_angular_vel_);
+    node_->get_parameter(param_name_ + ".min_angular_vel", min_angular_vel_);
+    node_->get_parameter(param_name_ + ".max_linear_acc", max_linear_acc_);
+    node_->get_parameter(param_name_ + ".max_angular_acc", max_angular_acc_);
+    node_->get_parameter(param_name_ + ".linear_ki_accel_vel", linear_ki_accel_vel_);
+    node_->get_parameter(param_name_ + ".linear_kp_accel_vel", linear_kp_accel_vel_);
+    node_->get_parameter(param_name_ + ".linear_kp_decel_dis", linear_kp_decel_dis_);
+    node_->get_parameter(param_name_ + ".linear_kp_decel_vel", linear_kp_decel_vel_);
+    node_->get_parameter(param_name_ + ".angular_kp", angular_kp_);
+    node_->get_parameter(param_name_ + ".look_ahead_distance", look_ahead_distance_);
+    node_->get_parameter(param_name_ + ".deceleration_distance", deceleration_distance_);
+    node_->get_parameter(param_name_ + ".reserved_distance", reserved_distance_);
+    node_->get_parameter(param_name_ + ".stop_degree", stop_degree_);
+    node_->get_parameter(param_name_ + ".rival_radius", rival_radius_);
 }
 
 }  // namespace opennav_docking
