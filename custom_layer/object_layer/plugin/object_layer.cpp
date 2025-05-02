@@ -43,7 +43,9 @@ namespace Object_costmap_plugin {
         board_poseArray_sub = node->create_subscription<geometry_msgs::msg::PoseArray>(
             "/detected/global_center_poses/platform", 100, std::bind(&ObjectLayer::boardPoseArrayCallback, this, std::placeholders::_1));
         robot_pose_sub = node->create_subscription<nav_msgs::msg::Odometry>(
-            "/final_pose_nav", 100, std::bind(&ObjectLayer::robotPoseCallback, this, std::placeholders::_1)); //need to change to "/final_pose" when on the real robot
+            "/final_pose_nav", 100, std::bind(&ObjectLayer::robotPoseCallback, this, std::placeholders::_1));
+        overturn_sub = node->create_subscription<geometry_msgs::msg::PoseArray>(
+            "/detected/global_center_poses/overturn", 100, std::bind(&ObjectLayer::overturnPoseArrayCallback, this, std::placeholders::_1));
         tf2_buffer_ = std::make_shared<tf2_ros::Buffer>(node->get_clock());
         tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf2_buffer_);
         tf2_buffer_->setUsingDedicatedThread(true);
@@ -89,9 +91,12 @@ namespace Object_costmap_plugin {
             if(eliminateObject(object)){
                 continue;
             }
-            else ExpandPointWithRectangle(object.pose.position.x, object.pose.position.y, nav2_costmap_2d::LETHAL_OBSTACLE, board_inflation_radius, cost_scaling_factor, board_inscribed_radius, object);
+            else ExpandPointWithRectangle(object.pose.position.x, object.pose.position.y, nav2_costmap_2d::LETHAL_OBSTACLE, board_inflation_radius, cost_scaling_factor, board_inscribed_radius, object, 0);
             updateWithMax(master_grid, 0, 0, getSizeInCellsX(), getSizeInCellsY());
-
+        }
+        for(auto object : overturnList){
+            ExpandPointWithRectangle(object.pose.position.x, object.pose.position.y, nav2_costmap_2d::LETHAL_OBSTACLE, board_inflation_radius, cost_scaling_factor, board_inscribed_radius, object, 1);
+            updateWithMax(master_grid, 0, 0, getSizeInCellsX(), getSizeInCellsY());
         }
         // updateWithMax(master_grid, 0, 0, getSizeInCellsX(), getSizeInCellsY());
         // checkClear();
@@ -140,15 +145,34 @@ namespace Object_costmap_plugin {
             column.header.frame_id = "map";
         }
 
-        geometry_msgs::msg::PoseStamped transformed_pose;
-        transformed_pose = tf2_buffer_->transform(
-            column, 
-            base_frame,
-            tf2::durationFromSec(0.01) // 10ms
-        );
-        if(checkInBox(transformed_pose.pose.position.x, transformed_pose.pose.position.y)) return true;
-        else return false;
-        
+        // // Add timestamp if missing
+        // if(column.header.stamp.seconds() == 0) {
+        //     auto node = node_.lock();
+        //     if (node) {
+        //         column.header.stamp = node->now();
+        //     }
+        // }
+
+        try {
+            geometry_msgs::msg::PoseStamped transformed_pose;
+            
+            // Use zero time to get latest transform
+            transformed_pose = tf2_buffer_->transform(
+                column, 
+                base_frame,
+                tf2::TimePointZero,
+                column.header.frame_id,
+                tf2::durationFromSec(0.1) // 100ms timeout
+            );
+            
+            return checkInBox(transformed_pose.pose.position.x, transformed_pose.pose.position.y);
+        }
+        catch (const tf2::TransformException& ex) {
+            RCLCPP_WARN(
+                rclcpp::get_logger("ObjectLayer"),
+                "Transform exception: %s", ex.what());
+            return false;
+        }
     }
 
     bool ObjectLayer::isClearable(){
@@ -160,11 +184,23 @@ namespace Object_costmap_plugin {
         current_ = true;
         columnList.clear();
         boardList.clear();
+        overturnList.clear();
         tf2_buffer_->clear();
         resetMapToValue(0, 0, getSizeInCellsX(), getSizeInCellsY(), nav2_costmap_2d::FREE_SPACE);
         RCLCPP_WARN(
             rclcpp::get_logger("ObjectLayer"), 
             "Resetting ObjectLayer");
+    }
+
+    void ObjectLayer::overturnPoseArrayCallback(const geometry_msgs::msg::PoseArray::SharedPtr object_poseArray){
+        overturnList.clear();
+        for(auto pose : object_poseArray->poses){
+            geometry_msgs::msg::PoseStamped poseStamped;
+            poseStamped.pose = pose;
+            poseStamped.header.frame_id = "map";
+            overturnList.push_back(poseStamped);
+        }
+        resetMapToValue(0, 0, getSizeInCellsX(), getSizeInCellsY(), nav2_costmap_2d::FREE_SPACE);
     }
 
     void ObjectLayer::robotPoseCallback(const nav_msgs::msg::Odometry::SharedPtr object_pose){
@@ -239,11 +275,25 @@ namespace Object_costmap_plugin {
 
     void ObjectLayer::ExpandPointWithRectangle(double x, double y, double MaxCost,
                                          double InflationRadius, double CostScalingFactor, double InscribedRadius, 
-                                         geometry_msgs::msg::PoseStamped object)
+                                         geometry_msgs::msg::PoseStamped object, int mode)
     {
         // Get rectangle half-dimensions from header-defined values.
-        double halfWidth  = board_width / 2.0;
-        double halfHeight = board_height / 2.0;
+        double halfWidth = 0;
+        double halfHeight = 0;
+        if(mode == 0) {
+            halfWidth  = board_width / 2.0;
+            halfHeight = board_height / 2.0;
+        }
+        else if(mode == 1) {
+            halfWidth  = overturn_width / 2.0;
+            halfHeight = overturn_height / 2.0;
+        }
+        else {
+            RCLCPP_ERROR(
+                rclcpp::get_logger("ObjectLayer"), 
+                "Invalid mode for ExpandPointWithRectangle");
+            return;
+        }
         
         // Get the yaw (orientation) from the object's quaternion.
         double siny_cosp = 2.0 * (object.pose.orientation.w * object.pose.orientation.z +

@@ -39,11 +39,12 @@ namespace Object_costmap_plugin {
             bool isClearable() override;
             void reset() override;
             
-            void ExpandPointWithRectangle(double x, double y, double MaxCost, double InflationRadius, double CostScalingFactor, double InscribedRadius, geometry_msgs::msg::PoseStamped object);
+            void ExpandPointWithRectangle(double x, double y, double MaxCost, double InflationRadius, double CostScalingFactor, double InscribedRadius, geometry_msgs::msg::PoseStamped object, int mode);
             void ExpandPointWithCircle(double x, double y, double MaxCost, double InflationRadius, double CostScalingFactor, double InscribedRadius);
             // data processes
             void columnPoseArrayCallback(const geometry_msgs::msg::PoseArray::SharedPtr object_poseArray);
             void boardPoseArrayCallback(const geometry_msgs::msg::PoseArray::SharedPtr object_poseArray);
+            void overturnPoseArrayCallback(const geometry_msgs::msg::PoseArray::SharedPtr object_poseArray);
             void robotPoseCallback(const nav_msgs::msg::Odometry::SharedPtr object_pose);
             void checkClear();    
             bool eliminateObject(geometry_msgs::msg::PoseStamped column);
@@ -51,8 +52,10 @@ namespace Object_costmap_plugin {
         private:
             std::deque<geometry_msgs::msg::PoseStamped> columnList;
             std::deque<geometry_msgs::msg::PoseStamped> boardList;
+            std::deque<geometry_msgs::msg::PoseStamped> overturnList;
             rclcpp::Subscription<geometry_msgs::msg::PoseArray>::SharedPtr column_poseArray_sub;
             rclcpp::Subscription<geometry_msgs::msg::PoseArray>::SharedPtr board_poseArray_sub;
+            rclcpp::Subscription<geometry_msgs::msg::PoseArray>::SharedPtr overturn_sub;
             rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr robot_pose_sub;
             geometry_msgs::msg::PoseStamped robot_pose;
             int clearTimer;
@@ -67,6 +70,7 @@ namespace Object_costmap_plugin {
             double cost_scaling_factor;
             double min_x_ = 0.0, min_y_ = 0.0, max_x_ = 3.0, max_y_ = 2.0;
             double board_width = 0.4, board_height = 0.1;
+            double overturn_width = 1.1, overturn_height = 0.75;
 
     };
 } // namespace Object_costmap_plgin
