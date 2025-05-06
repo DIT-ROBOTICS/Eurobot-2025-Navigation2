@@ -483,6 +483,7 @@ geometry_msgs::msg::TwistStamped CustomController::computeVelocityCommands(
             std_msgs::msg::Bool goal_reach;
             goal_reach.data = true;
             goal_reach_pub_->publish(goal_reach);
+            RCLCPP_INFO(logger_, "Goal reached sented");
     }
   
     if(isObstacleExist_){
