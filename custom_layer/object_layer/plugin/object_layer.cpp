@@ -6,7 +6,7 @@ namespace Object_costmap_plugin {
         RCLCPP_INFO(
             rclcpp::get_logger("ObjectLayer"), 
             "Initializing ObjectLayer");
-        
+
         enabled_ = true;
         current_ = true;
         resetMapToValue(0, 0, getSizeInCellsX(), getSizeInCellsY(), nav2_costmap_2d::FREE_SPACE);
@@ -38,6 +38,9 @@ namespace Object_costmap_plugin {
         node->get_parameter(name_ + "." + "upper_x_range", upper_x_range);
         node->get_parameter(name_ + "." + "lower_x_range", lower_x_range);
         node->get_parameter(name_ + "." + "y_range", y_range);
+        RCLCPP_INFO(
+            rclcpp::get_logger("ObjectLayer"), 
+            "ObjectLayer parameter enable %d", enabled_);
         column_poseArray_sub = node->create_subscription<geometry_msgs::msg::PoseArray>(
             "/detected/global_center_poses/column", 100, std::bind(&ObjectLayer::columnPoseArrayCallback, this, std::placeholders::_1));
         board_poseArray_sub = node->create_subscription<geometry_msgs::msg::PoseArray>(
@@ -49,7 +52,6 @@ namespace Object_costmap_plugin {
         tf2_buffer_ = std::make_shared<tf2_ros::Buffer>(node->get_clock());
         tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf2_buffer_);
         tf2_buffer_->setUsingDedicatedThread(true);
-        reset();
         clearTimer = 20;
 
         // Initialize robot pose with default values to prevent empty frame_id
