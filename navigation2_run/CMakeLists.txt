@@ -15,6 +15,7 @@ find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(yaml-cpp REQUIRED)
 find_package(opennav_docking_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
 
 # uncomment the following section in order to fill in
 # further dependencies manually.
@@ -24,7 +25,7 @@ add_executable(odometry_sim src/odometry_sim.cpp)
 ament_target_dependencies(odometry_sim rclcpp geometry_msgs nav2_msgs tf2_ros tf2 tf2_geometry_msgs)
 
 add_executable(script_sim src/script_sim.cpp)
-ament_target_dependencies(script_sim rclcpp geometry_msgs nav2_msgs tf2_ros tf2 tf2_geometry_msgs yaml-cpp opennav_docking_msgs)
+ament_target_dependencies(script_sim rclcpp geometry_msgs nav2_msgs tf2_ros tf2 tf2_geometry_msgs yaml-cpp opennav_docking_msgs std_msgs)
 
 add_executable(final_pose_bridge src/final_pose_bridge.cpp)
 ament_target_dependencies(final_pose_bridge rclcpp geometry_msgs nav2_msgs)

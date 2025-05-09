@@ -91,6 +91,7 @@ void CustomController::configure(
     declare_parameter_if_not_declared(node, plugin_name_ + ".costmap_tolerance", rclcpp::ParameterValue(60));
     declare_parameter_if_not_declared(node, plugin_name_ + ".speed_decade", rclcpp::ParameterValue(0.7));
     declare_parameter_if_not_declared(node, plugin_name_ + ".keep_planning", rclcpp::ParameterValue(true));
+    declare_parameter_if_not_declared(node, plugin_name_ + ".spin_delay_threshold", rclcpp::ParameterValue(0.5));
     
     //declare_parameter_if_not_declared(node, plugin_name_ + ".keepPlan", rclcpp::ParameterValue(ture));
     // Get parameters from the config file
@@ -107,6 +108,7 @@ void CustomController::configure(
     node->get_parameter(plugin_name_ + ".costmap_tolerance", costmap_tolerance_);
     node->get_parameter(plugin_name_ + ".speed_decade", speed_decade_);
     node->get_parameter(plugin_name_ + ".keep_planning", keep_planning_);
+    node->get_parameter(plugin_name_ + ".spin_delay_threshold", spin_delay_threshold_);
     double transform_tolerance;
     
     node->get_parameter(plugin_name_ + ".transform_tolerance", transform_tolerance);
@@ -297,7 +299,7 @@ double CustomController::getGoalAngle(double cur_angle, double goal_angle) {
     double ang_diff_ = goal_angle - cur_angle;
 
     if(controller_function_ == "DelaySpin") {
-        if(cur_pose_.distanceTo(vector_global_path_[0]) < 0.15 && cur_pose_.distanceTo(vector_global_path_.back()) > 0.15) {
+        if(cur_pose_.distanceTo(vector_global_path_[0]) < spin_delay_threshold_ && cur_pose_.distanceTo(vector_global_path_.back()) > spin_delay_threshold_) {
             return 0.0;
         } else {
             controller_function_ = "None";
