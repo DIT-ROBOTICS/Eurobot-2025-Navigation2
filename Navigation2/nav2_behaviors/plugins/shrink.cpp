@@ -189,117 +189,202 @@ namespace nav2_behaviors
         goalPose = msg;
     }
 
-    void Shrink::changeInflationLayer(bool doShrink){
+    void Shrink::changeInflationLayer(bool doShrink) {
         double radius = doShrink ? 0.15 : original_inflation_radius;
-        if(radius_param_client->service_is_ready()){
-            radius_param_client->set_parameters({rclcpp::Parameter("inflation_layer.inflation_radius", radius)},[this, radius](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future){
-                future.wait();
-                auto result = future.get();
-                if(result[0].successful){
-                    RCLCPP_INFO(logger_, "Set inflation_radius successfully");
-                }
-                else{
-                    RCLCPP_ERROR(logger_, "Failed to set inflation_radius");
-                }
-            });
+        if (radius_param_client->service_is_ready()) {
+            radius_param_client->set_parameters({rclcpp::Parameter("inflation_layer.inflation_radius", radius)},
+                [this, radius](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future) {
+                    // Add timeout check
+                    if (future.wait_for(std::chrono::seconds(1)) != std::future_status::ready) {
+                        RCLCPP_ERROR(logger_, "Timeout setting inflation_radius to %f", radius);
+                        return;
+                    }
+                    
+                    // Add try-catch
+                    try {
+                        auto result = future.get();
+                        if (result[0].successful) {
+                            RCLCPP_INFO(logger_, "Set inflation_radius successfully to %f", radius);
+                        } else {
+                            RCLCPP_ERROR(logger_, "Failed to set inflation_radius to %f: %s", 
+                                        radius, result[0].reason.c_str());
+                        }
+                    } catch (const std::exception& e) {
+                        RCLCPP_ERROR(logger_, "Exception setting inflation_radius: %s", e.what());
+                    }
+                });
+        } else {
+            RCLCPP_ERROR(logger_, "Service is not ready for inflation layer");
         }
-        else{
-            RCLCPP_ERROR(logger_, "Service is not ready");
-        }
+        RCLCPP_INFO(logger_, "Requested inflation layer update");
     }
 
-    void Shrink::changeRivalLayer(bool doShrink){
+    void Shrink::changeRivalLayer(bool doShrink) {
+        // Halted radius
         double halted_radius = doShrink ? 0.25 : original_rival_halted_radius;
-        if(radius_param_client->service_is_ready()){
-            // rival_layer.halted_inflation_radius
-            radius_param_client->set_parameters({rclcpp::Parameter("rival_layer.halted_inflation_radius", halted_radius)},[this, halted_radius](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future){
-                future.wait();
-                auto result = future.get();
-                if(result[0].successful){
-                    RCLCPP_INFO(logger_, "Set halted_inflation_radius successfully to %f", halted_radius);
-                }
-                else{
-                    RCLCPP_ERROR(logger_, "Failed to set halted_inflation_radius to %f", halted_radius);
-                }
-            });
+        if (radius_param_client->service_is_ready()) {
+            radius_param_client->set_parameters({rclcpp::Parameter("rival_layer.halted_inflation_radius", halted_radius)},
+                [this, halted_radius](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future) {
+                    // Add timeout check
+                    if (future.wait_for(std::chrono::seconds(1)) != std::future_status::ready) {
+                        RCLCPP_ERROR(logger_, "Timeout setting halted_inflation_radius to %f", halted_radius);
+                        return;
+                    }
+                    
+                    // Add try-catch
+                    try {
+                        auto result = future.get();
+                        if (result[0].successful) {
+                            RCLCPP_INFO(logger_, "Set halted_inflation_radius successfully to %f", halted_radius);
+                        } else {
+                            RCLCPP_ERROR(logger_, "Failed to set halted_inflation_radius to %f: %s", 
+                                        halted_radius, result[0].reason.c_str());
+                        }
+                    } catch (const std::exception& e) {
+                        RCLCPP_ERROR(logger_, "Exception setting halted_inflation_radius: %s", e.what());
+                    }
+                });
+        } else {
+            RCLCPP_ERROR(logger_, "Service is not ready for rival layer (halted)");
         }
 
+        // Wandering radius
         double wandering_radius = doShrink ? 0.25 : original_rival_wandering_radius;
-        if(radius_param_client->service_is_ready()){
-            // rival_layer.wandering_inflation_radius
-            radius_param_client->set_parameters({rclcpp::Parameter("rival_layer.wandering_inflation_radius", wandering_radius)},[this, wandering_radius](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future){
-                future.wait();
-                auto result = future.get();
-                if(result[0].successful){
-                    RCLCPP_INFO(logger_, "Set wandering_inflation_radius successfully to %f", wandering_radius);
-                }
-                else{
-                    RCLCPP_ERROR(logger_, "Failed to set wandering_inflation_radius to %f", wandering_radius);
-                }
-            });
+        if (radius_param_client->service_is_ready()) {
+            radius_param_client->set_parameters({rclcpp::Parameter("rival_layer.wandering_inflation_radius", wandering_radius)},
+                [this, wandering_radius](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future) {
+                    // Add timeout check
+                    if (future.wait_for(std::chrono::seconds(1)) != std::future_status::ready) {
+                        RCLCPP_ERROR(logger_, "Timeout setting wandering_inflation_radius to %f", wandering_radius);
+                        return;
+                    }
+                    
+                    // Add try-catch
+                    try {
+                        auto result = future.get();
+                        if (result[0].successful) {
+                            RCLCPP_INFO(logger_, "Set wandering_inflation_radius successfully to %f", wandering_radius);
+                        } else {
+                            RCLCPP_ERROR(logger_, "Failed to set wandering_inflation_radius to %f: %s", 
+                                        wandering_radius, result[0].reason.c_str());
+                        }
+                    } catch (const std::exception& e) {
+                        RCLCPP_ERROR(logger_, "Exception setting wandering_inflation_radius: %s", e.what());
+                    }
+                });
         }
 
+        // Moving radius
         double moving_radius = doShrink ? 0.25 : original_rival_moving_radius;
-        if(radius_param_client->service_is_ready()){
-            // rival_layer.moving_inflation_radius
-            radius_param_client->set_parameters({rclcpp::Parameter("rival_layer.moving_inflation_radius", moving_radius)},[this, moving_radius](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future){
-                future.wait();
-                auto result = future.get();
-                if(result[0].successful){
-                    RCLCPP_INFO(logger_, "Set moving_inflation_radius successfully to %f", moving_radius);
-                }
-                else{
-                    RCLCPP_ERROR(logger_, "Failed to set moving_inflation_radius to %f", moving_radius);
-                }
-            });
+        if (radius_param_client->service_is_ready()) {
+            radius_param_client->set_parameters({rclcpp::Parameter("rival_layer.moving_inflation_radius", moving_radius)},
+                [this, moving_radius](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future) {
+                    // Add timeout check
+                    if (future.wait_for(std::chrono::seconds(1)) != std::future_status::ready) {
+                        RCLCPP_ERROR(logger_, "Timeout setting moving_inflation_radius to %f", moving_radius);
+                        return;
+                    }
+                    
+                    // Add try-catch
+                    try {
+                        auto result = future.get();
+                        if (result[0].successful) {
+                            RCLCPP_INFO(logger_, "Set moving_inflation_radius successfully to %f", moving_radius);
+                        } else {
+                            RCLCPP_ERROR(logger_, "Failed to set moving_inflation_radius to %f: %s", 
+                                    moving_radius, result[0].reason.c_str());
+                        }
+                    } catch (const std::exception& e) {
+                        RCLCPP_ERROR(logger_, "Exception setting moving_inflation_radius: %s", e.what());
+                    }
+                });
         }
 
+        // Unknown radius
         double unknown_radius = doShrink ? 0.25 : original_rival_unknown_radius;
-        if(radius_param_client->service_is_ready()){
-            // rival_layer.unknown_inflation_radius
-            radius_param_client->set_parameters({rclcpp::Parameter("rival_layer.unknown_inflation_radius", unknown_radius)},[this, unknown_radius](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future){
-                future.wait();
-                auto result = future.get();
-                if(result[0].successful){
-                    RCLCPP_INFO(logger_, "Set unknown_inflation_radius successfully to %f", unknown_radius);
-                }
-                else{
-                    RCLCPP_ERROR(logger_, "Failed to set unknown_inflation_radius to %f", unknown_radius);
-                }
-            });
+        if (radius_param_client->service_is_ready()) {
+            radius_param_client->set_parameters({rclcpp::Parameter("rival_layer.unknown_inflation_radius", unknown_radius)},
+                [this, unknown_radius](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future) {
+                    // Add timeout check
+                    if (future.wait_for(std::chrono::seconds(1)) != std::future_status::ready) {
+                        RCLCPP_ERROR(logger_, "Timeout setting unknown_inflation_radius to %f", unknown_radius);
+                        return;
+                    }
+                    
+                    // Add try-catch
+                    try {
+                        auto result = future.get();
+                        if (result[0].successful) {
+                            RCLCPP_INFO(logger_, "Set unknown_inflation_radius successfully to %f", unknown_radius);
+                        } else {
+                            RCLCPP_ERROR(logger_, "Failed to set unknown_inflation_radius to %f: %s", 
+                                    unknown_radius, result[0].reason.c_str());
+                        }
+                    } catch (const std::exception& e) {
+                        RCLCPP_ERROR(logger_, "Exception setting unknown_inflation_radius: %s", e.what());
+                    }
+                });
         }
+        
+        RCLCPP_INFO(logger_, "Requested rival layer updates");
     }
 
-    void Shrink::changeObjectLayer(bool doShrink){
+    void Shrink::changeObjectLayer(bool doShrink) {
+        // Board radius
         double board_radius = doShrink ? 0.1 : original_object_board_radius;
-        if(radius_param_client->service_is_ready()){
-            // object_layer.board_inflation_radius
-            radius_param_client->set_parameters({rclcpp::Parameter("object_layer.board_inflation_radius", board_radius)},[this, board_radius](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future){
-                future.wait();
-                auto result = future.get();
-                if(result[0].successful){
-                    RCLCPP_INFO(logger_, "Set board_inflation_radius successfully to %f", board_radius);
-                }
-                else{
-                    RCLCPP_ERROR(logger_, "Failed to set board_inflation_radius to %f", board_radius);
-                }
-            });
+        if (radius_param_client->service_is_ready()) {
+            radius_param_client->set_parameters({rclcpp::Parameter("object_layer.board_inflation_radius", board_radius)},
+                [this, board_radius](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future) {
+                    // Add timeout check
+                    if (future.wait_for(std::chrono::seconds(1)) != std::future_status::ready) {
+                        RCLCPP_ERROR(logger_, "Timeout setting board_inflation_radius to %f", board_radius);
+                        return;
+                    }
+                    
+                    // Add try-catch
+                    try {
+                        auto result = future.get();
+                        if (result[0].successful) {
+                            RCLCPP_INFO(logger_, "Set board_inflation_radius successfully to %f", board_radius);
+                        } else {
+                            RCLCPP_ERROR(logger_, "Failed to set board_inflation_radius to %f: %s", 
+                                       board_radius, result[0].reason.c_str());
+                        }
+                    } catch (const std::exception& e) {
+                        RCLCPP_ERROR(logger_, "Exception setting board_inflation_radius: %s", e.what());
+                    }
+                });
+        } else {
+            RCLCPP_ERROR(logger_, "Service is not ready for object layer (board)");
         }
 
-        double column_radius = doShrink ? 0.1: original_object_column_radius;
-        if(radius_param_client->service_is_ready()){
-            // object_layer.column_inflation_radius
-            radius_param_client->set_parameters({rclcpp::Parameter("object_layer.column_inflation_radius", column_radius)},[this, column_radius](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future){
-                future.wait();
-                auto result = future.get();
-                if(result[0].successful){
-                    RCLCPP_INFO(logger_, "Set column_inflation_radius successfully to %f", column_radius);
-                }
-                else{
-                    RCLCPP_ERROR(logger_, "Failed to set column_inflation_radius to %f", column_radius);
-                }
-            });
+        // Column radius
+        double column_radius = doShrink ? 0.1 : original_object_column_radius;
+        if (radius_param_client->service_is_ready()) {
+            radius_param_client->set_parameters({rclcpp::Parameter("object_layer.column_inflation_radius", column_radius)},
+                [this, column_radius](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future) {
+                    // Add timeout check
+                    if (future.wait_for(std::chrono::seconds(1)) != std::future_status::ready) {
+                        RCLCPP_ERROR(logger_, "Timeout setting column_inflation_radius to %f", column_radius);
+                        return;
+                    }
+                    
+                    // Add try-catch
+                    try {
+                        auto result = future.get();
+                        if (result[0].successful) {
+                            RCLCPP_INFO(logger_, "Set column_inflation_radius successfully to %f", column_radius);
+                        } else {
+                            RCLCPP_ERROR(logger_, "Failed to set column_inflation_radius to %f: %s", 
+                                       column_radius, result[0].reason.c_str());
+                        }
+                    } catch (const std::exception& e) {
+                        RCLCPP_ERROR(logger_, "Exception setting column_inflation_radius: %s", e.what());
+                    }
+                });
         }
+        
+        RCLCPP_INFO(logger_, "Requested object layer updates");
     }
 
     bool Shrink::noCostInMiddle(){
