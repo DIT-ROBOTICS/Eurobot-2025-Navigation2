@@ -50,11 +50,6 @@ namespace nav2_behaviors
         //testing
         command_time_allowance = command->time_allowance;
         end_time = this->clock_->now() + command_time_allowance;
-        if(isEscape()){
-            stopRobot();
-            RCLCPP_INFO(logger_, "Escape successfully");
-            return Status::SUCCEEDED;
-        }
         return Status::SUCCEEDED;
     }
 
