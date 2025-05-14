@@ -35,7 +35,6 @@ namespace nav2_behaviors
         );
         shrinkBack = false;
         node->get_parameter("costmap_tolerance", costmap_tolerance);
-        getOriginalParam();
 
         shrinkCheck_srv = node->create_service<std_srvs::srv::SetBool>(
             "/shrink/doneShrink",
@@ -69,7 +68,10 @@ namespace nav2_behaviors
 
     Status Shrink::onCycleUpdate(){
         times++;
-        if(times == 3){
+        if(times == 1){
+            getOriginalParam();
+        }
+        else if(times == 3){
             setToShrink();
             shrinkBack = false;
             std_msgs::msg::Bool msg;
