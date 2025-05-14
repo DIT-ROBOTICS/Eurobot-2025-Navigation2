@@ -53,6 +53,9 @@ namespace Object_costmap_plugin {
         tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf2_buffer_);
         tf2_buffer_->setUsingDedicatedThread(true);
         clearTimer = 20;
+        mode_param = false;
+        set_mode_service_ = node->create_service<std_srvs::srv::SetBool>(
+            "/object_layer/set_mode", std::bind(&ObjectLayer::handleSetMode, this, std::placeholders::_1, std::placeholders::_2));
 
         // Initialize robot pose with default values to prevent empty frame_id
         robot_pose.header.frame_id = "map";
@@ -78,8 +81,14 @@ namespace Object_costmap_plugin {
             return;
         }
         auto node = node_.lock();
-        node->get_parameter(name_ + "." + "column_inflation_radius", column_inflation_radius);
-        node->get_parameter(name_ + "." + "board_inflation_radius", board_inflation_radius);
+        if(mode_param) {
+            column_inflation_radius = 0.1;
+            board_inflation_radius = 0.1;
+        }
+        else {
+            node->get_parameter(name_ + "." + "column_inflation_radius", column_inflation_radius);
+            node->get_parameter(name_ + "." + "board_inflation_radius", board_inflation_radius);
+        }
 
         for(auto object : columnList){
             if(eliminateObject(object)){
@@ -102,6 +111,21 @@ namespace Object_costmap_plugin {
         }
         // updateWithMax(master_grid, 0, 0, getSizeInCellsX(), getSizeInCellsY());
         // checkClear();
+    }
+
+    void ObjectLayer::handleSetMode(
+        const std::shared_ptr<std_srvs::srv::SetBool::Request> request,
+        const std::shared_ptr<std_srvs::srv::SetBool::Response> response) {
+        if(request->data) {
+            mode_param = true;
+            response->success = true;
+            response->message = "ObjectLayer mode set to shrink mode";
+        }
+        else if(!request->data){
+            mode_param = false;
+            response->success = true;
+            response->message = "ObjectLayer mode set to normal mode";
+        }
     }
 
     void ObjectLayer::checkClear(){

@@ -19,6 +19,8 @@
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2_ros/transform_listener.h"
 #include "nav_msgs/msg/odometry.hpp"
+#include "std_srvs/srv/set_bool.hpp"
+#include "std_msgs/msg/bool.hpp"
 
 
 
@@ -49,6 +51,7 @@ namespace Object_costmap_plugin {
             void checkClear();    
             bool eliminateObject(geometry_msgs::msg::PoseStamped column);
             bool checkInBox(double x, double y);
+
         private:
             std::deque<geometry_msgs::msg::PoseStamped> columnList;
             std::deque<geometry_msgs::msg::PoseStamped> boardList;
@@ -58,6 +61,11 @@ namespace Object_costmap_plugin {
             rclcpp::Subscription<geometry_msgs::msg::PoseArray>::SharedPtr overturn_sub;
             rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr robot_pose_sub;
             geometry_msgs::msg::PoseStamped robot_pose;
+            rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr set_mode_service_;
+            bool mode_param = false;
+            void handleSetMode(
+                const std::shared_ptr<std_srvs::srv::SetBool::Request> request,
+                const std::shared_ptr<std_srvs::srv::SetBool::Response> response);
             int clearTimer;
             bool delay_mode;
             std::string base_frame;
