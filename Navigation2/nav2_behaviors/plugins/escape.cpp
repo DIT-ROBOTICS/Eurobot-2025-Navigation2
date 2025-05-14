@@ -9,7 +9,7 @@ namespace nav2_behaviors
                     cmd_yaw(0.0),
                     prev_yaw(0.0),
                     relative_yaw(0.0),
-                    target_update_frequency_(1.0),  // Default to 1Hz updates
+                    target_update_frequency_(2.0),  // Default to 1Hz updates
                     is_active(false)
                     {
                         scan_radius = 20;
