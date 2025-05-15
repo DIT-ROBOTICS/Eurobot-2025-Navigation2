@@ -178,13 +178,13 @@ private:
                 if (file_.is_open() && beacon_pose_array_.poses.size() >= 3) {
                     auto stamp = this->now().seconds();
                     file_ << index_ << "," << stamp << ",Path,"
-                        << x << "," << y << ","
-                        << final_pose_data_.pose.pose.position.x << "," << final_pose_data_.pose.pose.position.y << ","
-                        << lidar_pose_data_.pose.pose.position.x << "," << lidar_pose_data_.pose.pose.position.y << ","
-                        << beacon_pose_array_.poses[0].position.x << "," << beacon_pose_array_.poses[0].position.y << ","
-                        << beacon_pose_array_.poses[1].position.x << "," << beacon_pose_array_.poses[1].position.y << ","
-                        << beacon_pose_array_.poses[2].position.x << "," << beacon_pose_array_.poses[2].position.y
-                        << std::endl;
+                          << x << "," << y << ","
+                          << final_pose_data_.pose.pose.position.x << "," << final_pose_data_.pose.pose.position.y << ","
+                          << lidar_pose_data_.pose.pose.position.x << "," << lidar_pose_data_.pose.pose.position.y << ","
+                          << beacon_pose_array_.poses[0].position.x << "," << beacon_pose_array_.poses[0].position.y << ","
+                          << beacon_pose_array_.poses[1].position.x << "," << beacon_pose_array_.poses[1].position.y << ","
+                          << beacon_pose_array_.poses[2].position.x << "," << beacon_pose_array_.poses[2].position.y
+                          << std::endl;
                 } else {
                     RCLCPP_WARN(this->get_logger(), "Skipping CSV write: not enough lidar pose data or file not open.");
                 }
@@ -212,11 +212,18 @@ private:
 
         auto goal_msg = DockRobot::Goal();
         goal_msg.use_dock_id = false;
+
         goal_msg.dock_pose.header.frame_id = "map";
         goal_msg.dock_pose.header.stamp = this->now();
         goal_msg.dock_pose.pose.position.x = x;
         goal_msg.dock_pose.pose.position.y = y;
         goal_msg.dock_pose.pose.orientation.w = w;
+
+        goal_msg.dock_pose.pose.position.z = 0.0;   // offset
+
+        goal_msg.dock_type = "dock_slow_gentle_precise_x";
+
+        goal_msg.navigate_to_staging_pose = false;
 
         RCLCPP_INFO(this->get_logger(), "Sending docking goal to (%f, %f, %f)", x, y, w);
 
