@@ -111,6 +111,10 @@ namespace custom_path_costmap_plugin {
             "/rival/final_pose", 100, std::bind(&RivalLayer::rivalPoseCallback, this, std::placeholders::_1));
         rival_distance_sub_ = node->create_subscription<std_msgs::msg::Float64>(
             "/rival_distance", 100, std::bind(&RivalLayer::rivalDistanceCallback, this, std::placeholders::_1));
+        
+        set_mode_service_ = node->create_service<std_srvs::srv::SetBool>(
+            "/rival_layer/set_mode", std::bind(&RivalLayer::handleSetMode, this, std::placeholders::_1, std::placeholders::_2));
+        mode_param = 0;
 
         // Initialize the queue
         rival_path_.init(model_size_);
@@ -137,11 +141,19 @@ namespace custom_path_costmap_plugin {
         }
 
         auto node = node_.lock();
-        node->get_parameter(name_ + "." + "halted_inflation_radius", halted_inflation_radius_);
-        node->get_parameter(name_ + "." + "wandering_inflation_radius", wandering_inflation_radius_);
-        node->get_parameter(name_ + "." + "moving_inflation_radius", moving_inflation_radius_);
-        node->get_parameter(name_ + "." + "unknown_inflation_radius", unknown_inflation_radius_);
-
+        if(mode_param == 0){
+            node->get_parameter(name_ + "." + "halted_inflation_radius", halted_inflation_radius_);
+            node->get_parameter(name_ + "." + "wandering_inflation_radius", wandering_inflation_radius_);
+            node->get_parameter(name_ + "." + "moving_inflation_radius", moving_inflation_radius_);
+            node->get_parameter(name_ + "." + "unknown_inflation_radius", unknown_inflation_radius_);
+        }
+        else if(mode_param == 1){
+            halted_inflation_radius_ = 0.25;
+            wandering_inflation_radius_ = 0.25;
+            moving_inflation_radius_ = 0.25;
+            unknown_inflation_radius_ = 0.25;
+        }
+        
         // Set the rival as a lethal obstacle & Update the costmap with the rival's path
         if(rival_pose_received_) {
             resetMapToValue(0, 0, getSizeInCellsX(), getSizeInCellsY(), nav2_costmap_2d::FREE_SPACE);
@@ -160,6 +172,20 @@ namespace custom_path_costmap_plugin {
 
     bool RivalLayer::isClearable() {
         return true;
+    }
+
+    void RivalLayer::handleSetMode(
+        const std::shared_ptr<std_srvs::srv::SetBool::Request> request,
+        const std::shared_ptr<std_srvs::srv::SetBool::Response> response) {
+        if(request->data) {
+            mode_param = 1;
+            response->success = true;
+            response->message = "RivalLayer is in shrink mode";
+        } else {
+            mode_param = 0;
+            response->success = true;
+            response->message = "RivalLayer is in default mode";
+        }
     }
 
     void RivalLayer::reset() {

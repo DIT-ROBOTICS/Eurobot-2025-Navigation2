@@ -56,10 +56,12 @@ namespace nav2_behavior_tree
   void StopController::shrinkBackCallBack(const std_msgs::msg::Bool::SharedPtr msg)
   {
     shrink_completed = msg->data;
+    RCLCPP_INFO(node_->get_logger(), "Received shrinkback message: %s", msg->data ? "true" : "false");
   }
 
   void StopController::goalReachCallBack(const std_msgs::msg::Bool::SharedPtr msg)
   {
+    RCLCPP_INFO(node_->get_logger(), "Received goal_reach message: %s", msg->data ? "true" : "false");
     if(!shrink_completed) do_shrinkback = false;
     else do_shrinkback = msg->data;
   }

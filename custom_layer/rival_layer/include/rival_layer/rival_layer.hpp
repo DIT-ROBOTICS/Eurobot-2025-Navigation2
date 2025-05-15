@@ -8,6 +8,8 @@
 #include "nav2_util/node_utils.hpp"
 #include "std_msgs/msg/float64.hpp"
 #include "nav_msgs/msg/odometry.hpp"
+#include "std_msgs/msg/bool.hpp"
+#include "std_srvs/srv/set_bool.hpp"
 
 // Circular Queue for rival's path      |front| ____ <--- ____ |rear|
 class CircularQueue {
@@ -77,6 +79,12 @@ namespace custom_path_costmap_plugin {
             // Functions from Lifecycle Nodes
             void activate() override;
             void deactivate() override;
+            
+            rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr set_mode_service_;
+            void handleSetMode(
+                const std::shared_ptr<std_srvs::srv::SetBool::Request> request,
+                const std::shared_ptr<std_srvs::srv::SetBool::Response> response);
+            bool mode_param;
 
         private:
             // Model size for rival's statistics

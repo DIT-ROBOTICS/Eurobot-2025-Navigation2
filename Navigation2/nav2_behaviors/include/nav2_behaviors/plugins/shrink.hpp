@@ -28,7 +28,8 @@ namespace nav2_behaviors
         void handleShrinkCheck(
             const std::shared_ptr<std_srvs::srv::SetBool::Request> request,
             const std::shared_ptr<std_srvs::srv::SetBool::Response> response);
-
+        rclcpp::Client<std_srvs::srv::SetBool>::SharedPtr setMode_rival_client;
+        rclcpp::Client<std_srvs::srv::SetBool>::SharedPtr setMode_object_client;
 
     protected:
         int times;

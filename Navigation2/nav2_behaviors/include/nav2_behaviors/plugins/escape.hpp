@@ -27,6 +27,9 @@ namespace nav2_behaviors
         Status onCycleUpdate() override;
 
     protected:
+        rclcpp::TimerBase::SharedPtr target_update_timer_;
+        void targetUpdateCallback();
+
         double map_x, map_y;
         int map_width, map_height;
         double rival_x, rival_y;
@@ -37,13 +40,11 @@ namespace nav2_behaviors
         void worldToMap(double wx, double wy, int & mx, int & my);
         geometry_msgs::msg::Pose target_point;
         geometry_msgs::msg::Pose findTargetPoint();
-        double** scanSquard;
         std::unique_ptr<geometry_msgs::msg::Twist> makeMove(double x, double y);
         void costmapCallback(const nav_msgs::msg::OccupancyGrid& msg);
         void rivalCallback(const nav_msgs::msg::Odometry& msg);
         geometry_msgs::msg::PoseStamped robotPose;
         nav_msgs::msg::Odometry rivalPose;
-
 
         EscapeAction::Feedback::SharedPtr feedback;
         double min_linear_vel;
@@ -51,11 +52,11 @@ namespace nav2_behaviors
         double cmd_yaw;
         double prev_yaw;
         double relative_yaw;
+        double target_update_frequency_;
+        bool is_active = false;
         rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr sub_costmap;
         rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr sub_rival;
         nav_msgs::msg::OccupancyGrid costmap;
-        rclcpp::Duration command_time_allowance{0,0};
-        rclcpp::Time end_time;
     };
 }  // namespace nav2_behaviors
 
