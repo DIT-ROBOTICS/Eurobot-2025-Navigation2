@@ -132,8 +132,8 @@ controller_server:
       plugin: "custom_controller::CustomController"
       max_linear_vel: 0.8
       max_angular_vel: 2.0
-      linear_kp: 2.2
-      angular_kp: 3.7
+      linear_kp: 1.6
+      angular_kp: 3.0
       transform_tolerance: 0.1
       look_ahead_distance: 0.2
       speed_decade: 0.7
@@ -154,10 +154,10 @@ controller_server:
 
     AngularBoost:
       plugin: "custom_controller::CustomController"
-      max_linear_vel: 0.5
+      max_linear_vel: 0.8
       max_angular_vel: 12.0
-      linear_kp: 2.2
-      angular_kp: 3.7
+      linear_kp: 1.6
+      angular_kp: 3.0
       transform_tolerance: 0.1
       look_ahead_distance: 0.2
       speed_decade: 0.7
