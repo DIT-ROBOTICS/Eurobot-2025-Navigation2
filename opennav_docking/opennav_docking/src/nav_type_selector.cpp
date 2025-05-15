@@ -17,6 +17,8 @@ void NavTypeSelector::setType(std::string const & mode, char & offset_direction,
         goal_checker_selector_msg_.data = "Precise";
     } else if(strstr(mode.c_str(), "loose") != nullptr) {
         goal_checker_selector_msg_.data = "Loose";
+    } else if(strstr(mode.c_str(), "unerring") != nullptr) {
+        goal_checker_selector_msg_.data = "Unerring";
     } else {
         goal_checker_selector_msg_.data = "Loose";
     }
