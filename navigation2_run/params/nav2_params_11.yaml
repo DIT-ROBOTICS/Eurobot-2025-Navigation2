@@ -89,7 +89,7 @@ controller_server:
     min_theta_velocity_threshold: 0.001
     failure_tolerance: 0.2
     progress_checker_plugin: "progress_checker"
-    goal_checker_plugins: ["Precise", "Loose"]
+    goal_checker_plugins: ["Precise", "Unerring", "Loose"]
     controller_plugins: ["Fast", "Slow", "LinearBoost", "AngularBoost"]
 
     # Progress checker parameters
