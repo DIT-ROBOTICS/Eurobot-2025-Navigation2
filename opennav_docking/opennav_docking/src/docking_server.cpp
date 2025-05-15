@@ -66,7 +66,7 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   vel_publisher_ = create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 1);
 
   stop_robot_sub_ = create_subscription<std_msgs::msg::Bool>(
-    "/stopRobot", 1,
+    "/stopRobot", rclcpp::QoS(10).reliable().transient_local(),
     [this](const std_msgs::msg::Bool::SharedPtr msg) {
         stop_robot_ = msg->data;
     });
