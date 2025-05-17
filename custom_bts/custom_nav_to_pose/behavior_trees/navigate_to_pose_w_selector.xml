@@ -5,16 +5,18 @@
         <CancelWait/>
         <RecoveryNode number_of_retries="3" name="NavigateRecovery">
           <StopController>
-            <PipelineSequence name="NavigateWithReplanning">
-              <RateController hz="5">
-                <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
-              </RateController>
-              <Sequence>
-                  <ControllerSelector topic_name="/controller_type" default_controller="Slow" selected_controller="{controller}"/>
-                  <GoalCheckerSelector topic_name="/goal_checker_type" default_goal_checker="Loose" selected_goal_checker="{goal_checker}"/>
-                  <FollowPath path="{path}" controller_id="{controller}" goal_checker_id="{goal_checker}"/>
-              </Sequence>
-            </PipelineSequence>
+            <RetryUntilSuccessful num_attempts="3">
+              <PipelineSequence name="NavigateWithReplanning">
+                <RateController hz="5">
+                  <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
+                </RateController>
+                <Sequence>
+                    <ControllerSelector topic_name="/controller_type" default_controller="Slow" selected_controller="{controller}"/>
+                    <GoalCheckerSelector topic_name="/goal_checker_type" default_goal_checker="Loose" selected_goal_checker="{goal_checker}"/>
+                    <FollowPath path="{path}" controller_id="{controller}" goal_checker_id="{goal_checker}"/>
+                </Sequence>
+              </PipelineSequence>
+            </RetryUntilSuccessful>
           </StopController>
           <StopController>
             <ReactiveFallback name="RecoveryFallback">
