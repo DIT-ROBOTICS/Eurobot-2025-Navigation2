@@ -129,7 +129,7 @@ controller_server:
       max_linear_vel: 1.1
       max_angular_vel: 12.0
       linear_kp: 2.2
-      angular_kp: 3.7
+      angular_kp: 3.0
       transform_tolerance: 0.1
       look_ahead_distance: 0.2
       speed_decade: 0.125
@@ -168,7 +168,7 @@ controller_server:
       max_linear_vel: 0.5
       max_angular_vel: 12.0
       linear_kp: 2.2
-      angular_kp: 3.7
+      angular_kp: 3.0
       transform_tolerance: 0.1
       look_ahead_distance: 0.2
       speed_decade: 0.125

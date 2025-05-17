@@ -59,7 +59,7 @@ void CustomController::configure(
         });
 
     rival_pose_subscription_ = node->create_subscription<nav_msgs::msg::Odometry>(
-        "/rival_pose",  // Replace with your actual rival pose topic
+        "/rival/final_pose",  // Replace with your actual rival pose topic
         rclcpp::QoS(10),
         [this](const nav_msgs::msg::Odometry::SharedPtr msg) {
             rival_pose_ = *msg;
@@ -485,6 +485,7 @@ geometry_msgs::msg::TwistStamped CustomController::computeVelocityCommands(
             std_msgs::msg::Bool goal_reach;
             goal_reach.data = true;
             goal_reach_pub_->publish(goal_reach);
+            RCLCPP_INFO(logger_, "Goal reached sented");
     }
   
     if(isObstacleExist_){
