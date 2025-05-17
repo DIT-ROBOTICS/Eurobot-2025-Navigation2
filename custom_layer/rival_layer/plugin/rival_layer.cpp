@@ -29,12 +29,13 @@ namespace custom_path_costmap_plugin {
 
         declareParameter("reset_timeout_threshold", rclcpp::ParameterValue(40));
 
+        declareParameter("robot_inscribed_radius", rclcpp::ParameterValue(0.22));
         declareParameter("rival_inscribed_radius", rclcpp::ParameterValue(0.22));
 
-        declareParameter("halted_inflation_radius", rclcpp::ParameterValue(0.5));
-        declareParameter("wandering_inflation_radius", rclcpp::ParameterValue(0.5));
-        declareParameter("moving_inflation_radius", rclcpp::ParameterValue(0.2));
-        declareParameter("unknown_inflation_radius", rclcpp::ParameterValue(0.55));
+        declareParameter("halted_inflation_radius", rclcpp::ParameterValue(0.1));
+        declareParameter("wandering_inflation_radius", rclcpp::ParameterValue(0.1));
+        declareParameter("moving_inflation_radius", rclcpp::ParameterValue(0.1));
+        declareParameter("unknown_inflation_radius", rclcpp::ParameterValue(0.1));
 
         declareParameter("halted_cost_scaling_factor", rclcpp::ParameterValue(10.0));
         declareParameter("wandering_cost_scaling_factor", rclcpp::ParameterValue(3.0));
@@ -72,12 +73,21 @@ namespace custom_path_costmap_plugin {
 
         node->get_parameter(name_ + "." + "reset_timeout_threshold", reset_timeout_threshold_);
 
+        double robot_inscribed_radius;
+        node->get_parameter(name_ + "." + "robot_inscribed_radius", robot_inscribed_radius);
         node->get_parameter(name_ + "." + "rival_inscribed_radius", rival_inscribed_radius_);
+        // TODO: Refactor the implementation code for rival_inscribed_radius_ to avoid misleading the variable name
+        rival_inscribed_radius_ += robot_inscribed_radius;
 
         node->get_parameter(name_ + "." + "halted_inflation_radius", halted_inflation_radius_);
         node->get_parameter(name_ + "." + "wandering_inflation_radius", wandering_inflation_radius_);
         node->get_parameter(name_ + "." + "moving_inflation_radius", moving_inflation_radius_);
         node->get_parameter(name_ + "." + "unknown_inflation_radius", unknown_inflation_radius_);
+        // TODO: Refactor the implementation code for inflation_radius_ to avoid misleading the variable name
+        halted_inflation_radius_ += rival_inscribed_radius_;
+        wandering_inflation_radius_ += rival_inscribed_radius_;
+        moving_inflation_radius_ += rival_inscribed_radius_;
+        unknown_inflation_radius_ += rival_inscribed_radius_;
 
         node->get_parameter(name_ + "." + "halted_cost_scaling_factor", halted_cost_scaling_factor_);
         node->get_parameter(name_ + "." + "wandering_cost_scaling_factor", wandering_cost_scaling_factor_);
@@ -136,11 +146,7 @@ namespace custom_path_costmap_plugin {
             return;
         }
 
-        auto node = node_.lock();
-        node->get_parameter(name_ + "." + "halted_inflation_radius", halted_inflation_radius_);
-        node->get_parameter(name_ + "." + "wandering_inflation_radius", wandering_inflation_radius_);
-        node->get_parameter(name_ + "." + "moving_inflation_radius", moving_inflation_radius_);
-        node->get_parameter(name_ + "." + "unknown_inflation_radius", unknown_inflation_radius_);
+        updateRadius();
 
         // Set the rival as a lethal obstacle & Update the costmap with the rival's path
         if(rival_pose_received_) {
@@ -424,6 +430,20 @@ namespace custom_path_costmap_plugin {
                     "Unknown rival state");
                 break;
         }
+    }
+
+    void RivalLayer::updateRadius() {
+        auto node = node_.lock();
+        // Update the inflation radius of the rival
+        node->get_parameter(name_ + "." + "halted_inflation_radius", halted_inflation_radius_);
+        node->get_parameter(name_ + "." + "wandering_inflation_radius", wandering_inflation_radius_);
+        node->get_parameter(name_ + "." + "moving_inflation_radius", moving_inflation_radius_);
+        node->get_parameter(name_ + "." + "unknown_inflation_radius", unknown_inflation_radius_);
+        // TODO: Refactor the implementation code for inflation_radius_ to avoid misleading the variable name
+        halted_inflation_radius_ += rival_inscribed_radius_;
+        wandering_inflation_radius_ += rival_inscribed_radius_;
+        moving_inflation_radius_ += rival_inscribed_radius_;
+        unknown_inflation_radius_ += rival_inscribed_radius_;
     }
 
     void RivalLayer::activate() {

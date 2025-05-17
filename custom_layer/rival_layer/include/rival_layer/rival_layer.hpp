@@ -149,6 +149,9 @@ namespace custom_path_costmap_plugin {
             void ExpandLine(double x, double y, double MaxCost, double InflationRadius, double CostScalingFactor, double InscribedRadius, double ExtendLength);
             void FieldExpansion(double x, double y);
 
+            // Functions for update radius
+            void updateRadius();
+
             // Rival pose subscibtion
             rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr rival_distance_sub_;
             void rivalDistanceCallback(const std_msgs::msg::Float64::SharedPtr msg);
