@@ -474,7 +474,7 @@ geometry_msgs::msg::TwistStamped CustomController::computeVelocityCommands(
 
     cmd_vel.twist.angular.z = getGoalAngle(cur_pose_.theta_, final_goal_angle_);
     double vel_ = sqrt(pow(cmd_vel.twist.linear.x, 2) + pow(cmd_vel.twist.linear.y, 2));
-    check_distance_ = std::max(vel_ * 2.5,look_ahead_distance_);
+    check_distance_ = std::max(vel_ * 1.0,look_ahead_distance_);
     check_index_ = getIndex(cur_pose_, vector_global_path_, check_distance_);
     current_index_ = getIndex(cur_pose_, vector_global_path_, look_ahead_distance_);
     last_vel_x_ = cmd_vel.twist.linear.x;
@@ -492,6 +492,9 @@ geometry_msgs::msg::TwistStamped CustomController::computeVelocityCommands(
         cmd_vel.twist.linear.y = last_vel_y_ * speed_decade_;
         cmd_vel.twist.angular.z = 0.0;
         update_plan_ = true;
+        if(abs(cmd_vel.twist.linear.x) < 0.1 && abs(cmd_vel.twist.linear.y) < 0.1){
+            throw nav2_core::PlannerException("Obstacle detected");
+        }
         return cmd_vel;
     }
     
