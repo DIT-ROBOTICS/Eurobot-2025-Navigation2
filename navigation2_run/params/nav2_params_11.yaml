@@ -87,7 +87,7 @@ controller_server:
     min_x_velocity_threshold: 0.001
     min_y_velocity_threshold: 0.001
     min_theta_velocity_threshold: 0.001
-    failure_tolerance: 0.2
+    failure_tolerance: 0.0
     progress_checker_plugin: "progress_checker"
     goal_checker_plugins: ["Precise", "Unerring", "Loose"]
     controller_plugins: ["Fast", "Slow", "LinearBoost", "AngularBoost"]
@@ -132,7 +132,7 @@ controller_server:
       angular_kp: 3.7
       transform_tolerance: 0.1
       look_ahead_distance: 0.2
-      speed_decade: 0.7
+      speed_decade: 0.125
       costmap_tolerance: 60
       keep_planning: false
       
@@ -144,7 +144,7 @@ controller_server:
       angular_kp: 3.0
       transform_tolerance: 0.1
       look_ahead_distance: 0.2
-      speed_decade: 0.7
+      speed_decade: 0.125
       costmap_tolerance: 60
       keep_planning: false
 
@@ -156,7 +156,7 @@ controller_server:
       angular_kp: 3.7
       transform_tolerance: 0.1
       look_ahead_distance: 0.2
-      speed_decade: 0.7
+      speed_decade: 0.125
       costmap_tolerance: 60
       keep_planning: false
 
@@ -168,7 +168,7 @@ controller_server:
       angular_kp: 3.0
       transform_tolerance: 0.1
       look_ahead_distance: 0.2
-      speed_decade: 0.7
+      speed_decade: 0.125
       costmap_tolerance: 60
       keep_planning: false
 
