@@ -79,7 +79,7 @@ public:
         if (!file_.is_open()) {
             RCLCPP_ERROR(this->get_logger(), "Failed to open CSV file.");
         } else if (is_empty) {
-            file_ << "index,timestamp,mode,goal_x,goal_y,final_x,final_y,lidar_x,lidar_y,beacon1_x,beacon1_y,beacon2_x,beacon2_y,beacon3_x,beacon3_y\n";
+            file_ << "index,timestamp,mode,goal_x,goal_y,goal_z,goal_w,final_x,final_y,lidar_x,lidar_y,beacon1_x,beacon1_y,beacon2_x,beacon2_y,beacon3_x,beacon3_y\n";
         }
     }
 
@@ -102,7 +102,8 @@ public:
             const std::string & moving_type = point[0];
             double x = std::stod(point[1]); 
             double y = std::stod(point[2]);
-            double w = std::stod(point[3]);
+            double z = std::stod(point[3]);
+            double w = std::stod(point[4]);
 
             if (moving_type == "path" && !halt_)
             {
@@ -112,11 +113,11 @@ public:
                 goal_checker_type.data = "Precise";
                 controller_selector_pub_->publish(controller_type);
                 goal_checker_selector_pub_->publish(goal_checker_type);
-                send_navigation_goal(x, y, w);
+                send_navigation_goal(x, y, z, w);
             }
             else if (moving_type == "dock" && !halt_)
             {
-                send_docking_goal(x, y, w);
+                send_docking_goal(x, y, z, w);
             } 
             else if (moving_type == "wait" && !halt_)
             {
@@ -153,7 +154,7 @@ private:
         }
     }
 
-    void send_navigation_goal(double x, double y, double w) {
+    void send_navigation_goal(double x, double y, double z, double w) {
         halt_ = true;
 
         if (!nav_to_pose_client_->wait_for_action_server(std::chrono::seconds(10))) {
@@ -164,34 +165,35 @@ private:
         auto goal_msg = NavigateToPose::Goal();
         goal_msg.pose.pose.position.x = x;
         goal_msg.pose.pose.position.y = y;
+        goal_msg.pose.pose.orientation.z = z;
         goal_msg.pose.pose.orientation.w = w;
         goal_msg.pose.header.frame_id = "map";
         goal_msg.pose.header.stamp = this->now();
 
-        RCLCPP_INFO(this->get_logger(), "Sending navigation goal to (%f, %f, %f)", x, y, w);
+        RCLCPP_INFO(this->get_logger(), "Sending navigation goal to (%f, %f, %f, %f)", x, y, z, w);
 
         auto send_goal_options = rclcpp_action::Client<NavigateToPose>::SendGoalOptions();
-        send_goal_options.result_callback = [this, x, y](const GoalHandleNavigate::WrappedResult & result) {
+        send_goal_options.result_callback = [this, x, y, z, w](const GoalHandleNavigate::WrappedResult & result) {
             if (result.code == rclcpp_action::ResultCode::SUCCEEDED) {
-                RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Navigation succeeded");
+                RCLCPP_INFO(rclcpp::get_logger("ScriptSim"), "Navigation succeeded");
                 index_++;
                 if (file_.is_open() && beacon_pose_array_.poses.size() >= 3) {
                     auto stamp = this->now().seconds();
                     file_ << index_ << "," << stamp << ",Path,"
-                          << x << "," << y << ","
-                          << final_pose_data_.pose.pose.position.x << "," << final_pose_data_.pose.pose.position.y << ","
-                          << lidar_pose_data_.pose.pose.position.x << "," << lidar_pose_data_.pose.pose.position.y << ","
-                          << beacon_pose_array_.poses[0].position.x << "," << beacon_pose_array_.poses[0].position.y << ","
-                          << beacon_pose_array_.poses[1].position.x << "," << beacon_pose_array_.poses[1].position.y << ","
-                          << beacon_pose_array_.poses[2].position.x << "," << beacon_pose_array_.poses[2].position.y
-                          << std::endl;
+                        << x << "," << y << "," << z << "," << w << ","
+                        << final_pose_data_.pose.pose.position.x << "," << final_pose_data_.pose.pose.position.y << ","
+                        << lidar_pose_data_.pose.pose.position.x << "," << lidar_pose_data_.pose.pose.position.y << ","
+                        << beacon_pose_array_.poses[0].position.x << "," << beacon_pose_array_.poses[0].position.y << ","
+                        << beacon_pose_array_.poses[1].position.x << "," << beacon_pose_array_.poses[1].position.y << ","
+                        << beacon_pose_array_.poses[2].position.x << "," << beacon_pose_array_.poses[2].position.y
+                        << std::endl;
                 } else {
                     RCLCPP_WARN(this->get_logger(), "Skipping CSV write: not enough lidar pose data or file not open.");
                 }
 
                 halt_ = false;
             } else {
-                RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Navigation failed");
+                RCLCPP_ERROR(rclcpp::get_logger("ScriptSim"), "Navigation failed");
                 halt_ = false;
             }
         };
@@ -200,7 +202,7 @@ private:
     }
 
 
-    void send_docking_goal(double x, double y, double w)
+    void send_docking_goal(double x, double y, double z, double w)
     {
         halt_ = true;
 
@@ -212,32 +214,32 @@ private:
 
         auto goal_msg = DockRobot::Goal();
         goal_msg.use_dock_id = false;
-
         goal_msg.dock_pose.header.frame_id = "map";
         goal_msg.dock_pose.header.stamp = this->now();
         goal_msg.dock_pose.pose.position.x = x;
         goal_msg.dock_pose.pose.position.y = y;
+        goal_msg.dock_pose.pose.orientation.z = z;
         goal_msg.dock_pose.pose.orientation.w = w;
 
         goal_msg.dock_pose.pose.position.z = 0.0;   // offset
 
-        goal_msg.dock_type = "dock_slow_gentle_precise_x";
+        goal_msg.dock_type = "dock_slow_precise_x";
 
         goal_msg.navigate_to_staging_pose = false;
 
-        RCLCPP_INFO(this->get_logger(), "Sending docking goal to (%f, %f, %f)", x, y, w);
+        RCLCPP_INFO(this->get_logger(), "Sending docking goal to (%f, %f, %f, %f)", x, y, z, w);
 
         auto send_goal_options = rclcpp_action::Client<DockRobot>::SendGoalOptions();
         send_goal_options.result_callback = [this](const GoalHandleDock::WrappedResult & result)
         {
             if (result.code == rclcpp_action::ResultCode::SUCCEEDED)
             {
-                RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Docking succeeded");
+                RCLCPP_INFO(rclcpp::get_logger("ScriptSim"), "Docking succeeded");
                 halt_ = false;
             }
             else
             {
-                RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Docking failed");
+                RCLCPP_ERROR(rclcpp::get_logger("ScriptSim"), "Docking failed");
                 halt_ = false;
             }
         };
