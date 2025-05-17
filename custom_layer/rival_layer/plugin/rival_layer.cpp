@@ -397,31 +397,31 @@ namespace custom_path_costmap_plugin {
         // Expand the costmap based on the rival's state
         switch (rival_state_) {
             case RivalState::HALTED:
-                ExpandPointWithCircle(x, y, nav2_costmap_2d::LETHAL_OBSTACLE, halted_inflation_radius_, halted_cost_scaling_factor_, rival_inscribed_radius_);
+                ExpandPointWithCircle(x, y, nav2_costmap_2d::MAX_NON_OBSTACLE, halted_inflation_radius_, halted_cost_scaling_factor_, rival_inscribed_radius_);
                 break;
             
             case RivalState::WANDERING:
-                ExpandPointWithCircle(x, y, nav2_costmap_2d::LETHAL_OBSTACLE, wandering_inflation_radius_, wandering_cost_scaling_factor_, rival_inscribed_radius_);
+                ExpandPointWithCircle(x, y, nav2_costmap_2d::MAX_NON_OBSTACLE, wandering_inflation_radius_, wandering_cost_scaling_factor_, rival_inscribed_radius_);
                 break;
 
             case RivalState::MOVING:
                 if(use_statistic_method_) {
                     vel_factor_ = std::min(1.0, hypot(rival_x_cov_, rival_y_cov_)/(cov_range_max_-cov_range_min_));
                     position_offset_ = std::max((rival_distance_ - safe_distance_), 0.0) * vel_factor_ * offset_vel_factor_weight_statistic_;
-                    ExpandPointWithCircle(x, y, nav2_costmap_2d::LETHAL_OBSTACLE, halted_inflation_radius_, halted_cost_scaling_factor_, rival_inscribed_radius_);
-                    ExpandLine(x, y, nav2_costmap_2d::LETHAL_OBSTACLE, moving_inflation_radius_, moving_cost_scaling_factor_, 0, 
+                    ExpandPointWithCircle(x, y, nav2_costmap_2d::MAX_NON_OBSTACLE, halted_inflation_radius_, halted_cost_scaling_factor_, rival_inscribed_radius_);
+                    ExpandLine(x, y, nav2_costmap_2d::MAX_NON_OBSTACLE, moving_inflation_radius_, moving_cost_scaling_factor_, 0, 
                         max_extend_length_* vel_factor_ * expand_vel_factor_weight_statistic_ / std::max(rival_distance_, 1.0));
                 } else {
                     vel_factor_ = std::min(1.0, hypot(v_from_localization_x_, v_from_localization_y_)/(vel_range_max_-vel_range_min_));
                     position_offset_ = std::max((rival_distance_ - safe_distance_), 0.0) * vel_factor_ * offset_vel_factor_weight_localization_;
-                    ExpandPointWithCircle(x, y, nav2_costmap_2d::LETHAL_OBSTACLE, halted_inflation_radius_, halted_cost_scaling_factor_, rival_inscribed_radius_);
-                    ExpandLine(x, y, nav2_costmap_2d::LETHAL_OBSTACLE, moving_inflation_radius_, moving_cost_scaling_factor_, 0, 
+                    ExpandPointWithCircle(x, y, nav2_costmap_2d::MAX_NON_OBSTACLE, halted_inflation_radius_, halted_cost_scaling_factor_, rival_inscribed_radius_);
+                    ExpandLine(x, y, nav2_costmap_2d::MAX_NON_OBSTACLE, moving_inflation_radius_, moving_cost_scaling_factor_, 0, 
                         max_extend_length_ * vel_factor_ * expand_vel_factor_weight_localization_ / std::max(rival_distance_, 1.0));
                 }
                 break;
             
             case RivalState::UNKNOWN:
-                ExpandPointWithCircle(x, y, nav2_costmap_2d::LETHAL_OBSTACLE, unknown_inflation_radius_, unknown_cost_scaling_factor_, rival_inscribed_radius_);
+                ExpandPointWithCircle(x, y, nav2_costmap_2d::MAX_NON_OBSTACLE, unknown_inflation_radius_, unknown_cost_scaling_factor_, rival_inscribed_radius_);
                 break;
             
             default:
