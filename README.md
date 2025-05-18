@@ -37,7 +37,7 @@ The keepout zones correspond to specific regions on the Eurobot 2025 field, used
 - Suitable for strategic behaviors like avoiding opponent areas or obstacle fields.  
 - **Message Type**: `std_msgs/msg/String`
 
-#### ✅ Supported Keywords for `/dock_robot` API value `/dock_type`
+#### ✅ Supported Keywords for `/dock_robot` API parameter `/dock_type`
 (Keyword order does not matter and is designed for compatibility.)
 
 - **Template Base**:  
