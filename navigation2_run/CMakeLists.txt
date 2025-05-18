@@ -16,6 +16,8 @@ find_package(tf2_geometry_msgs REQUIRED)
 find_package(yaml-cpp REQUIRED)
 find_package(opennav_docking_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(btcpp_ros2_interfaces REQUIRED)
+find_package(rclcpp_action REQUIRED)
 
 # uncomment the following section in order to fill in
 # further dependencies manually.
@@ -30,12 +32,20 @@ ament_target_dependencies(script_sim rclcpp geometry_msgs nav2_msgs tf2_ros tf2 
 add_executable(final_pose_bridge src/final_pose_bridge.cpp)
 ament_target_dependencies(final_pose_bridge rclcpp geometry_msgs nav2_msgs)
 
+add_executable(system_check src/system_check.cpp)
+ament_target_dependencies(system_check rclcpp  std_msgs  nav2_msgs opennav_docking_msgs  btcpp_ros2_interfaces rclcpp_action)
+
+add_executable(system_check_test_server src/system_check_test_server.cpp)
+ament_target_dependencies(system_check_test_server rclcpp btcpp_ros2_interfaces)
+
 target_link_libraries(script_sim yaml-cpp)
 
 install(TARGETS
   odometry_sim
   script_sim
   final_pose_bridge
+  system_check
+  system_check_test_server
   DESTINATION lib/${PROJECT_NAME}
 )
 

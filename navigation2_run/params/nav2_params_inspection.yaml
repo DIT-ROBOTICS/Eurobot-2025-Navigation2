@@ -126,50 +126,50 @@ controller_server:
     # Controller parameters
     Fast:
       plugin: "custom_controller::CustomController"
-      max_linear_vel: 1.1
-      max_angular_vel: 12.0
-      linear_kp: 2.2
-      angular_kp: 3.7
+      max_linear_vel: 0.5
+      max_angular_vel: 2.0
+      linear_kp: 1.5
+      angular_kp: 3.0
       transform_tolerance: 0.1
       look_ahead_distance: 0.2
       speed_decade: 0.125
-      costmap_tolerance: 95 # rival is 98
+      costmap_tolerance: 95
       keep_planning: false
       
     Slow:
       plugin: "custom_controller::CustomController"
-      max_linear_vel: 0.8
+      max_linear_vel: 0.5
       max_angular_vel: 2.0
-      linear_kp: 2.2
-      angular_kp: 3.7
+      linear_kp: 1.5
+      angular_kp: 3.0
       transform_tolerance: 0.1
       look_ahead_distance: 0.2
       speed_decade: 0.125
-      costmap_tolerance: 95 # rival is 98
+      costmap_tolerance: 95
       keep_planning: false
-    
+
     LinearBoost:
       plugin: "custom_controller::CustomController"
-      max_linear_vel: 1.1
+      max_linear_vel: 0.5
       max_angular_vel: 2.0
-      linear_kp: 2.2
-      angular_kp: 3.7
+      linear_kp: 1.5
+      angular_kp: 3.0
       transform_tolerance: 0.1
       look_ahead_distance: 0.2
       speed_decade: 0.125
-      costmap_tolerance: 95 # rival is 98
+      costmap_tolerance: 95
       keep_planning: false
 
     AngularBoost:
       plugin: "custom_controller::CustomController"
       max_linear_vel: 0.5
-      max_angular_vel: 12.0
-      linear_kp: 2.2
-      angular_kp: 3.7
+      max_angular_vel: 2.0
+      linear_kp: 1.5
+      angular_kp: 3.0
       transform_tolerance: 0.1
       look_ahead_distance: 0.2
       speed_decade: 0.125
-      costmap_tolerance: 95 # rival is 98
+      costmap_tolerance: 95
       keep_planning: false
 
 local_costmap:
@@ -222,7 +222,7 @@ global_costmap:
         R_sq_threshold: 0.85
         reset_timeout_threshold: 70
         robot_inscribed_radius: 0.3
-        # external_rival_data_path: "/home/user/Eurobot-2025-Navigation2-ws/src/Eurobot-2025-Navigation2/custom_layer/rival_layer/params/rival_param.yaml"
+        external_rival_data_path: "/home/share/data/rival_param.yaml"
         rival_inscribed_radius: 0.22
         halted_inflation_radius: 0.1
         wandering_inflation_radius: 0.12
@@ -411,7 +411,7 @@ docking_server:
       linear_ki_accel_vel: 0.1
       linear_kp_decel_dis: 3.0
       angular_kp: 4.0
-      deceleration_distance: 0.1
+      deceleration_distance: 0.05
       reserved_distance: 0.0
       stop_degree: 120.0
       rival_radius: 0.44
@@ -423,7 +423,7 @@ docking_server:
       linear_ki_accel_vel: 0.1
       linear_kp_decel_dis: 3.0
       angular_kp: 4.0
-      deceleration_distance: 0.03
+      deceleration_distance: 0.05
       reserved_distance: 0.0
       stop_degree: 120.0
       rival_radius: 0.44

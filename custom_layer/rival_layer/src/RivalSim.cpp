@@ -26,7 +26,7 @@ class RivalSimPub : public rclcpp::Node {
                 message.header.frame_id = "map";
 
                 // position
-                message.pose.pose.position.x = 1.5;
+                message.pose.pose.position.x = 2.8;
                 message.pose.pose.position.y = 1.0;
 
                 rival_pub_->publish(message);
@@ -88,7 +88,7 @@ class RivalSimPub : public rclcpp::Node {
 
                 // Hardcoded halted rival
                 if(rival_mode_ == 0) {
-                    message.pose.pose.position.x = float(rand()%5-2)/200.0 + 1.5;
+                    message.pose.pose.position.x = float(rand()%5-2)/200.0 + 2.8;
                     message.pose.pose.position.y = float(rand()%5-2)/200.0 + 1.0;
                 }
 

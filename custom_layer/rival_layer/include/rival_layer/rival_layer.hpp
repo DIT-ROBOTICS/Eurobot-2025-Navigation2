@@ -11,6 +11,9 @@
 #include "std_msgs/msg/bool.hpp"
 #include "std_srvs/srv/set_bool.hpp"
 
+#include <yaml-cpp/yaml.h>
+#include <fstream>
+
 // Circular Queue for rival's path      |front| ____ <--- ____ |rear|
 class CircularQueue {
     public:
@@ -156,6 +159,9 @@ namespace custom_path_costmap_plugin {
             void ExpandPointWithCircle(double x, double y, double MaxCost, double InflationRadius, double CostScalingFactor, double InscribedRadius);
             void ExpandLine(double x, double y, double MaxCost, double InflationRadius, double CostScalingFactor, double InscribedRadius, double ExtendLength);
             void FieldExpansion(double x, double y);
+
+            // Functions for update radius
+            void updateRadius();
 
             // Rival pose subscibtion
             rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr rival_distance_sub_;
