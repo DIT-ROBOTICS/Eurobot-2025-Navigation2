@@ -41,7 +41,7 @@ private:
     if (msg == nullptr || is_main_ready_)
       return;
 
-    RCLCPP_INFO(this->get_logger(), "\033[1;35m Received startup plan message, processing... \033[0m");
+    // RCLCPP_INFO(this->get_logger(), "\033[1;35m Received startup plan message, processing... \033[0m");
 
     // Retry until service is ready
     while (!ready_srv_client_->wait_for_service(1s)) {
@@ -73,7 +73,7 @@ private:
     request->group = group;
     request->state = state;
 
-    RCLCPP_INFO(this->get_logger(), "\033[1;35m Sending ReadySignal (group=%d, state=%d)... \033[0m", group, state);
+    // RCLCPP_INFO(this->get_logger(), "\033[1;35m Sending ReadySignal (group=%d, state=%d)... \033[0m", group, state);
 
     ready_srv_client_->async_send_request(request,
       [this](rclcpp::Client<btcpp_ros2_interfaces::srv::StartUpSrv>::SharedFuture future) {
