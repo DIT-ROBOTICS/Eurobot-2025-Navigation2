@@ -133,7 +133,7 @@ controller_server:
       transform_tolerance: 0.1
       look_ahead_distance: 0.2
       speed_decade: 0.125
-      costmap_tolerance: 95
+      costmap_tolerance: 95 # rival is 98
       keep_planning: false
       
     Slow:
@@ -145,7 +145,7 @@ controller_server:
       transform_tolerance: 0.1
       look_ahead_distance: 0.2
       speed_decade: 0.125
-      costmap_tolerance: 95
+      costmap_tolerance: 95 # rival is 98
       keep_planning: false
     
     LinearBoost:
@@ -157,7 +157,7 @@ controller_server:
       transform_tolerance: 0.1
       look_ahead_distance: 0.2
       speed_decade: 0.125
-      costmap_tolerance: 95
+      costmap_tolerance: 95 # rival is 98
       keep_planning: false
 
     AngularBoost:
@@ -169,7 +169,7 @@ controller_server:
       transform_tolerance: 0.1
       look_ahead_distance: 0.2
       speed_decade: 0.125
-      costmap_tolerance: 95
+      costmap_tolerance: 95 # rival is 98
       keep_planning: false
 
 local_costmap:
