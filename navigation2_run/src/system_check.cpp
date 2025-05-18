@@ -26,7 +26,7 @@ public:
     navigate_to_pose_client_ = rclcpp_action::create_client<NavigateToPose>(this, "navigate_to_pose");
     dock_robot_client_ = rclcpp_action::create_client<DockRobot>(this, "dock_robot");
 
-    RCLCPP_INFO(this->get_logger(), "SystemCheck started, waiting for startup plan...");
+    RCLCPP_INFO(this->get_logger(), "\033[1;35m SystemCheck started, waiting for startup plan... \033[0m");
   }
 
 private:
@@ -41,7 +41,7 @@ private:
     if (msg == nullptr || is_main_ready_)
       return;
 
-    RCLCPP_INFO(this->get_logger(), "Received startup plan message: '%s'", msg->data.c_str());
+    RCLCPP_INFO(this->get_logger(), "\033[1;35m Received startup plan message, processing... \033[0m");
 
     // Retry until service is ready
     while (!ready_srv_client_->wait_for_service(1s)) {
@@ -63,6 +63,7 @@ private:
 
     // All systems ready
     is_main_ready_ = true;
+    RCLCPP_INFO(this->get_logger(), "\033[1;32m All systems ready !!! \033[0m");
     sendReadySignal(3, 3);  // group = 3 (navigation), state = 3 (START)
   }
 
@@ -72,17 +73,17 @@ private:
     request->group = group;
     request->state = state;
 
-    RCLCPP_INFO(this->get_logger(), "Sending ReadySignal (group=%d, state=%d)...", group, state);
+    RCLCPP_INFO(this->get_logger(), "\033[1;35m Sending ReadySignal (group=%d, state=%d)... \033[0m", group, state);
 
     ready_srv_client_->async_send_request(request,
       [this](rclcpp::Client<btcpp_ros2_interfaces::srv::StartUpSrv>::SharedFuture future) {
         auto response = future.get();
         if (response->success) {
-          RCLCPP_INFO(this->get_logger(), "ReadySignal SUCCESS: group=%d", response->group);
+            RCLCPP_INFO(this->get_logger(), "\033[1;32m ReadySignal SUCCESS: group=%d \033[0m", response->group);
+            is_main_ready_ = false; // Reset for next system check process
         } else {
-          RCLCPP_WARN(this->get_logger(), "ReadySignal FAILED");
+            RCLCPP_WARN(this->get_logger(), "ReadySignal FAILED");
         }
-        rclcpp::shutdown();
       });
   }
 };
