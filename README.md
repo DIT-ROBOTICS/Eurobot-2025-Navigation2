@@ -10,18 +10,20 @@ Enables smooth and efficient autonomous movement.
 Seamlessly integrates docking and navigation for autonomous charging or station return.  
 - Utilizes the `/dock_robot` action server to control the docking process.
 
-### Multi-Functional Interfaces  
-Offers a variety of commands for enhanced control and flexibility:  
+### 🧩 Multi-Functional Interfaces  
+Offers a variety of commands for enhanced control and flexibility:
+
 - `/stopRobot`: Lock/unlock the robot.  
 - `/keepout_zone`: Dynamically set keepout zones to avoid certain areas.  
-- `/dock_robot` supports flexible keyword-based commands via the `dock_type` parameter.
+- `/dock_robot`: Supports flexible keyword-based commands via the `dock_type` parameter.  
+- `rival_param.yaml`: Supports dynamic rival data setup adjustments.
 
 #### ✅ Stop Robot
 
 Control the robot's emergency stop or resume behavior via the `/stopRobot` topic.
 
-- `true`: Immediately stops and locks the robot.
-- `false`: Unlocks and resumes normal operation.
+- `true`: Immediately stops and locks the robot.  
+- `false`: Unlocks and resumes normal operation.  
 - **Message Type**: `std_msgs/msg/Bool`
 
 #### ✅ Keepout Zone Index
@@ -30,22 +32,30 @@ The keepout zones correspond to specific regions on the Eurobot 2025 field, used
 
 ![Keepout Zones Index](custom_layer/keepout_layer/Keepout_zones_Index.png)
 
-- Zones are labeled **A** through **J** on the field map.
-- These zones can be toggled at runtime using the `/keepout_zone` topic.
-- Suitable for strategic behaviors like avoiding opponent areas or obstacle fields.
+- Zones are labeled **A** through **J** on the field map.  
+- These zones can be toggled at runtime using the `/keepout_zone` topic.  
+- Suitable for strategic behaviors like avoiding opponent areas or obstacle fields.  
 - **Message Type**: `std_msgs/msg/String`
 
-#### ✅ Supported Keywords
+#### ✅ Supported Keywords for `/dock_robot` API value `/dock_type`
 (Keyword order does not matter and is designed for compatibility.)
+
 - **Template Base**:  
   - `dock`: Triggers the docking process.
 
 - **Functional Tags**:  
-  - **Controller Type**: `fast`, `slow`, `linearBoost`, `angularBoost`
+  - **Controller Type**: `fast`, `slow`, `linearBoost`, `angularBoost`  
   - **Goal Checker Type**: `precise`, `loose`  
   - **Offset Direction**: `x`, `y`, `z`  
   - **Docking Style**: `ordinary`, `gentle`, `rush`  
   - **Special Control**: `delaySpin`
+
+#### ✅ Format for `rival_param.yaml`
+
+```yaml
+rival_parameters:
+  rival_inscribed_radius: *data(double)*
+```
 
 ---
 
