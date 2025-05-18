@@ -133,7 +133,7 @@ controller_server:
       transform_tolerance: 0.1
       look_ahead_distance: 0.2
       speed_decade: 0.125
-      costmap_tolerance: 60
+      costmap_tolerance: 95
       keep_planning: false
       spin_delay_threshold: 0.5
       
@@ -146,7 +146,7 @@ controller_server:
       transform_tolerance: 0.1
       look_ahead_distance: 0.2
       speed_decade: 0.125
-      costmap_tolerance: 60
+      costmap_tolerance: 95
       keep_planning: false
       spin_delay_threshold: 0.5
 
@@ -159,7 +159,7 @@ controller_server:
       transform_tolerance: 0.1
       look_ahead_distance: 0.2
       speed_decade: 0.125
-      costmap_tolerance: 60
+      costmap_tolerance: 95
       keep_planning: false
       spin_delay_threshold: 0.5
 
@@ -172,7 +172,7 @@ controller_server:
       transform_tolerance: 0.1
       look_ahead_distance: 0.2
       speed_decade: 0.125
-      costmap_tolerance: 60
+      costmap_tolerance: 95
       keep_planning: false
       spin_delay_threshold: 0.5
 
