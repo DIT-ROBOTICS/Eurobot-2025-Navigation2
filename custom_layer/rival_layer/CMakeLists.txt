@@ -11,6 +11,7 @@ find_package(rclcpp REQUIRED)
 find_package(nav2_costmap_2d REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(nav_msgs REQUIRED)
+find_package(yaml-cpp REQUIRED)
 
 set(lib_dep_pkgs
 rclcpp
@@ -26,6 +27,8 @@ add_executable(RivalSim
 
 add_library(rival_layer SHARED
   plugin/rival_layer.cpp)
+
+target_link_libraries(rival_layer yaml-cpp)
 
 include_directories(include)
 
