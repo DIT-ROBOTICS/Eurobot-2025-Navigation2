@@ -79,6 +79,7 @@ namespace custom_path_costmap_plugin {
         node->get_parameter(name_ + "." + "robot_inscribed_radius", robot_inscribed_radius);
         std::string external_rival_data_path;
         node->get_parameter(name_ + "." + "external_rival_data_path", external_rival_data_path);
+        node->get_parameter(name_ + "." + "rival_inscribed_radius", rival_inscribed_radius_);
         if (!external_rival_data_path.empty()) {
             try {
                 YAML::Node config = YAML::LoadFile(external_rival_data_path);
@@ -90,9 +91,7 @@ namespace custom_path_costmap_plugin {
             } catch (const std::exception &e) {
                 RCLCPP_ERROR(rclcpp::get_logger("RivalLayer"), "Failed to load YAML file: %s", e.what());
             }
-        } else {
-            node->get_parameter(name_ + "." + "rival_inscribed_radius", rival_inscribed_radius_);
-        }
+        } 
         // TODO: Refactor the implementation code for rival_inscribed_radius_ to avoid misleading the variable name
         rival_inscribed_radius_ += robot_inscribed_radius;
         RCLCPP_INFO(
