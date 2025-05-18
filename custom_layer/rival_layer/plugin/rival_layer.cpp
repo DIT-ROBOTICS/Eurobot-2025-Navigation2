@@ -86,17 +86,17 @@ namespace custom_path_costmap_plugin {
                 if (config["rival_parameters"] && config["rival_parameters"]["rival_inscribed_radius"]) {
                     rival_inscribed_radius_ = config["rival_parameters"]["rival_inscribed_radius"].as<double>();
                 } else {
-                    RCLCPP_WARN(rclcpp::get_logger("RivalLayer"), "rival_inscribed_radius not found in YAML file");
+                    RCLCPP_WARN(rclcpp::get_logger("RivalLayer"), "rival_inscribed_radius not found in YAML file, using default value");
                 }
             } catch (const std::exception &e) {
-                RCLCPP_ERROR(rclcpp::get_logger("RivalLayer"), "Failed to load YAML file: %s", e.what());
+                RCLCPP_ERROR(rclcpp::get_logger("RivalLayer"), "Failed to load YAML file: %s, using default value", e.what());
             }
         } 
         // TODO: Refactor the implementation code for rival_inscribed_radius_ to avoid misleading the variable name
         rival_inscribed_radius_ += robot_inscribed_radius;
         RCLCPP_INFO(
             rclcpp::get_logger("RivalLayer"), 
-            "rival_inscribed_radius_ is %f", rival_inscribed_radius_);
+            "\033[35m Rival inscribed radius is set to %f \033[0m", rival_inscribed_radius_);
 
         node->get_parameter(name_ + "." + "halted_inflation_radius", halted_inflation_radius_);
         node->get_parameter(name_ + "." + "wandering_inflation_radius", wandering_inflation_radius_);
