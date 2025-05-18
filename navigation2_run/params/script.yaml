@@ -3,6 +3,7 @@ ScriptSim:
     points:   
       # [moving_type, x, y, w] - moving_type: path, dock, or wait(x for seconds)
       # TODO: Fix the dock
+
       - [path, 0.9, 0.8, 0.707, 0.707]
       - [path, 0.9, 0.8, 0.0, 1.0]
       - [dock, 0.45, 0.8, 0.0, 1.0]

@@ -113,6 +113,7 @@ public:
                 goal_checker_type.data = "Precise";
                 controller_selector_pub_->publish(controller_type);
                 goal_checker_selector_pub_->publish(goal_checker_type);
+
                 send_navigation_goal(x, y, z, w);
             }
             else if (moving_type == "dock" && !halt_)
@@ -180,13 +181,13 @@ private:
                 if (file_.is_open() && beacon_pose_array_.poses.size() >= 3) {
                     auto stamp = this->now().seconds();
                     file_ << index_ << "," << stamp << ",Path,"
-                        << x << "," << y << "," << z << "," << w << ","
-                        << final_pose_data_.pose.pose.position.x << "," << final_pose_data_.pose.pose.position.y << ","
-                        << lidar_pose_data_.pose.pose.position.x << "," << lidar_pose_data_.pose.pose.position.y << ","
-                        << beacon_pose_array_.poses[0].position.x << "," << beacon_pose_array_.poses[0].position.y << ","
-                        << beacon_pose_array_.poses[1].position.x << "," << beacon_pose_array_.poses[1].position.y << ","
-                        << beacon_pose_array_.poses[2].position.x << "," << beacon_pose_array_.poses[2].position.y
-                        << std::endl;
+                          << x << "," << y << "," << z << "," << w << ","
+                          << final_pose_data_.pose.pose.position.x << "," << final_pose_data_.pose.pose.position.y << ","
+                          << lidar_pose_data_.pose.pose.position.x << "," << lidar_pose_data_.pose.pose.position.y << ","
+                          << beacon_pose_array_.poses[0].position.x << "," << beacon_pose_array_.poses[0].position.y << ","
+                          << beacon_pose_array_.poses[1].position.x << "," << beacon_pose_array_.poses[1].position.y << ","
+                          << beacon_pose_array_.poses[2].position.x << "," << beacon_pose_array_.poses[2].position.y
+                          << std::endl;
                 } else {
                     RCLCPP_WARN(this->get_logger(), "Skipping CSV write: not enough lidar pose data or file not open.");
                 }
@@ -202,8 +203,7 @@ private:
     }
 
 
-    void send_docking_goal(double x, double y, double z, double w)
-    {
+    void send_docking_goal(double x, double y, double z, double w) {
         halt_ = true;
 
         if (!dock_robot_client_->wait_for_action_server(std::chrono::seconds(10)))
@@ -214,6 +214,7 @@ private:
 
         auto goal_msg = DockRobot::Goal();
         goal_msg.use_dock_id = false;
+
         goal_msg.dock_pose.header.frame_id = "map";
         goal_msg.dock_pose.header.stamp = this->now();
         goal_msg.dock_pose.pose.position.x = x;
