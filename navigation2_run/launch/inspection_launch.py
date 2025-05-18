@@ -18,6 +18,7 @@ import os
 import sys
 
 from ament_index_python.packages import get_package_share_directory # type: ignore
+# from launch_ros.substitutions import FindPackageShare # type: ignore
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, ExecuteProcess, IncludeLaunchDescription # type: ignore
@@ -31,18 +32,10 @@ def generate_launch_description():
     # Get the launch directory
     pkg_dir = get_package_share_directory('navigation2_run')
     launch_dir = os.path.join(pkg_dir, 'launch')
-    ros_domain_id = os.getenv('ROS_DOMAIN_ID')
+    params_file_name = 'nav2_params_inspection.yaml'
+    print(f'[INFO] [inspection_launch] Inspection mode activated')
 
-    if ros_domain_id == '11':
-        params_file_name = 'nav2_params_11.yaml'
-        print('[INFO] [sim_launch] ROS_DOMAIN_ID=11. Use nav2_params_11.yaml')
-    elif ros_domain_id == '14':
-        params_file_name = 'nav2_params_14.yaml'
-        print('[INFO] [sim_launch] ROS_DOMAIN_ID=14. Use nav2_params_14.yaml')
-    else:
-        params_file_name = 'nav2_params_default.yaml'
-        print(f'[INFO] [sim_launch] Unrecognized ROS_DOMAIN_ID={ros_domain_id}. Use default params file')
-
+    # Create the launch configuration variables
     namespace = LaunchConfiguration('namespace')
     use_namespace = LaunchConfiguration('use_namespace')
     map_yaml_file = LaunchConfiguration('map')
@@ -105,14 +98,14 @@ def generate_launch_description():
 
     declare_use_rviz_cmd = DeclareLaunchArgument(
         'use_rviz',
-        default_value='True',
+        default_value='False',
         description='Whether to start RVIZ')
-
+    
     declare_use_odometry_sim_cmd = DeclareLaunchArgument(
         'use_odometry_sim',
-        default_value='True',
+        default_value='False',
         description='Whether to start odometry simulation')
-
+    
     declare_robot_pose_remap_cmd = DeclareLaunchArgument(
         'robot_pose_remap',
         default_value='/final_pose_nav',
@@ -139,6 +132,14 @@ def generate_launch_description():
                           'use_odometry_sim': use_odometry_sim,
                           'use_respawn': use_respawn,
                           'robot_pose_remap': robot_pose_remap}.items())
+    
+    final_pose_bridge_cmd = Node(
+        package='navigation2_run',
+        executable='final_pose_bridge',
+        name='final_pose_bridge',
+        output='screen',
+        parameters=[params_file]
+    )
 
     system_check_cmd = Node(
         package='navigation2_run',
@@ -153,6 +154,7 @@ def generate_launch_description():
     # Declare the launch options
     ld.add_action(declare_namespace_cmd)
     ld.add_action(declare_use_namespace_cmd)
+    # ld.add_action(declare_slam_cmd)
     ld.add_action(declare_map_yaml_cmd)
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_params_file_cmd)
@@ -165,9 +167,14 @@ def generate_launch_description():
     ld.add_action(declare_use_respawn_cmd)
     ld.add_action(declare_robot_pose_remap_cmd)
 
+    # Add any conditioned actions
+
     # Add the actions to launch all of the navigation nodes
     ld.add_action(rviz_cmd)
     ld.add_action(bringup_cmd)
+
+    # Add the final pose bridge node
+    ld.add_action(final_pose_bridge_cmd)
 
     # Add the system check node
     ld.add_action(system_check_cmd)

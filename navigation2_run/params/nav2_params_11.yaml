@@ -87,9 +87,9 @@ controller_server:
     min_x_velocity_threshold: 0.001
     min_y_velocity_threshold: 0.001
     min_theta_velocity_threshold: 0.001
-    failure_tolerance: 0.2
+    failure_tolerance: 0.0
     progress_checker_plugin: "progress_checker"
-    goal_checker_plugins: ["Precise", "Loose"]
+    goal_checker_plugins: ["Precise", "Unerring", "Loose"]
     controller_plugins: ["Fast", "Slow", "LinearBoost", "AngularBoost"]
 
     # Progress checker parameters
@@ -106,6 +106,14 @@ controller_server:
       yaw_goal_tolerance: 0.05
       xy_debounce_threshold: 1
       yaw_debounce_threshold: 1
+
+    Unerring:
+      stateful: True
+      plugin: "nav2_controller::SimpleGoalChecker"
+      xy_goal_tolerance: 0.01
+      yaw_goal_tolerance: 0.05
+      xy_debounce_threshold: 5
+      yaw_debounce_threshold: 5
 
     Loose:
       stateful: True
@@ -124,20 +132,20 @@ controller_server:
       angular_kp: 3.7
       transform_tolerance: 0.1
       look_ahead_distance: 0.2
-      speed_decade: 0.7
-      costmap_tolerance: 60
+      speed_decade: 0.125
+      costmap_tolerance: 95
       keep_planning: false
       
     Slow:
       plugin: "custom_controller::CustomController"
       max_linear_vel: 0.8
       max_angular_vel: 2.0
-      linear_kp: 2.2
-      angular_kp: 3.7
+      linear_kp: 1.6
+      angular_kp: 3.0
       transform_tolerance: 0.1
       look_ahead_distance: 0.2
-      speed_decade: 0.7
-      costmap_tolerance: 60
+      speed_decade: 0.125
+      costmap_tolerance: 95
       keep_planning: false
 
     LinearBoost:
@@ -148,20 +156,20 @@ controller_server:
       angular_kp: 3.7
       transform_tolerance: 0.1
       look_ahead_distance: 0.2
-      speed_decade: 0.7
-      costmap_tolerance: 60
+      speed_decade: 0.125
+      costmap_tolerance: 95
       keep_planning: false
 
     AngularBoost:
       plugin: "custom_controller::CustomController"
-      max_linear_vel: 0.5
+      max_linear_vel: 0.8
       max_angular_vel: 12.0
-      linear_kp: 2.2
-      angular_kp: 3.7
+      linear_kp: 1.6
+      angular_kp: 3.0
       transform_tolerance: 0.1
       look_ahead_distance: 0.2
-      speed_decade: 0.7
-      costmap_tolerance: 60
+      speed_decade: 0.125
+      costmap_tolerance: 95
       keep_planning: false
 
 local_costmap:
@@ -213,15 +221,17 @@ global_costmap:
         y_cov_threshold: 0.02
         R_sq_threshold: 0.85
         reset_timeout_threshold: 70
+        robot_inscribed_radius: 0.3
+        external_rival_data_path: "/home/share/data/rival_param.yaml"
         rival_inscribed_radius: 0.22
-        halted_inflation_radius: 0.5
-        wandering_inflation_radius: 0.5
-        moving_inflation_radius: 0.4
-        unknown_inflation_radius: 0.5
-        halted_cost_scaling_factor: 4.0
-        wandering_cost_scaling_factor: 4.0
-        moving_cost_scaling_factor: 3.0
-        unknown_cost_scaling_factor: 4.0
+        halted_inflation_radius: 0.1
+        wandering_inflation_radius: 0.12
+        moving_inflation_radius: 0.1
+        unknown_inflation_radius: 0.12
+        halted_cost_scaling_factor: 10.0
+        wandering_cost_scaling_factor: 10.0
+        moving_cost_scaling_factor: 0.9
+        unknown_cost_scaling_factor: 10.0
         max_extend_length: 0.6
         cov_range_max: 0.05385164807134504  # sqrt(0.0029)
         cov_range_min: 0.01414213562373095  # sqrt(0.0002)
@@ -348,7 +358,7 @@ docking_server:
     controller_frequency: 20.0
     initial_perception_timeout: 5.0
     wait_charge_timeout: 5.0
-    dock_approach_timeout: 2.0
+    dock_approach_timeout: 3.0
     max_retries: 0
     base_frame: "base_footprint"
     fixed_frame: "map"

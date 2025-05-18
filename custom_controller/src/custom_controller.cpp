@@ -59,7 +59,7 @@ void CustomController::configure(
         });
 
     rival_pose_subscription_ = node->create_subscription<nav_msgs::msg::Odometry>(
-        "/rival_pose",  // Replace with your actual rival pose topic
+        "/rival/final_pose",  // Replace with your actual rival pose topic
         rclcpp::QoS(10),
         [this](const nav_msgs::msg::Odometry::SharedPtr msg) {
             rival_pose_ = *msg;
@@ -91,6 +91,7 @@ void CustomController::configure(
     declare_parameter_if_not_declared(node, plugin_name_ + ".costmap_tolerance", rclcpp::ParameterValue(60));
     declare_parameter_if_not_declared(node, plugin_name_ + ".speed_decade", rclcpp::ParameterValue(0.7));
     declare_parameter_if_not_declared(node, plugin_name_ + ".keep_planning", rclcpp::ParameterValue(true));
+    declare_parameter_if_not_declared(node, plugin_name_ + ".spin_delay_threshold", rclcpp::ParameterValue(0.5));
     
     //declare_parameter_if_not_declared(node, plugin_name_ + ".keepPlan", rclcpp::ParameterValue(ture));
     // Get parameters from the config file
@@ -107,6 +108,7 @@ void CustomController::configure(
     node->get_parameter(plugin_name_ + ".costmap_tolerance", costmap_tolerance_);
     node->get_parameter(plugin_name_ + ".speed_decade", speed_decade_);
     node->get_parameter(plugin_name_ + ".keep_planning", keep_planning_);
+    node->get_parameter(plugin_name_ + ".spin_delay_threshold", spin_delay_threshold_);
     double transform_tolerance;
     
     node->get_parameter(plugin_name_ + ".transform_tolerance", transform_tolerance);
@@ -297,7 +299,7 @@ double CustomController::getGoalAngle(double cur_angle, double goal_angle) {
     double ang_diff_ = goal_angle - cur_angle;
 
     if(controller_function_ == "DelaySpin") {
-        if(cur_pose_.distanceTo(vector_global_path_[0]) < 0.15 && cur_pose_.distanceTo(vector_global_path_.back()) > 0.15) {
+        if(cur_pose_.distanceTo(vector_global_path_[0]) < spin_delay_threshold_ && cur_pose_.distanceTo(vector_global_path_.back()) > spin_delay_threshold_) {
             return 0.0;
         } else {
             controller_function_ = "None";
@@ -472,7 +474,7 @@ geometry_msgs::msg::TwistStamped CustomController::computeVelocityCommands(
 
     cmd_vel.twist.angular.z = getGoalAngle(cur_pose_.theta_, final_goal_angle_);
     double vel_ = sqrt(pow(cmd_vel.twist.linear.x, 2) + pow(cmd_vel.twist.linear.y, 2));
-    check_distance_ = std::max(vel_ * 2.5,look_ahead_distance_);
+    check_distance_ = std::max(vel_ * 1.0,look_ahead_distance_);
     check_index_ = getIndex(cur_pose_, vector_global_path_, check_distance_);
     current_index_ = getIndex(cur_pose_, vector_global_path_, look_ahead_distance_);
     last_vel_x_ = cmd_vel.twist.linear.x;
@@ -483,6 +485,7 @@ geometry_msgs::msg::TwistStamped CustomController::computeVelocityCommands(
             std_msgs::msg::Bool goal_reach;
             goal_reach.data = true;
             goal_reach_pub_->publish(goal_reach);
+            RCLCPP_INFO(logger_, "Goal reached sented");
     }
   
     if(isObstacleExist_){
@@ -490,6 +493,9 @@ geometry_msgs::msg::TwistStamped CustomController::computeVelocityCommands(
         cmd_vel.twist.linear.y = last_vel_y_ * speed_decade_;
         cmd_vel.twist.angular.z = 0.0;
         update_plan_ = true;
+        if(abs(cmd_vel.twist.linear.x) < 0.1 && abs(cmd_vel.twist.linear.y) < 0.1){
+            throw nav2_core::PlannerException("Obstacle detected");
+        }
         return cmd_vel;
     }
     
