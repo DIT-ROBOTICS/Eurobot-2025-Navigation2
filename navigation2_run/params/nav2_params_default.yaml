@@ -358,7 +358,7 @@ docking_server:
     controller_frequency: 20.0
     initial_perception_timeout: 5.0
     wait_charge_timeout: 5.0
-    dock_approach_timeout: 2.0
+    dock_approach_timeout: 3.0
     max_retries: 0
     base_frame: "base_footprint"
     fixed_frame: "map"

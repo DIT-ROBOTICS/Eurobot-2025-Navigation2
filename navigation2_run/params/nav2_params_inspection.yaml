@@ -133,7 +133,7 @@ controller_server:
       transform_tolerance: 0.1
       look_ahead_distance: 0.2
       speed_decade: 0.125
-      costmap_tolerance: 60
+      costmap_tolerance: 95
       keep_planning: false
       
     Slow:
@@ -145,7 +145,7 @@ controller_server:
       transform_tolerance: 0.1
       look_ahead_distance: 0.2
       speed_decade: 0.125
-      costmap_tolerance: 60
+      costmap_tolerance: 95
       keep_planning: false
 
     LinearBoost:
@@ -157,7 +157,7 @@ controller_server:
       transform_tolerance: 0.1
       look_ahead_distance: 0.2
       speed_decade: 0.125
-      costmap_tolerance: 60
+      costmap_tolerance: 95
       keep_planning: false
 
     AngularBoost:
@@ -169,7 +169,7 @@ controller_server:
       transform_tolerance: 0.1
       look_ahead_distance: 0.2
       speed_decade: 0.125
-      costmap_tolerance: 60
+      costmap_tolerance: 95
       keep_planning: false
 
 local_costmap:
@@ -358,7 +358,7 @@ docking_server:
     controller_frequency: 20.0
     initial_perception_timeout: 5.0
     wait_charge_timeout: 5.0
-    dock_approach_timeout: 2.0
+    dock_approach_timeout: 3.0
     max_retries: 0
     base_frame: "base_footprint"
     fixed_frame: "map"
