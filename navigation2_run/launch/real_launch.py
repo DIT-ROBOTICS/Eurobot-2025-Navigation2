@@ -150,6 +150,13 @@ def generate_launch_description():
         parameters=[params_file]
     )
 
+    system_check_cmd = Node(
+        package='navigation2_run',
+        executable='system_check',
+        name='system_check',
+        output='screen'
+    )
+
     # Create the launch description and populate
     ld = LaunchDescription()
 
@@ -177,5 +184,8 @@ def generate_launch_description():
 
     # Add the final pose bridge node
     ld.add_action(final_pose_bridge_cmd)
+
+    # Add the system check node
+    ld.add_action(system_check_cmd)
 
     return ld
