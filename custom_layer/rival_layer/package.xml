@@ -16,6 +16,7 @@
   <depend>nav2_costmap_2d</depend>
   <depend>pluginlib</depend>
   <depend>nav_msgs</depend>
+  <depend>yaml-cpp</depend>
 
   <export>
     <costmap_2d plugin="${prefix}/rival_layer.xml"/>

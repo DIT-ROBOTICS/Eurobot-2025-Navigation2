@@ -30,6 +30,8 @@ namespace custom_path_costmap_plugin {
         declareParameter("reset_timeout_threshold", rclcpp::ParameterValue(40));
 
         declareParameter("robot_inscribed_radius", rclcpp::ParameterValue(0.22));
+        // If given external_rival_data_path, use it to load the rival's data
+        declareParameter("external_rival_data_path", rclcpp::ParameterValue(""));
         declareParameter("rival_inscribed_radius", rclcpp::ParameterValue(0.22));
 
         declareParameter("halted_inflation_radius", rclcpp::ParameterValue(0.1));
@@ -75,9 +77,27 @@ namespace custom_path_costmap_plugin {
 
         double robot_inscribed_radius;
         node->get_parameter(name_ + "." + "robot_inscribed_radius", robot_inscribed_radius);
-        node->get_parameter(name_ + "." + "rival_inscribed_radius", rival_inscribed_radius_);
+        std::string external_rival_data_path;
+        node->get_parameter(name_ + "." + "external_rival_data_path", external_rival_data_path);
+        if (!external_rival_data_path.empty()) {
+            try {
+                YAML::Node config = YAML::LoadFile(external_rival_data_path);
+                if (config["rival_parameters"] && config["rival_parameters"]["rival_inscribed_radius"]) {
+                    rival_inscribed_radius_ = config["rival_parameters"]["rival_inscribed_radius"].as<double>();
+                } else {
+                    RCLCPP_WARN(rclcpp::get_logger("RivalLayer"), "rival_inscribed_radius not found in YAML file");
+                }
+            } catch (const std::exception &e) {
+                RCLCPP_ERROR(rclcpp::get_logger("RivalLayer"), "Failed to load YAML file: %s", e.what());
+            }
+        } else {
+            node->get_parameter(name_ + "." + "rival_inscribed_radius", rival_inscribed_radius_);
+        }
         // TODO: Refactor the implementation code for rival_inscribed_radius_ to avoid misleading the variable name
         rival_inscribed_radius_ += robot_inscribed_radius;
+        RCLCPP_INFO(
+            rclcpp::get_logger("RivalLayer"), 
+            "rival_inscribed_radius_ is %f", rival_inscribed_radius_);
 
         node->get_parameter(name_ + "." + "halted_inflation_radius", halted_inflation_radius_);
         node->get_parameter(name_ + "." + "wandering_inflation_radius", wandering_inflation_radius_);
