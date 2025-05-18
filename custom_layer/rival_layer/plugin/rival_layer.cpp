@@ -389,8 +389,12 @@ namespace custom_path_costmap_plugin {
                 if (worldToMap(mark_x, mark_y, mx, my)) {
                     Distance = sqrt(pow(fabs(x - currentPointX), 2) + pow(fabs(y - currentPointY), 2));
 
-                    cost = ceil(252 * exp(-CostScalingFactor * (Distance - InscribedRadius)));
-                    cost = std::max(std::min(cost, MaxCost), 0.0);
+                    if (Distance <= InscribedRadius) {
+                        cost = MaxCost;
+                    } else {
+                        cost = ceil(252 * exp(-CostScalingFactor * (Distance - InscribedRadius)));
+                        cost = std::max(std::min(cost, MaxCost), 0.0);
+                    }
                     
                     if (getCost(mx, my) != nav2_costmap_2d::NO_INFORMATION) {
                         setCost(mx, my, std::max((unsigned char)cost, getCost(mx, my)));
