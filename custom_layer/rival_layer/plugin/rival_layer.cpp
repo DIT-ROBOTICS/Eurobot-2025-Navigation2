@@ -96,7 +96,7 @@ namespace custom_path_costmap_plugin {
         rival_inscribed_radius_ += robot_inscribed_radius;
         RCLCPP_INFO(
             rclcpp::get_logger("RivalLayer"), 
-            "\033[35m Rival inscribed radius is set to %f \033[0m", rival_inscribed_radius_);
+            "\033[1;35mRival inscribed radius is set to %f\033[0m", rival_inscribed_radius_);
 
         node->get_parameter(name_ + "." + "halted_inflation_radius", halted_inflation_radius_);
         node->get_parameter(name_ + "." + "wandering_inflation_radius", wandering_inflation_radius_);
