@@ -12,7 +12,6 @@
 #include "std_srvs/srv/set_bool.hpp"
 
 #include <yaml-cpp/yaml.h>
-#include <fstream>
 
 // Circular Queue for rival's path      |front| ____ <--- ____ |rear|
 class CircularQueue {

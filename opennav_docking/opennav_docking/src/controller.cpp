@@ -268,6 +268,7 @@ void Controller::publishLocalGoal() {
 void Controller::declareAllControlParams()
 {
     std::vector<std::pair<std::string, rclcpp::ParameterValue>> params = {
+        {"external_rival_data_path", rclcpp::ParameterValue("")},
         {"max_linear_vel", rclcpp::ParameterValue(0.5)},
         {"min_linear_vel", rclcpp::ParameterValue(0.1)},
         {"max_angular_vel", rclcpp::ParameterValue(3.0)},
@@ -313,9 +314,38 @@ void Controller::updateParams() {
     node_->get_parameter(param_name_ + ".angular_kp", angular_kp_);
     node_->get_parameter(param_name_ + ".look_ahead_distance", look_ahead_distance_);
     node_->get_parameter(param_name_ + ".deceleration_distance", deceleration_distance_);
+    RCLCPP_INFO(
+        rclcpp::get_logger("DockController"), 
+        "\033[1;35m %s deceleration distance is set to %f \033[0m", param_name_.c_str(), deceleration_distance_);
     node_->get_parameter(param_name_ + ".reserved_distance", reserved_distance_);
     node_->get_parameter(param_name_ + ".stop_degree", stop_degree_);
     node_->get_parameter(param_name_ + ".rival_radius", rival_radius_);
+    std::string external_rival_data_path;
+    node_->get_parameter(param_name_ + ".external_rival_data_path", external_rival_data_path);
+    if(!external_rival_data_path.empty()) {
+        try {
+            YAML::Node config = YAML::LoadFile(external_rival_data_path);
+            if(config["dock_rival_parameters"] && config["dock_rival_parameters"]["dock_rival_radius"]) {
+                rival_radius_ = config["dock_rival_parameters"]["dock_rival_radius"].as<double>();
+            } else {
+                RCLCPP_WARN(rclcpp::get_logger("DockController"), "dock_rival_radius not found in YAML file, using default value");
+            }
+
+            if(config["dock_rival_parameters"] && config["dock_rival_parameters"]["dock_rival_degree"]) {
+                stop_degree_ = config["dock_rival_parameters"]["dock_rival_degree"].as<double>();
+            } else {
+                RCLCPP_WARN(rclcpp::get_logger("DockController"), "dock_rival_degree not found in YAML file, using default value");
+            }
+        } catch (const std::exception &e) {
+            RCLCPP_ERROR(rclcpp::get_logger("DockController"), "Failed to load YAML file: %s, using default value", e.what());
+        }
+    }
+    RCLCPP_INFO(
+        rclcpp::get_logger("DockController"), 
+        "\033[1;35m %s rival radius is set to %f \033[0m", param_name_.c_str(), rival_radius_);
+    RCLCPP_INFO(
+        rclcpp::get_logger("DockController"), 
+        "\033[1;35m %s rival stop degree is set to %f \033[0m", param_name_.c_str(), stop_degree_);
 }
 
 }  // namespace opennav_docking

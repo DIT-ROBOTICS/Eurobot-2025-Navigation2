@@ -34,6 +34,8 @@
 #include "tf2/utils.h"
 #include "std_msgs/msg/string.hpp"
 
+#include <yaml-cpp/yaml.h>
+
 namespace opennav_docking
 {
 class RobotState {

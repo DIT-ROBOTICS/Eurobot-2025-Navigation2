@@ -14,6 +14,8 @@
 #include "std_msgs/msg/string.hpp"
 #include "std_msgs/msg/bool.hpp"
 
+#include <yaml-cpp/yaml.h>
+
 namespace custom_controller{
 class RobotState {
    public:

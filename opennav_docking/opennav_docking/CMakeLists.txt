@@ -21,6 +21,7 @@ find_package(pluginlib REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
 find_package(opennav_docking_msgs REQUIRED)
 find_package(opennav_docking_core REQUIRED)
+find_package(yaml-cpp REQUIRED)
 
 # potentially replace with nav2_common, nav2_package()
 set(CMAKE_CXX_STANDARD 17)
@@ -61,6 +62,8 @@ add_library(${library_name} SHARED
   src/dock_database.cpp
   src/navigator.cpp
 )
+
+target_link_libraries(${library_name} yaml-cpp)
 
 ament_target_dependencies(${library_name}
   ${dependencies}

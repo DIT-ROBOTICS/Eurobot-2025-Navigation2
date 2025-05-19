@@ -77,6 +77,7 @@ void CustomController::configure(
     goal_reach_pub_ = node->create_publisher<std_msgs::msg::Bool>("goal_reached", 5);
 
     // Declare parameters if not declared
+    declare_parameter_if_not_declared(node, plugin_name_ + ".external_velocity_data_path", rclcpp::ParameterValue(""));
     declare_parameter_if_not_declared(node, plugin_name_ + ".max_linear_vel", rclcpp::ParameterValue(0.7));
     declare_parameter_if_not_declared(node, plugin_name_ + ".min_linear_vel", rclcpp::ParameterValue(0.0));
     declare_parameter_if_not_declared(node, plugin_name_ + ".max_angular_vel", rclcpp::ParameterValue(3.0));
@@ -95,10 +96,37 @@ void CustomController::configure(
     
     //declare_parameter_if_not_declared(node, plugin_name_ + ".keepPlan", rclcpp::ParameterValue(ture));
     // Get parameters from the config file
+    std::string external_velocity_data_path;
+    node->get_parameter(plugin_name_ + ".external_velocity_data_path", external_velocity_data_path);
     node->get_parameter(plugin_name_ + ".max_linear_vel", max_linear_vel_);
     node->get_parameter(plugin_name_ + ".min_linear_vel", min_linear_vel_);
     node->get_parameter(plugin_name_ + ".max_angular_vel", max_angular_vel_);
     node->get_parameter(plugin_name_ + ".min_angular_vel", min_angular_vel_);
+    if(!external_velocity_data_path.empty()) {
+        try {
+            YAML::Node config = YAML::LoadFile(external_velocity_data_path);
+            if(config["robot_parameters"] && config["robot_parameters"]["max_linear_velocity"]) {
+                max_linear_vel_ = config["robot_parameters"]["max_linear_velocity"].as<double>();
+            } else {
+                RCLCPP_WARN(rclcpp::get_logger("CustomController"), "max_linear_velocity not found in YAML file, using default value");
+            }
+
+            if(config["robot_parameters"] && config["robot_parameters"]["max_angular_velocity"]) {
+                max_angular_vel_ = config["robot_parameters"]["max_angular_velocity"].as<double>();
+            } else {
+                RCLCPP_WARN(rclcpp::get_logger("CustomController"), "max_angular_velocity not found in YAML file, using default value");
+            }
+        } catch (const std::exception &e) {
+            RCLCPP_ERROR(rclcpp::get_logger("CustomController"), "Failed to load YAML file: %s, using default value", e.what());
+        }
+    }
+    RCLCPP_INFO(
+        rclcpp::get_logger("CustomController"), 
+        "\033[1;35m %s max linear velocity is set to %f \033[0m", plugin_name_.c_str(), max_linear_vel_);
+    RCLCPP_INFO(
+        rclcpp::get_logger("CustomController"), 
+        "\033[1;35m %s max angular velocity is set to %f \033[0m", plugin_name_.c_str(), max_angular_vel_);
+
     node->get_parameter(plugin_name_ + ".max_linear_acc", max_linear_acc_);
     node->get_parameter(plugin_name_ + ".max_angular_acc", max_angular_acc_);
     node->get_parameter(plugin_name_ + ".yaw_goal_tolerance", yaw_goal_tolerance_);
