@@ -126,6 +126,7 @@ controller_server:
     # Controller parameters
     Fast:
       plugin: "custom_controller::CustomController"
+      external_velocity_data_path: "/home/share/data/nav_fast_params.yaml"
       max_linear_vel: 1.1
       max_angular_vel: 12.0
       linear_kp: 2.2
@@ -138,6 +139,7 @@ controller_server:
       
     Slow:
       plugin: "custom_controller::CustomController"
+      external_velocity_data_path: "/home/share/data/nav_slow_params.yaml"
       max_linear_vel: 0.8
       max_angular_vel: 2.0
       linear_kp: 1.6
@@ -150,6 +152,7 @@ controller_server:
 
     LinearBoost:
       plugin: "custom_controller::CustomController"
+      external_velocity_data_path: "/home/share/data/nav_linearBoost_params.yaml"
       max_linear_vel: 1.1
       max_angular_vel: 2.0
       linear_kp: 2.2
@@ -162,6 +165,7 @@ controller_server:
 
     AngularBoost:
       plugin: "custom_controller::CustomController"
+      external_velocity_data_path: "/home/share/data/nav_angularBoost_params.yaml"
       max_linear_vel: 0.8
       max_angular_vel: 12.0
       linear_kp: 1.6
@@ -222,7 +226,7 @@ global_costmap:
         R_sq_threshold: 0.85
         reset_timeout_threshold: 70
         robot_inscribed_radius: 0.3
-        external_rival_data_path: "/home/share/data/rival_param.yaml"
+        external_rival_data_path: "/home/share/data/rival_params.yaml"
         rival_inscribed_radius: 0.22
         halted_inflation_radius: 0.1
         wandering_inflation_radius: 0.12
@@ -401,6 +405,7 @@ docking_server:
       angular_kp: 4.0
       deceleration_distance: 0.05
       reserved_distance: 0.0
+      external_rival_data_path: "/home/share/data/rival_params.yaml"
       stop_degree: 120.0
       rival_radius: 0.44
 
@@ -413,6 +418,7 @@ docking_server:
       angular_kp: 4.0
       deceleration_distance: 0.05
       reserved_distance: 0.0
+      external_rival_data_path: "/home/share/data/rival_params.yaml"
       stop_degree: 120.0
       rival_radius: 0.44
 
@@ -425,6 +431,7 @@ docking_server:
       angular_kp: 4.0
       deceleration_distance: 0.05
       reserved_distance: 0.0
+      external_rival_data_path: "/home/share/data/rival_params.yaml"
       stop_degree: 120.0
       rival_radius: 0.44
 
