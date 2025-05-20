@@ -29,7 +29,7 @@ namespace nav2_behaviors
     protected:
         rclcpp::TimerBase::SharedPtr target_update_timer_;
         void targetUpdateCallback();
-
+        bool abort_escape = false;
         double map_x, map_y;
         int map_width, map_height;
         double rival_x, rival_y;
