@@ -52,16 +52,16 @@ namespace nav2_behavior_tree
         return false;
     }
 
-    incline BT::NodeStatus SetupUpdater::tick()
+    inline BT::NodeStatus SetupUpdater::tick()
     {
         if(status() == BT::NodeStatus::IDLE) {
-            config.blackboard->get<std::vector<geometry_msgs::msg::PoseStamped>>("goals", goals_);
-            config.blackboard->get<geometry_msgs::msg::PoseStamped>("goal", goal_);
+            config().blackboard->get<std::vector<geometry_msgs::msg::PoseStamped>>("goals", goals_);
+            config().blackboard->get<geometry_msgs::msg::PoseStamped>("goal", goal_);
         }
 
         if(goalUpdated()) requestShrinkBack();
 
-        return BT::NodeStatus::SUCCESS;
+        return child_node_->executeTick();
     }
 }
 

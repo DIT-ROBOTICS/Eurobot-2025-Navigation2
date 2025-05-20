@@ -26,7 +26,7 @@ namespace nav2_behavior_tree
             std::vector<geometry_msgs::msg::PoseStamped> goals_;
             void requestShrinkBack();
             bool goalUpdated();
-    }
+    };
 }
 
 
