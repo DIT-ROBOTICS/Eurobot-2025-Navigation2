@@ -42,10 +42,12 @@ namespace nav2_behavior_tree
         config().blackboard->get<std::vector<geometry_msgs::msg::PoseStamped>>("goals", current_goals);
         geometry_msgs::msg::PoseStamped current_goal;
         config().blackboard->get<geometry_msgs::msg::PoseStamped>("goal", current_goal);
-
+        RCLCPP_INFO(node_->get_logger(), "current goalUpdated: %f, %f", current_goal.pose.position.x, current_goal.pose.position.y);
+        RCLCPP_INFO(node_->get_logger(), "goal goalUpdated: %f, %f", goal_.pose.position.x, goal_.pose.position.y);
         if (goal_ != current_goal || goals_ != current_goals) {
             goal_ = current_goal;
             goals_ = current_goals;
+            RCLCPP_ERROR(node_->get_logger(), "Goal updated");
             return true;
         }
 
@@ -58,7 +60,6 @@ namespace nav2_behavior_tree
             config().blackboard->get<std::vector<geometry_msgs::msg::PoseStamped>>("goals", goals_);
             config().blackboard->get<geometry_msgs::msg::PoseStamped>("goal", goal_);
         }
-
         if(goalUpdated()) requestShrinkBack();
 
         return child_node_->executeTick();
