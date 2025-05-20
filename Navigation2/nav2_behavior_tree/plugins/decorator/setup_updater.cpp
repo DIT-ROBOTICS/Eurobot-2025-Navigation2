@@ -14,6 +14,10 @@ namespace nav2_behavior_tree
         shrink_client_ = node_->create_client<std_srvs::srv::SetBool>(
             "/shrink/doneShrink",
             rmw_qos_profile_services_default);
+
+        // get init goal and goals from blackboard
+        config().blackboard->get<std::vector<geometry_msgs::msg::PoseStamped>>("goals", current_goal_list);
+        config().blackboard->get<geometry_msgs::msg::PoseStamped>("goal", current_goal);
     }
 
     void SetupUpdater::requestShrinkBack()
@@ -38,15 +42,11 @@ namespace nav2_behavior_tree
     }
 
     bool SetupUpdater::goalUpdated(){
-        std::vector<geometry_msgs::msg::PoseStamped> current_goals;
-        config().blackboard->get<std::vector<geometry_msgs::msg::PoseStamped>>("goals", current_goals);
-        geometry_msgs::msg::PoseStamped current_goal;
-        config().blackboard->get<geometry_msgs::msg::PoseStamped>("goal", current_goal);
-        RCLCPP_INFO(node_->get_logger(), "current goalUpdated: %f, %f", current_goal.pose.position.x, current_goal.pose.position.y);
-        RCLCPP_INFO(node_->get_logger(), "goal goalUpdated: %f, %f", goal_.pose.position.x, goal_.pose.position.y);
-        if (goal_ != current_goal || goals_ != current_goals) {
-            goal_ = current_goal;
-            goals_ = current_goals;
+        config().blackboard->get<std::vector<geometry_msgs::msg::PoseStamped>>("goals", incomming_goal_list);
+        config().blackboard->get<geometry_msgs::msg::PoseStamped>("goal", incomming_goal);
+        if (current_goal != incomming_goal || current_goal_list != incomming_goal_list) {
+            current_goal = incomming_goal;
+            current_goal_list = incomming_goal_list;
             RCLCPP_ERROR(node_->get_logger(), "Goal updated");
             return true;
         }
@@ -56,10 +56,6 @@ namespace nav2_behavior_tree
 
     inline BT::NodeStatus SetupUpdater::tick()
     {
-        if(status() == BT::NodeStatus::IDLE) {
-            config().blackboard->get<std::vector<geometry_msgs::msg::PoseStamped>>("goals", goals_);
-            config().blackboard->get<geometry_msgs::msg::PoseStamped>("goal", goal_);
-        }
         if(goalUpdated()) requestShrinkBack();
 
         return child_node_->executeTick();

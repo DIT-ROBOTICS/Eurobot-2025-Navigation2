@@ -22,8 +22,10 @@ namespace nav2_behavior_tree
         private:
             rclcpp::Node::SharedPtr node_;
             rclcpp::Client<std_srvs::srv::SetBool>::SharedPtr shrink_client_;
-            geometry_msgs::msg::PoseStamped goal_;
-            std::vector<geometry_msgs::msg::PoseStamped> goals_;
+            geometry_msgs::msg::PoseStamped incomming_goal;
+            std::vector<geometry_msgs::msg::PoseStamped> incomming_goal_list;
+            geometry_msgs::msg::PoseStamped current_goal;
+            std::vector<geometry_msgs::msg::PoseStamped> current_goal_list;
             void requestShrinkBack();
             bool goalUpdated();
     };
