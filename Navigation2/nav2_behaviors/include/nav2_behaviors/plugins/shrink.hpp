@@ -29,6 +29,7 @@ namespace nav2_behaviors
             const std::shared_ptr<std_srvs::srv::SetBool::Response> response);
         rclcpp::Client<std_srvs::srv::SetBool>::SharedPtr setMode_rival_client;
         rclcpp::Client<std_srvs::srv::SetBool>::SharedPtr setMode_object_client;
+        rclcpp::Client<std_srvs::srv::SetBool>::SharedPtr setMode_inflation_client;
 
     protected:
         int times;

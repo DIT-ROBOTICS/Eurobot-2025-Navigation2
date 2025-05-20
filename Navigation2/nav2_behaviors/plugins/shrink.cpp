@@ -50,6 +50,11 @@ namespace nav2_behaviors
             "/object_layer/set_mode", 
             rmw_qos_profile_services_default
         );
+
+        setMode_inflation_client = node->create_client<std_srvs::srv::SetBool>(
+            "/inflation_layer/set_mode", 
+            rmw_qos_profile_services_default
+        );
         getOriginalParam();
 
     }
@@ -142,32 +147,28 @@ namespace nav2_behaviors
     }
 
     void Shrink::changeInflationLayer(bool doShrink) {
-        double radius = doShrink ? 0.15 : original_inflation_radius;
-        if (radius_param_client->service_is_ready()) {
-            radius_param_client->set_parameters({rclcpp::Parameter("inflation_layer.inflation_radius", radius)},
-                [this, radius](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future) {
-                    // Add timeout check
-                    if (future.wait_for(std::chrono::seconds(1)) != std::future_status::ready) {
-                        RCLCPP_ERROR(logger_, "Timeout setting inflation_radius to %f", radius);
-                        return;
-                    }
-                    
-                    // Add try-catch
-                    try {
-                        auto result = future.get();
-                        if (result[0].successful) {
-                            RCLCPP_INFO(logger_, "Set inflation_radius successfully to %f", radius);
-                        } else {
-                            RCLCPP_ERROR(logger_, "Failed to set inflation_radius to %f: %s", 
-                                        radius, result[0].reason.c_str());
-                        }
-                    } catch (const std::exception& e) {
-                        RCLCPP_ERROR(logger_, "Exception setting inflation_radius: %s", e.what());
-                    }
-                });
-        } else {
+        if (!setMode_inflation_client->service_is_ready()) {
             RCLCPP_ERROR(logger_, "Service is not ready for inflation layer");
+            return;
         }
+        auto request = std::make_shared<std_srvs::srv::SetBool::Request>();
+        request->data = doShrink;
+
+        setMode_inflation_client->async_send_request(
+            request,
+            [this, doShrink](rclcpp::Client<std_srvs::srv::SetBool>::SharedFuture future) {
+                try {
+                    auto response = future.get();
+                    if (response->success) {
+                        RCLCPP_INFO(logger_, "Inflation layer mode set to %s", doShrink ? "shrink" : "original");
+                    } else {
+                        RCLCPP_ERROR(logger_, "Failed to set inflation layer mode: %s", response->message.c_str());
+                    }
+                } catch (const std::exception& e) {
+                    RCLCPP_ERROR(logger_, "Exception in inflation layer callback: %s", e.what());
+                }
+            });
+
         RCLCPP_INFO(logger_, "Requested inflation layer update");
     }
 
