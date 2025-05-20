@@ -30,7 +30,7 @@ namespace nav2_behavior_tree
     sub_options.callback_group = callback_group_;
     stop_sub = node_->create_subscription<std_msgs::msg::Bool>(
       "/stopRobot", 
-      rclcpp::SystemDefaultsQoS(),
+      rclcpp::QoS(1).reliable().transient_local(),
       std::bind(&StopController::stopCallback, this, std::placeholders::_1),
       sub_options);
     
@@ -51,6 +51,7 @@ namespace nav2_behavior_tree
   void StopController::stopCallback(const std_msgs::msg::Bool::SharedPtr msg)
   {
     stop_robot = msg->data;
+    RCLCPP_INFO(node_->get_logger(), "\033[1;34mReceived stop message: %s\033[0m", msg->data ? "true" : "false");
   }
 
   void StopController::shrinkBackCallBack(const std_msgs::msg::Bool::SharedPtr msg)
