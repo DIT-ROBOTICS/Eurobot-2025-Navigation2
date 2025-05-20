@@ -268,21 +268,15 @@ void Controller::publishLocalGoal() {
 void Controller::declareAllControlParams()
 {
     std::vector<std::pair<std::string, rclcpp::ParameterValue>> params = {
-        {"external_rival_data_path", rclcpp::ParameterValue("")},
         {"max_linear_vel", rclcpp::ParameterValue(0.5)},
         {"min_linear_vel", rclcpp::ParameterValue(0.1)},
-        {"max_angular_vel", rclcpp::ParameterValue(3.0)},
-        {"min_angular_vel", rclcpp::ParameterValue(0.0)},
-        {"max_linear_acc", rclcpp::ParameterValue(0.3)},
-        {"max_angular_acc", rclcpp::ParameterValue(1.0)},
-        {"linear_ki_accel_vel", rclcpp::ParameterValue(0.7)},
         {"linear_kp_accel_vel", rclcpp::ParameterValue(0.5)},
+        {"linear_ki_accel_vel", rclcpp::ParameterValue(0.7)},
         {"linear_kp_decel_dis", rclcpp::ParameterValue(3.0)},
-        {"linear_kp_decel_vel", rclcpp::ParameterValue(0.9)},
         {"angular_kp", rclcpp::ParameterValue(4.0)},
-        {"look_ahead_distance", rclcpp::ParameterValue(1.0)},
         {"deceleration_distance", rclcpp::ParameterValue(0.1)},
         {"reserved_distance", rclcpp::ParameterValue(0.03)},
+        {"external_rival_data_path", rclcpp::ParameterValue("")},
         {"stop_degree", rclcpp::ParameterValue(45.0)},
         {"rival_radius", rclcpp::ParameterValue(0.44)},
     };
@@ -303,16 +297,10 @@ void Controller::declareAllControlParams()
 void Controller::updateParams() {
     node_->get_parameter(param_name_ + ".max_linear_vel", max_linear_vel_);
     node_->get_parameter(param_name_ + ".min_linear_vel", min_linear_vel_);
-    node_->get_parameter(param_name_ + ".max_angular_vel", max_angular_vel_);
-    node_->get_parameter(param_name_ + ".min_angular_vel", min_angular_vel_);
-    node_->get_parameter(param_name_ + ".max_linear_acc", max_linear_acc_);
-    node_->get_parameter(param_name_ + ".max_angular_acc", max_angular_acc_);
-    node_->get_parameter(param_name_ + ".linear_ki_accel_vel", linear_ki_accel_vel_);
     node_->get_parameter(param_name_ + ".linear_kp_accel_vel", linear_kp_accel_vel_);
+    node_->get_parameter(param_name_ + ".linear_ki_accel_vel", linear_ki_accel_vel_);
     node_->get_parameter(param_name_ + ".linear_kp_decel_dis", linear_kp_decel_dis_);
-    node_->get_parameter(param_name_ + ".linear_kp_decel_vel", linear_kp_decel_vel_);
     node_->get_parameter(param_name_ + ".angular_kp", angular_kp_);
-    node_->get_parameter(param_name_ + ".look_ahead_distance", look_ahead_distance_);
     node_->get_parameter(param_name_ + ".deceleration_distance", deceleration_distance_);
     RCLCPP_INFO(
         rclcpp::get_logger("DockController"), 
