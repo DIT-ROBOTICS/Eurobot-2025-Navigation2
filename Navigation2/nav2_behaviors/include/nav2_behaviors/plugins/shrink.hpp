@@ -23,7 +23,6 @@ namespace nav2_behaviors
         Status onCycleUpdate() override;
         bool noCostInMiddle();
         bool noCostAtGoal();
-        rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr shrinkback_pub;
         rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr shrinkCheck_srv;
         void handleShrinkCheck(
             const std::shared_ptr<std_srvs::srv::SetBool::Request> request,
@@ -37,12 +36,6 @@ namespace nav2_behaviors
         bool shrinkBack;
         double costmap_tolerance;
         double original_inflation_radius;
-        double original_rival_halted_radius;
-        double original_rival_wandering_radius;
-        double original_rival_moving_radius;
-        double original_rival_unknown_radius;
-        double original_object_board_radius;
-        double original_object_column_radius;
         double getOneGridCost(double x, double y);
         void costmapCallback(const nav_msgs::msg::OccupancyGrid& msg);
         void goalPoseCallback(const geometry_msgs::msg::PoseStamped& msg);
@@ -61,7 +54,6 @@ namespace nav2_behaviors
         void getOriginalParam();
         void setToOriginal();
         void setToShrink();
-        void tellStopToShrinkBack();
     };
 }
 

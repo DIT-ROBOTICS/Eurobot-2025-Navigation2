@@ -41,11 +41,6 @@ namespace nav2_behaviors
             std::bind(&Shrink::handleShrinkCheck, this, std::placeholders::_1, std::placeholders::_2)
         );
 
-        shrinkback_pub = node->create_publisher<std_msgs::msg::Bool>(
-            "/shrink/shrinkback", 
-            rclcpp::SystemDefaultsQoS()
-        );
-
         setMode_rival_client = node->create_client<std_srvs::srv::SetBool>(
             "/rival_layer/set_mode", 
             rmw_qos_profile_services_default
@@ -55,6 +50,8 @@ namespace nav2_behaviors
             "/object_layer/set_mode", 
             rmw_qos_profile_services_default
         );
+        getOriginalParam();
+
     }
 
     Status Shrink::onRun(const std::shared_ptr<const ShrinkAction::Goal> command){
@@ -68,21 +65,13 @@ namespace nav2_behaviors
 
     Status Shrink::onCycleUpdate(){
         times++;
-        if(times == 1){
-            getOriginalParam();
-        }
-        else if(times == 3){
+        if(times == 3){
             setToShrink();
-            shrinkBack = false;
-            std_msgs::msg::Bool msg;
-            msg.data = shrinkBack;
-            shrinkback_pub->publish(msg);
         }
 
         if(noCostInMiddle() && noCostAtGoal() && times > 20){
             times = 0;
             shrinkBack = true;
-            tellStopToShrinkBack();
             return Status::SUCCEEDED;
         }
         else if(times > 20){
@@ -93,17 +82,9 @@ namespace nav2_behaviors
             RCLCPP_INFO(logger_, "obstacle detected at the center of the goal: the center %f, %f; the cost: %d", robotPose.pose.position.x, goalPose.pose.position.y, goal_cost);
             times = 0;
             shrinkBack = true;
-            tellStopToShrinkBack();
             return Status::FAILED;
         }
         else return Status::RUNNING;
-    }
-
-    void Shrink::tellStopToShrinkBack(){
-        std_msgs::msg::Bool msg;
-        msg.data = shrinkBack;
-        shrinkback_pub->publish(msg);
-        RCLCPP_INFO(logger_, "tell stop to shrink back");
     }
 
     void Shrink::handleShrinkCheck(
