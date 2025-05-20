@@ -1,36 +1,36 @@
 <root main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
-    <RecoveryNode number_of_retries="3" name="NavigateRecovery">
-      <StopController>
-        <RetryUntilSuccessful num_attempts="3">
-          <PipelineSequence name="NavigateWithReplanning">
-            <RateController hz="5">
-              <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
-            </RateController>
-            <Sequence>
-                <ControllerSelector topic_name="/controller_type" default_controller="Slow" selected_controller="{controller}"/>
-                <GoalCheckerSelector topic_name="/goal_checker_type" default_goal_checker="Loose" selected_goal_checker="{goal_checker}"/>
-                <FollowPath path="{path}" controller_id="{controller}" goal_checker_id="{goal_checker}"/>
-            </Sequence>
-          </PipelineSequence>
-        </RetryUntilSuccessful>
-      </StopController>
-      <StopController>
-        <ReactiveFallback name="RecoveryFallback">
-          <GoalUpdated/>
-          <RoundRobin name="RecoveryActions">
-            <ForceSuccess>
-              <Shrink shrink_to="0.05"/>
-            </ForceSuccess>
-            <ForceSuccess>
-              <Wait wait_duration="0.5"/>
-            </ForceSuccess>
-            <ForceSuccess>
-              <Escape run_dist="5" time_allowance="5" is_recovery="1"/>
-            </ForceSuccess>
-          </RoundRobin>
-        </ReactiveFallback>
-      </StopController>
-    </RecoveryNode>
+    <StopController>
+      <SetupUpdater>
+        <RecoveryNode number_of_retries="3" name="NavigateRecovery">
+          <RetryUntilSuccessful num_attempts="3">
+            <PipelineSequence name="NavigateWithReplanning">
+              <RateController hz="5">
+                <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
+              </RateController>
+              <Sequence>
+                  <ControllerSelector topic_name="/controller_type" default_controller="Slow" selected_controller="{controller}"/>
+                  <GoalCheckerSelector topic_name="/goal_checker_type" default_goal_checker="Loose" selected_goal_checker="{goal_checker}"/>
+                  <FollowPath path="{path}" controller_id="{controller}" goal_checker_id="{goal_checker}"/>
+              </Sequence>
+            </PipelineSequence>
+          </RetryUntilSuccessful>
+          <ReactiveFallback name="RecoveryFallback">
+            <GoalUpdated/>
+            <RoundRobin name="RecoveryActions">
+              <ForceSuccess>
+                <Shrink shrink_to="0.05"/>
+              </ForceSuccess>
+              <ForceSuccess>
+                <Wait wait_duration="0.5"/>
+              </ForceSuccess>
+              <ForceSuccess>
+                <Escape run_dist="5" time_allowance="5" is_recovery="1"/>
+              </ForceSuccess>
+            </RoundRobin>
+          </ReactiveFallback>
+        </RecoveryNode>
+      </SetupUpdater>
+    </StopController>
   </BehaviorTree>
 </root>

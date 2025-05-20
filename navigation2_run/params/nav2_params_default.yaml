@@ -15,6 +15,7 @@ bt_navigator:
     default_nav_to_pose_bt_xml: "$(find-pkg-share custom_nav_to_pose)/behavior_trees/navigate_to_pose_w_selector.xml"
     plugin_lib_names:
       - nav2_stop_controller_bt_node
+      - nav2_setup_updater_bt_node
       - nav2_compute_path_to_pose_action_bt_node
       - nav2_compute_path_through_poses_action_bt_node
       - nav2_smooth_path_action_bt_node

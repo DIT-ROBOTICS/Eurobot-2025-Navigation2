@@ -9,7 +9,7 @@ namespace nav2_behaviors
                     cmd_yaw(0.0),
                     prev_yaw(0.0),
                     relative_yaw(0.0),
-                    target_update_frequency_(2.0),  // Default to 1Hz updates
+                    target_update_frequency_(5.0),  // Default to 1Hz updates
                     is_active(false)
                     {
                         scan_radius = 20;
@@ -51,6 +51,7 @@ namespace nav2_behaviors
             "/rival_pose", 
             rclcpp::QoS(10), 
             std::bind(&Escape::rivalCallback, this, std::placeholders::_1));
+        abort_escape = false;
     }
 
     // New timer callback function
@@ -153,15 +154,7 @@ namespace nav2_behaviors
                     double dist = hypot(world_x - robotPose.pose.position.x, 
                                        world_y - robotPose.pose.position.y);
                     
-                    // Found a point with same cost but closer
-                    if (cost == lowest_cost && dist < best_distance) {
-                        best_point.position.x = world_x;
-                        best_point.position.y = world_y;
-                        best_point.position.z = 0.0;
-                        best_distance = dist;
-                    }
-                    // Found a point with better cost
-                    else if (cost < lowest_cost) {
+                    if (cost < lowest_cost && !outOfBound(world_x, world_y)) {
                         lowest_cost = cost;
                         best_point.position.x = world_x;
                         best_point.position.y = world_y;
@@ -185,6 +178,7 @@ namespace nav2_behaviors
                         best_point.position.x, best_point.position.y, lowest_cost, best_distance);
         } else {
             RCLCPP_INFO(logger_, "No suitable target point found, staying in place");
+            abort_escape = true;
         }
         
         return best_point;
@@ -246,14 +240,11 @@ namespace nav2_behaviors
             return Status::SUCCEEDED;
         }
         
-        
-        if (target_point.position.x == 0 && target_point.position.y == 0) {
-            target_point = findTargetPoint();
-        }
-        
-        if(target_point.position.x == robotPose.pose.position.x && target_point.position.y == robotPose.pose.position.y){
+        target_point = findTargetPoint();
+        if(abort_escape){
             stopRobot();
             is_active = false;
+            abort_escape = false;
             return Status::FAILED;
         }
         

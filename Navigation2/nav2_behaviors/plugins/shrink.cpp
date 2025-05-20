@@ -41,11 +41,6 @@ namespace nav2_behaviors
             std::bind(&Shrink::handleShrinkCheck, this, std::placeholders::_1, std::placeholders::_2)
         );
 
-        shrinkback_pub = node->create_publisher<std_msgs::msg::Bool>(
-            "/shrink/shrinkback", 
-            rclcpp::SystemDefaultsQoS()
-        );
-
         setMode_rival_client = node->create_client<std_srvs::srv::SetBool>(
             "/rival_layer/set_mode", 
             rmw_qos_profile_services_default
@@ -55,6 +50,13 @@ namespace nav2_behaviors
             "/object_layer/set_mode", 
             rmw_qos_profile_services_default
         );
+
+        setMode_inflation_client = node->create_client<std_srvs::srv::SetBool>(
+            "/inflation_layer/set_mode", 
+            rmw_qos_profile_services_default
+        );
+        getOriginalParam();
+
     }
 
     Status Shrink::onRun(const std::shared_ptr<const ShrinkAction::Goal> command){
@@ -68,21 +70,13 @@ namespace nav2_behaviors
 
     Status Shrink::onCycleUpdate(){
         times++;
-        if(times == 1){
-            getOriginalParam();
-        }
-        else if(times == 3){
+        if(times == 3){
             setToShrink();
-            shrinkBack = false;
-            std_msgs::msg::Bool msg;
-            msg.data = shrinkBack;
-            shrinkback_pub->publish(msg);
         }
 
         if(noCostInMiddle() && noCostAtGoal() && times > 20){
             times = 0;
             shrinkBack = true;
-            tellStopToShrinkBack();
             return Status::SUCCEEDED;
         }
         else if(times > 20){
@@ -93,17 +87,9 @@ namespace nav2_behaviors
             RCLCPP_INFO(logger_, "obstacle detected at the center of the goal: the center %f, %f; the cost: %d", robotPose.pose.position.x, goalPose.pose.position.y, goal_cost);
             times = 0;
             shrinkBack = true;
-            tellStopToShrinkBack();
             return Status::FAILED;
         }
         else return Status::RUNNING;
-    }
-
-    void Shrink::tellStopToShrinkBack(){
-        std_msgs::msg::Bool msg;
-        msg.data = shrinkBack;
-        shrinkback_pub->publish(msg);
-        RCLCPP_INFO(logger_, "tell stop to shrink back");
     }
 
     void Shrink::handleShrinkCheck(
@@ -161,32 +147,28 @@ namespace nav2_behaviors
     }
 
     void Shrink::changeInflationLayer(bool doShrink) {
-        double radius = doShrink ? 0.15 : original_inflation_radius;
-        if (radius_param_client->service_is_ready()) {
-            radius_param_client->set_parameters({rclcpp::Parameter("inflation_layer.inflation_radius", radius)},
-                [this, radius](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future) {
-                    // Add timeout check
-                    if (future.wait_for(std::chrono::seconds(1)) != std::future_status::ready) {
-                        RCLCPP_ERROR(logger_, "Timeout setting inflation_radius to %f", radius);
-                        return;
-                    }
-                    
-                    // Add try-catch
-                    try {
-                        auto result = future.get();
-                        if (result[0].successful) {
-                            RCLCPP_INFO(logger_, "Set inflation_radius successfully to %f", radius);
-                        } else {
-                            RCLCPP_ERROR(logger_, "Failed to set inflation_radius to %f: %s", 
-                                        radius, result[0].reason.c_str());
-                        }
-                    } catch (const std::exception& e) {
-                        RCLCPP_ERROR(logger_, "Exception setting inflation_radius: %s", e.what());
-                    }
-                });
-        } else {
+        if (!setMode_inflation_client->service_is_ready()) {
             RCLCPP_ERROR(logger_, "Service is not ready for inflation layer");
+            return;
         }
+        auto request = std::make_shared<std_srvs::srv::SetBool::Request>();
+        request->data = doShrink;
+
+        setMode_inflation_client->async_send_request(
+            request,
+            [this, doShrink](rclcpp::Client<std_srvs::srv::SetBool>::SharedFuture future) {
+                try {
+                    auto response = future.get();
+                    if (response->success) {
+                        RCLCPP_INFO(logger_, "Inflation layer mode set to %s", doShrink ? "shrink" : "original");
+                    } else {
+                        RCLCPP_ERROR(logger_, "Failed to set inflation layer mode: %s", response->message.c_str());
+                    }
+                } catch (const std::exception& e) {
+                    RCLCPP_ERROR(logger_, "Exception in inflation layer callback: %s", e.what());
+                }
+            });
+
         RCLCPP_INFO(logger_, "Requested inflation layer update");
     }
 
@@ -199,7 +181,6 @@ namespace nav2_behaviors
         auto request = std::make_shared<std_srvs::srv::SetBool::Request>();
         request->data = doShrink;
         
-        // Use a callback-based approach instead of spin_until_future_complete
         setMode_rival_client->async_send_request(
             request,
             [this, doShrink](rclcpp::Client<std_srvs::srv::SetBool>::SharedFuture future) {

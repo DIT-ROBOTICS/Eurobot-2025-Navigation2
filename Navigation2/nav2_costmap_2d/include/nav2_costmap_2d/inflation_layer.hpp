@@ -45,6 +45,8 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/layer.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
+#include "std_srvs/srv/set_bool.hpp"
+#include "std_msgs/msg/bool.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -81,6 +83,12 @@ public:
 class InflationLayer : public Layer
 {
 public:
+  rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr set_mode_service_;
+  bool mode_param = false;
+  void handleSetMode(
+    const std::shared_ptr<std_srvs::srv::SetBool::Request> request,
+    const std::shared_ptr<std_srvs::srv::SetBool::Response> response);
+
   /**
     * @brief A constructor
     */
