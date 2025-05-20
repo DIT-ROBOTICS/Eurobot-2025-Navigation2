@@ -1,8 +1,8 @@
 <root main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
-    <RecoveryNode number_of_retries="3" name="NavigateRecovery">
+    <StopController>
       <SetupUpdater>
-        <StopController>
+        <RecoveryNode number_of_retries="3" name="NavigateRecovery">
           <RetryUntilSuccessful num_attempts="3">
             <PipelineSequence name="NavigateWithReplanning">
               <RateController hz="5">
@@ -15,10 +15,6 @@
               </Sequence>
             </PipelineSequence>
           </RetryUntilSuccessful>
-        </StopController>
-      </SetupUpdater>
-      <SetupUpdater>
-        <StopController>
           <ReactiveFallback name="RecoveryFallback">
             <GoalUpdated/>
             <RoundRobin name="RecoveryActions">
@@ -33,8 +29,8 @@
               </ForceSuccess>
             </RoundRobin>
           </ReactiveFallback>
-        </StopController>
+        </RecoveryNode>
       </SetupUpdater>
-    </RecoveryNode>
+    </StopController>
   </BehaviorTree>
 </root>
