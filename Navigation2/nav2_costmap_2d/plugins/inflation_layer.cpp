@@ -106,6 +106,9 @@ InflationLayer::onInitialize()
       std::bind(
         &InflationLayer::dynamicParametersCallback,
         this, std::placeholders::_1));
+
+    set_mode_service_ = node->create_service<std_srvs::srv::SetBool>(
+      "/inflation_layer/set_mode", std::bind(&InflationLayer::handleSetMode, this, std::placeholders::_1, std::placeholders::_2));
   }
 
   current_ = true;
@@ -116,6 +119,21 @@ InflationLayer::onInitialize()
   cell_inflation_radius_ = cellDistance(inflation_radius_);
   matchSize();
 }
+
+void InflationLayer::handleSetMode(
+  const std::shared_ptr<std_srvs::srv::SetBool::Request> request,
+  const std::shared_ptr<std_srvs::srv::SetBool::Response> response)
+{
+  if (request->data) {
+    mode_param = true;
+    response->success = true;
+    response->message = "InflationLayer mode set to shrink mode";
+  } else {
+    mode_param = false;
+    response->success = true;
+    response->message = "InflationLayer mode set to normal mode";
+  }
+} 
 
 void
 InflationLayer::matchSize()
@@ -197,6 +215,10 @@ InflationLayer::updateCosts(
   if (!enabled_ || (cell_inflation_radius_ == 0)) {
     return;
   }
+
+  if(mode_param) inflation_radius_ = 0.15;
+  else node->get_parameter(name_ + "." + "inflation_radius", inflation_radius_);
+
 
   // make sure the inflation list is empty at the beginning of the cycle (should always be true)
   for (auto & dist : inflation_cells_) {

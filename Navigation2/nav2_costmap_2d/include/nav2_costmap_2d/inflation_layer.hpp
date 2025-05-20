@@ -45,6 +45,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/layer.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
+#include "std_srvs/srv/set_bool.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -71,6 +72,12 @@ public:
   unsigned int index_;
   unsigned int x_, y_;
   unsigned int src_x_, src_y_;
+  rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr set_mode_service_;
+  bool mode_param = false;
+  void handleSetMode(
+    const std::shared_ptr<std_srvs::srv::SetBool::Request> request,
+    const std::shared_ptr<std_srvs::srv::SetBool::Response> response)
+  
 };
 
 /**
