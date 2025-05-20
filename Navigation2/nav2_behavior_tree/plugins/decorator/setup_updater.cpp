@@ -14,10 +14,6 @@ namespace nav2_behavior_tree
         shrink_client_ = node_->create_client<std_srvs::srv::SetBool>(
             "/shrink/doneShrink",
             rmw_qos_profile_services_default);
-
-        // get init goal and goals from blackboard
-        config().blackboard->get<std::vector<geometry_msgs::msg::PoseStamped>>("goals", current_goal_list);
-        config().blackboard->get<geometry_msgs::msg::PoseStamped>("goal", current_goal);
     }
 
     void SetupUpdater::requestShrinkBack()
