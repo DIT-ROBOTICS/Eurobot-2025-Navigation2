@@ -6,7 +6,7 @@ namespace nav2_behavior_tree
     const std::string & name,
     const BT::NodeConfiguration & conf)
     : BT::DecoratorNode(name, conf),
-      stop_robot(false),
+      stop_robot(false)
   {
     // Retrieve node from the blackboard
     node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
