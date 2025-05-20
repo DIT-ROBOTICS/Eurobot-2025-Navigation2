@@ -16,6 +16,8 @@
             </PipelineSequence>
           </RetryUntilSuccessful>
         </StopController>
+      </SetupUpdater>
+      <SetupUpdater>
         <StopController>
           <ReactiveFallback name="RecoveryFallback">
             <GoalUpdated/>
