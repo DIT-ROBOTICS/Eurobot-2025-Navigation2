@@ -210,6 +210,9 @@ list(APPEND plugin_libs nav2_goal_updated_controller_bt_node)
 add_library(nav2_stop_controller_bt_node SHARED plugins/decorator/stop_controller.cpp)
 list(APPEND plugin_libs nav2_stop_controller_bt_node)
 
+add_library(nav2_setup_updater_bt_node SHARED plugins/decorator/setup_updater.cpp)
+list(APPEND plugin_libs nav2_setup_updater_bt_node)
+
 foreach(bt_plugin ${plugin_libs})
   ament_target_dependencies(${bt_plugin} ${dependencies})
   target_compile_definitions(${bt_plugin} PRIVATE BT_PLUGIN_EXPORT)
