@@ -55,7 +55,6 @@ namespace nav2_behaviors
             "/inflation_layer/set_mode", 
             rmw_qos_profile_services_default
         );
-        getOriginalParam();
 
     }
 
@@ -80,11 +79,7 @@ namespace nav2_behaviors
             return Status::SUCCEEDED;
         }
         else if(times > 20){
-            int robot_cost = getOneGridCost(robotPose.pose.position.x, robotPose.pose.position.y);
-            int goal_cost = getOneGridCost(goalPose.pose.position.x, goalPose.pose.position.y);
             RCLCPP_ERROR(logger_, "shrink the inflation radius is not working");
-            RCLCPP_INFO(logger_, "obstacle detected at the center of the robot: the center %f, %f; the cost: %d", robotPose.pose.position.x, robotPose.pose.position.y, robot_cost);
-            RCLCPP_INFO(logger_, "obstacle detected at the center of the goal: the center %f, %f; the cost: %d", robotPose.pose.position.x, goalPose.pose.position.y, goal_cost);
             times = 0;
             shrinkBack = true;
             return Status::FAILED;

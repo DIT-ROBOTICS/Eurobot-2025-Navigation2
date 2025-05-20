@@ -133,7 +133,6 @@ namespace nav2_behaviors
         double lowest_cost = 100.0;  // Max cost threshold
         geometry_msgs::msg::Pose best_point = robotPose.pose;
         double robot_cost = getOneGridCost(robotPose.pose.position.x, robotPose.pose.position.y);
-        double best_distance = std::numeric_limits<double>::max();  // Initialize with max value
         
         // Scan increasing radius circles
         for (double r = 0.01; r <= scan_radius; r += 0.01) {
@@ -151,15 +150,12 @@ namespace nav2_behaviors
                     map_y >= 0 && map_y < map_height) {
                     
                     double cost = getOneGridCost(world_x, world_y);
-                    double dist = hypot(world_x - robotPose.pose.position.x, 
-                                       world_y - robotPose.pose.position.y);
                     
                     if (cost < lowest_cost && !outOfBound(world_x, world_y)) {
                         lowest_cost = cost;
                         best_point.position.x = world_x;
                         best_point.position.y = world_y;
                         best_point.position.z = 0.0;
-                        best_distance = dist;
                     }
                 }
             }
@@ -167,15 +163,12 @@ namespace nav2_behaviors
             // If we found a better point than robot position for this radius,
             // return it instead of checking larger radii
             if (lowest_cost < robot_cost) {
-                RCLCPP_INFO(logger_, "Found better point than robot position at radius %f with cost %f, distance %f",
-                           r, lowest_cost, best_distance);
                 return best_point;
             }
         }
         
         if (lowest_cost < 100.0) {
-            RCLCPP_INFO(logger_, "Found target point at (%f, %f) with cost %f, distance %f",
-                        best_point.position.x, best_point.position.y, lowest_cost, best_distance);
+            abort_escape = false;
         } else {
             RCLCPP_INFO(logger_, "No suitable target point found, staying in place");
             abort_escape = true;
@@ -249,7 +242,6 @@ namespace nav2_behaviors
         }
         
         auto cmd_vel = makeMove(target_point.position.x, target_point.position.y);
-        RCLCPP_INFO(logger_, "Moving to target point (%f, %f)", target_point.position.x, target_point.position.y);
         vel_pub_->publish(std::move(cmd_vel));
         return Status::RUNNING;
     }
