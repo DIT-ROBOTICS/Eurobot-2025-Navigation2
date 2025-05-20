@@ -23,6 +23,10 @@ namespace nav2_behavior_tree
       rclcpp::SystemDefaultsQoS(),
       std::bind(&StopController::stopCallback, this, std::placeholders::_1),
       sub_options);
+    
+    cmd_vel_pub = node_->create_publisher<geometry_msgs::msg::Twist>(
+      "/cmd_vel", 
+      rclcpp::SystemDefaultsQoS());
   }
 
   void StopController::stopCallback(const std_msgs::msg::Bool::SharedPtr msg)
