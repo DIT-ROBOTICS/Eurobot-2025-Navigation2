@@ -180,7 +180,6 @@ namespace nav2_behaviors
         auto request = std::make_shared<std_srvs::srv::SetBool::Request>();
         request->data = doShrink;
         
-        // Use a callback-based approach instead of spin_until_future_complete
         setMode_rival_client->async_send_request(
             request,
             [this, doShrink](rclcpp::Client<std_srvs::srv::SetBool>::SharedFuture future) {
