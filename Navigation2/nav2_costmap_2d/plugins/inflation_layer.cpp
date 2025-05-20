@@ -74,6 +74,7 @@ InflationLayer::InflationLayer()
   last_max_y_(std::numeric_limits<double>::max())
 {
   access_ = new mutex_t();
+  mode_param = false;
 }
 
 InflationLayer::~InflationLayer()
@@ -124,16 +125,46 @@ void InflationLayer::handleSetMode(
   const std::shared_ptr<std_srvs::srv::SetBool::Request> request,
   const std::shared_ptr<std_srvs::srv::SetBool::Response> response)
 {
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+  
   if (request->data) {
+    // Shrink mode
     mode_param = true;
+    inflation_radius_ = 0.15;  // Set your shrink radius here
+    
+    // Update all derived values
+    cell_inflation_radius_ = cellDistance(inflation_radius_);
+    computeCaches();
+    need_reinflation_ = true;
+    
     response->success = true;
-    response->message = "InflationLayer mode set to shrink mode";
+    response->message = "InflationLayer mode set to shrink mode, radius=" + 
+                        std::to_string(inflation_radius_);
+    RCLCPP_INFO(logger_, "Inflation radius changed to %.2f (shrink mode)", inflation_radius_);
   } else {
+    // Normal mode
     mode_param = false;
-    response->success = true;
-    response->message = "InflationLayer mode set to normal mode";
+    
+    // Get original parameter again
+    auto node = node_.lock();
+    if (node) {
+      node->get_parameter(name_ + "." + "inflation_radius", inflation_radius_);
+      
+      // Update all derived values
+      cell_inflation_radius_ = cellDistance(inflation_radius_);
+      computeCaches();
+      need_reinflation_ = true;
+      
+      response->success = true;
+      response->message = "InflationLayer mode set to normal mode, radius=" + 
+                          std::to_string(inflation_radius_);
+      RCLCPP_INFO(logger_, "Inflation radius restored to %.2f (normal mode)", inflation_radius_);
+    } else {
+      response->success = false;
+      response->message = "Failed to lock node";
+    }
   }
-} 
+}
 
 void
 InflationLayer::matchSize()
@@ -215,10 +246,6 @@ InflationLayer::updateCosts(
   if (!enabled_ || (cell_inflation_radius_ == 0)) {
     return;
   }
-
-  if(mode_param) inflation_radius_ = 0.15;
-  else node->get_parameter(name_ + "." + "inflation_radius", inflation_radius_);
-
 
   // make sure the inflation list is empty at the beginning of the cycle (should always be true)
   for (auto & dist : inflation_cells_) {
