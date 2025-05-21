@@ -90,7 +90,7 @@ controller_server:
     min_theta_velocity_threshold: 0.001
     failure_tolerance: 0.0
     progress_checker_plugin: "progress_checker"
-    goal_checker_plugins: ["Precise", "Unerring", "Loose"]
+    goal_checker_plugins: ["Precise", "Unerring", "Loose", "Uncertainty"]
     controller_plugins: ["Fast", "Slow", "LinearBoost", "AngularBoost"]
 
     # Progress checker parameters
@@ -121,6 +121,14 @@ controller_server:
       plugin: "nav2_controller::SimpleGoalChecker"
       xy_goal_tolerance: 0.03
       yaw_goal_tolerance: 0.07
+      xy_debounce_threshold: 1
+      yaw_debounce_threshold: 1
+
+    Uncertainty:
+      stateful: True
+      plugin: "nav2_controller::SimpleGoalChecker"
+      xy_goal_tolerance: 0.15
+      yaw_goal_tolerance: 6.28
       xy_debounce_threshold: 1
       yaw_debounce_threshold: 1
 
@@ -356,7 +364,7 @@ velocity_smoother:
     max_velocity: [1.1, 1.1, 12.0]
     min_velocity: [-1.1, -1.1, -12.0]
     max_accel: [3.3, 3.3, 120.0]
-    max_decel: [-4.4, -4.4, -120.0]  
+    max_decel: [-11.0, -11.0, -120.0]  
     odom_topic: "/final_pose_nav"
     odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]
