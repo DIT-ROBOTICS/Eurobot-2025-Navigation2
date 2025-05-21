@@ -14,6 +14,8 @@ public:
   void setType(std::string const & mode, char & offset_direction, geometry_msgs::msg::PoseStamped & original_staging_pose, double const & offset);
 
 private:
+  void publishAll();
+
   std::shared_ptr<rclcpp_lifecycle::LifecycleNode> node_;
 
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr controller_selector_pub_;

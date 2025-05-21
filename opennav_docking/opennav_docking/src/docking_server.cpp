@@ -71,6 +71,13 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
         stop_robot_ = msg->data;
     });
 
+  controller_function_sub_ = create_subscription<std_msgs::msg::String>(
+    "/controller_function",
+    rclcpp::QoS(1).reliable().transient_local(),
+    [this](const std_msgs::msg::String::SharedPtr msg) {
+        controller_function_ = msg->data;
+    });
+
   tf2_buffer_ = std::make_shared<tf2_ros::Buffer>(node->get_clock());
 
   double action_server_result_timeout;
@@ -411,7 +418,7 @@ bool DockingServer::approachDock(Dock * dock, geometry_msgs::msg::PoseStamped & 
     }
 
     // Stop and report success if connected to dock
-    if (dock->plugin->isDocked() || dock->plugin->isCharging()) {
+    if (dock->plugin->isDocked() || dock->plugin->isCharging() || controller_function_ == "Didilong") {
       publishZeroVelocity();
       return true;
     }
@@ -467,7 +474,7 @@ bool DockingServer::waitForCharge(Dock * dock)
   while (rclcpp::ok()) {
     publishDockingFeedback(DockRobot::Feedback::WAIT_FOR_CHARGE);
 
-    if (dock->plugin->isCharging()) {
+    if (dock->plugin->isCharging() || controller_function_ == "Didilong") {
       return true;
     }
 

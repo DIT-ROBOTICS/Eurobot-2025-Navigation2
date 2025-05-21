@@ -19,11 +19,11 @@ void NavTypeSelector::setType(std::string const & mode, char & offset_direction,
         goal_checker_selector_msg_.data = "Loose";
     } else if(strstr(mode.c_str(), "unerring") != nullptr) {
         goal_checker_selector_msg_.data = "Unerring";
+    } else if(strstr(mode.c_str(), "uncertainty") != nullptr) {
+        goal_checker_selector_msg_.data = "Uncertainty";
     } else {
         goal_checker_selector_msg_.data = "Loose";
     }
-    RCLCPP_INFO(node_->get_logger(), "\033[1;36m Goal checker has set to \"%s\" \033[0m", goal_checker_selector_msg_.data.c_str());
-    goal_checker_selector_pub_->publish(goal_checker_selector_msg_);    // Publish the goal checker type
 
     // Determine the controller type
     if(strstr(mode.c_str(), "fast") != nullptr) {
@@ -37,17 +37,17 @@ void NavTypeSelector::setType(std::string const & mode, char & offset_direction,
     } else {
         controller_selector_msg_.data = "Slow";
     }
-    RCLCPP_INFO(node_->get_logger(), "\033[1;36m Controller has set to \"%s\" \033[0m", controller_selector_msg_.data.c_str());
-    controller_selector_pub_->publish(controller_selector_msg_);    // Publish the controller type
 
     // Determine the controller function
     if(strstr(mode.c_str(), "delaySpin") != nullptr) {
         controller_function_msg_.data = "DelaySpin";
-        RCLCPP_INFO(node_->get_logger(), "\033[1;36m \"%s\" is activated \033[0m", controller_function_msg_.data.c_str());
+    } else if(strstr(mode.c_str(), "didilong") != nullptr) { 
+        controller_function_msg_.data = "Didilong";
+        controller_selector_msg_.data = "Fast";
+        goal_checker_selector_msg_.data = "Uncertainty";
     } else {
         controller_function_msg_.data = "None";
     }
-    controller_function_pub_->publish(controller_function_msg_);    // Publish the controller function
 
     // Determine the dock controller type
     if(strstr(mode.c_str(), "ordinary") != nullptr) {
@@ -59,8 +59,9 @@ void NavTypeSelector::setType(std::string const & mode, char & offset_direction,
     } else {
         dock_controller_selector_msg_.data = "Ordinary";
     }
-    RCLCPP_INFO(node_->get_logger(), "\033[1;36m Dock controller has set to \"%s\" \033[0m", dock_controller_selector_msg_.data.c_str());
-    dock_controller_selector_pub_->publish(dock_controller_selector_msg_);    // Publish the dock controller type
+
+    // Publish the selected types
+    publishAll();
 
     // Determine the offset direction & value
     if(strchr(mode.c_str(), 'x') != nullptr) {
@@ -76,4 +77,19 @@ void NavTypeSelector::setType(std::string const & mode, char & offset_direction,
         RCLCPP_INFO(node_->get_logger(), "\033[1;36m Applying offset to both \"x\" and \"y\" \033[0m");
     }
     RCLCPP_INFO(node_->get_logger(), "\033[1;36m -------------------------------------- \033[0m");
+}
+
+void NavTypeSelector::publishAll() {
+    RCLCPP_INFO(node_->get_logger(), "\033[1;36m Goal checker has set to \"%s\" \033[0m", goal_checker_selector_msg_.data.c_str());
+    goal_checker_selector_pub_->publish(goal_checker_selector_msg_);    // Publish the goal checker type
+
+    RCLCPP_INFO(node_->get_logger(), "\033[1;36m Controller has set to \"%s\" \033[0m", controller_selector_msg_.data.c_str());
+    controller_selector_pub_->publish(controller_selector_msg_);    // Publish the controller type
+
+    if(controller_function_msg_.data != "None")
+        RCLCPP_INFO(node_->get_logger(), "\033[1;36m \"%s\" is activated \033[0m", controller_function_msg_.data.c_str());
+    controller_function_pub_->publish(controller_function_msg_);    // Publish the controller function
+
+    RCLCPP_INFO(node_->get_logger(), "\033[1;36m Dock controller has set to \"%s\" \033[0m", dock_controller_selector_msg_.data.c_str());
+    dock_controller_selector_pub_->publish(dock_controller_selector_msg_);    // Publish the dock controller type
 }

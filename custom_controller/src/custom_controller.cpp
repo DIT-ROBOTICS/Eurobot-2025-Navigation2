@@ -74,7 +74,6 @@ void CustomController::configure(
     global_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("received_global_plan", 5);
     check_goal_pub_ = node->create_publisher<geometry_msgs::msg::PoseStamped>("check_goal", 5);
     rival_distance_pub_ = node->create_publisher<std_msgs::msg::Float64>("rival_distance", 5);
-    goal_reach_pub_ = node->create_publisher<std_msgs::msg::Bool>("goal_reached", 5);
 
     // Declare parameters if not declared
     declare_parameter_if_not_declared(node, plugin_name_ + ".external_velocity_data_path", rclcpp::ParameterValue(""));
@@ -148,7 +147,7 @@ void CustomController::configure(
         rclcpp::QoS(10).reliable().transient_local(),
         [this](const std_msgs::msg::String::SharedPtr msg) {
             controller_function_ = msg->data;
-        });
+    });
 }
 
 // Lifecycle methods
@@ -156,20 +155,17 @@ void CustomController::cleanup(){
     RCLCPP_INFO(logger_, "[%s] Cleaning up controller", plugin_name_.c_str());
     global_path_pub_.reset();
     check_goal_pub_.reset();
-    rival_distance_pub_.reset();
 }
 void CustomController::activate(){
     RCLCPP_INFO(logger_, "[%s] Activating controller", plugin_name_.c_str());
     global_path_pub_->on_activate();
     check_goal_pub_->on_activate();
-    // rival_distance_pub_->on_activate();
 
 }
 void CustomController::deactivate(){
     RCLCPP_INFO(logger_, "[%s] Deactivating controller", plugin_name_.c_str());
     global_path_pub_->on_deactivate();
     check_goal_pub_->on_deactivate();
-    // rival_distance_pub_->on_deactivate();
 }
 
 // void CustomController::setSpeedLimit(double speed_limit, double speed_limit_yaw){
@@ -497,10 +493,16 @@ geometry_msgs::msg::TwistStamped CustomController::computeVelocityCommands(
 
     double local_distance = sqrt(pow(local_goal_.x_ - cur_pose_.x_, 2) + pow(local_goal_.y_ - cur_pose_.y_, 2));
     
-    cmd_vel.twist.linear.x = std::min(global_distance * linear_kp_, max_linear_vel_) * cos(local_angle);
-    cmd_vel.twist.linear.y = std::min(global_distance * linear_kp_, max_linear_vel_) * sin(local_angle);
+    if(controller_function_ == "Didilong") {
+        cmd_vel.twist.linear.x = std::min(global_distance * 10.0, max_linear_vel_) * cos(local_angle);
+        cmd_vel.twist.linear.y = std::min(global_distance * 10.0, max_linear_vel_) * sin(local_angle);
+        cmd_vel.twist.angular.z = 0.0;
+    } else {
+        cmd_vel.twist.linear.x = std::min(global_distance * linear_kp_, max_linear_vel_) * cos(local_angle);
+        cmd_vel.twist.linear.y = std::min(global_distance * linear_kp_, max_linear_vel_) * sin(local_angle);
+        cmd_vel.twist.angular.z = getGoalAngle(cur_pose_.theta_, final_goal_angle_);
+    }
 
-    cmd_vel.twist.angular.z = getGoalAngle(cur_pose_.theta_, final_goal_angle_);
     double vel_ = sqrt(pow(cmd_vel.twist.linear.x, 2) + pow(cmd_vel.twist.linear.y, 2));
     check_distance_ = std::max(vel_ * 1.0,look_ahead_distance_);
     check_index_ = getIndex(cur_pose_, vector_global_path_, check_distance_);
@@ -508,13 +510,6 @@ geometry_msgs::msg::TwistStamped CustomController::computeVelocityCommands(
     last_vel_x_ = cmd_vel.twist.linear.x;
     last_vel_y_ = cmd_vel.twist.linear.y;
     isObstacleExist_ = checkObstacle(current_index_, check_index_);
-  
-    if(goal_checker->isGoalReached(pose.pose, global_plan_.poses.back().pose, velocity)){
-            std_msgs::msg::Bool goal_reach;
-            goal_reach.data = true;
-            goal_reach_pub_->publish(goal_reach);
-            RCLCPP_INFO(logger_, "Goal reached sented");
-    }
   
     if(isObstacleExist_){
         cmd_vel.twist.linear.x = last_vel_x_ * speed_decade_;

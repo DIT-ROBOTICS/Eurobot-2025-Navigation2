@@ -78,7 +78,6 @@ class CustomController : public nav2_core::Controller{
 
         rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr local_goal_pub_;
         rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr rival_distance_pub_;
-        rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr goal_reach_pub_;
         
         rcl_interfaces::msg::SetParametersResult
         dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
