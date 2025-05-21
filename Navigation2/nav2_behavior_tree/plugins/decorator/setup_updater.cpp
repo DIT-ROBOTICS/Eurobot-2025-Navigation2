@@ -43,7 +43,7 @@ namespace nav2_behavior_tree
         if (current_goal != incomming_goal || current_goal_list != incomming_goal_list) {
             current_goal = incomming_goal;
             current_goal_list = incomming_goal_list;
-            RCLCPP_ERROR(node_->get_logger(), "Goal updated");
+            RCLCPP_INFO(node_->get_logger(), "\033[1;34m Goal updated \033[0m");
             return true;
         }
 
