@@ -91,7 +91,7 @@ controller_server:
     failure_tolerance: 0.0
     progress_checker_plugin: "progress_checker"
     goal_checker_plugins: ["Precise", "Unerring", "Loose", "Uncertainty"]
-    controller_plugins: ["Fast", "Slow", "LinearBoost", "AngularBoost"]
+    controller_plugins: ["Turbo", "Fast", "Slow", "LinearBoost", "AngularBoost"]
 
     # Progress checker parameters
     progress_checker:
@@ -133,6 +133,19 @@ controller_server:
       yaw_debounce_threshold: 1
 
     # Controller parameters
+    Turbo:
+      plugin: "custom_controller::CustomController"
+      external_velocity_data_path: "/home/user/Eurobot-2025-Navigation2-ws/src/Eurobot-2025-Navigation2/navigation2_run/params/dynamic_params/nav_turbo_params.yaml"
+      max_linear_vel: 1.5
+      max_angular_vel: 1.0
+      linear_kp: 2.2
+      angular_kp: 3.7
+      transform_tolerance: 0.1
+      look_ahead_distance: 0.2
+      speed_decade: 0.125
+      costmap_tolerance: 95 # rival is 98
+      keep_planning: false
+
     Fast:
       plugin: "custom_controller::CustomController"
       external_velocity_data_path: "/home/user/Eurobot-2025-Navigation2-ws/src/Eurobot-2025-Navigation2/navigation2_run/params/dynamic_params/nav_fast_params.yaml"
@@ -357,8 +370,8 @@ velocity_smoother:
     smoothing_frequency: 20.0
     scale_velocities: False
     feedback: "OPEN_LOOP"
-    max_velocity: [1.1, 1.1, 12.0]
-    min_velocity: [-1.1, -1.1, -12.0]
+    max_velocity: [1.5, 1.5, 12.0]
+    min_velocity: [-1.5, -1.5, -12.0]
     max_accel: [3.3, 3.3, 120.0]
     max_decel: [-11.0, -11.0, -120.0]  
     odom_topic: "/final_pose_nav"

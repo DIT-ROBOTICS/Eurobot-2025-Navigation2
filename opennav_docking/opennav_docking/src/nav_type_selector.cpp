@@ -26,7 +26,9 @@ void NavTypeSelector::setType(std::string const & mode, char & offset_direction,
     }
 
     // Determine the controller type
-    if(strstr(mode.c_str(), "fast") != nullptr) {
+    if(strstr(mode.c_str(), "turbo") != nullptr) {
+        controller_selector_msg_.data = "Turbo";
+    } else if(strstr(mode.c_str(), "fast") != nullptr) {
         controller_selector_msg_.data = "Fast";
     } else if(strstr(mode.c_str(), "slow") != nullptr) {
         controller_selector_msg_.data = "Slow";
@@ -43,7 +45,7 @@ void NavTypeSelector::setType(std::string const & mode, char & offset_direction,
         controller_function_msg_.data = "DelaySpin";
     } else if(strstr(mode.c_str(), "didilong") != nullptr) { 
         controller_function_msg_.data = "Didilong";
-        controller_selector_msg_.data = "Fast";
+        controller_selector_msg_.data = "Turbo";
         goal_checker_selector_msg_.data = "Uncertainty";
     } else {
         controller_function_msg_.data = "None";
