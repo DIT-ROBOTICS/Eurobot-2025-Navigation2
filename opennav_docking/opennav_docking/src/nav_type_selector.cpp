@@ -19,15 +19,15 @@ void NavTypeSelector::setType(std::string const & mode, char & offset_direction,
         goal_checker_selector_msg_.data = "Loose";
     } else if(strstr(mode.c_str(), "unerring") != nullptr) {
         goal_checker_selector_msg_.data = "Unerring";
-    } else if(strstr(mode.c_str(), "uncertainty") != nullptr) {
-        goal_checker_selector_msg_.data = "Uncertainty";
+    } else if(strstr(mode.c_str(), "didilong") != nullptr) {
+        goal_checker_selector_msg_.data = "Didilong";
     } else {
         goal_checker_selector_msg_.data = "Loose";
     }
 
     // Determine the controller type
-    if(strstr(mode.c_str(), "turbo") != nullptr) {
-        controller_selector_msg_.data = "Turbo";
+    if(strstr(mode.c_str(), "didilong") != nullptr) {
+        controller_selector_msg_.data = "Didilong";
     } else if(strstr(mode.c_str(), "fast") != nullptr) {
         controller_selector_msg_.data = "Fast";
     } else if(strstr(mode.c_str(), "slow") != nullptr) {
@@ -45,8 +45,6 @@ void NavTypeSelector::setType(std::string const & mode, char & offset_direction,
         controller_function_msg_.data = "DelaySpin";
     } else if(strstr(mode.c_str(), "didilong") != nullptr) { 
         controller_function_msg_.data = "Didilong";
-        controller_selector_msg_.data = "Turbo";
-        goal_checker_selector_msg_.data = "Uncertainty";
     } else {
         controller_function_msg_.data = "None";
     }
