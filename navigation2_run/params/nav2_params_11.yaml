@@ -90,8 +90,8 @@ controller_server:
     min_theta_velocity_threshold: 0.001
     failure_tolerance: 0.0
     progress_checker_plugin: "progress_checker"
-    goal_checker_plugins: ["Precise", "Unerring", "Loose", "Didilong"]
-    controller_plugins: ["Didilong", "Fast", "Slow", "LinearBoost", "AngularBoost"]
+    goal_checker_plugins: ["Precise", "Unerring", "Loose", "DidilongGoalChecker"]
+    controller_plugins: ["DidilongController", "Fast", "Slow", "LinearBoost", "AngularBoost"]
 
     # Progress checker parameters
     progress_checker:
@@ -124,7 +124,7 @@ controller_server:
       xy_debounce_threshold: 1
       yaw_debounce_threshold: 1
 
-    Didilong:
+    DidilongGoalChecker:
       stateful: True
       plugin: "nav2_controller::SimpleGoalChecker"
       xy_goal_tolerance: 0.15
@@ -133,9 +133,9 @@ controller_server:
       yaw_debounce_threshold: 1
 
     # Controller parameters
-    Didilong:
+    DidilongController:
       plugin: "custom_controller::CustomController"
-      external_velocity_data_path: "/home/user/Eurobot-2025-Navigation2-ws/src/Eurobot-2025-Navigation2/navigation2_run/params/dynamic_params/nav_didilong_params.yaml"
+      external_velocity_data_path: "/home/share/data/nav_didilong_params.yaml"
       max_linear_vel: 1.5
       max_angular_vel: 1.0
       linear_kp: 2.2

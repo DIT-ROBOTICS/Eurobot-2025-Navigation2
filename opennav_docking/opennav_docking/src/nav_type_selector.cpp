@@ -20,14 +20,14 @@ void NavTypeSelector::setType(std::string const & mode, char & offset_direction,
     } else if(strstr(mode.c_str(), "unerring") != nullptr) {
         goal_checker_selector_msg_.data = "Unerring";
     } else if(strstr(mode.c_str(), "didilong") != nullptr) {
-        goal_checker_selector_msg_.data = "Didilong";
+        goal_checker_selector_msg_.data = "DidilongGoalChecker";
     } else {
         goal_checker_selector_msg_.data = "Loose";
     }
 
     // Determine the controller type
     if(strstr(mode.c_str(), "didilong") != nullptr) {
-        controller_selector_msg_.data = "Didilong";
+        controller_selector_msg_.data = "DidilongController";
     } else if(strstr(mode.c_str(), "fast") != nullptr) {
         controller_selector_msg_.data = "Fast";
     } else if(strstr(mode.c_str(), "slow") != nullptr) {
