@@ -83,7 +83,15 @@ Controller::Controller(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node) 
         [this](const std_msgs::msg::String::SharedPtr msg) {
             param_name_ = msg->data;
             updateParams();
-        });
+    });
+
+    // Special function for controller
+    controller_function_sub_ = node->create_subscription<std_msgs::msg::String>(
+        "/controller_function",
+        rclcpp::QoS(10).reliable().transient_local(),
+        [this](const std_msgs::msg::String::SharedPtr msg) {
+            controller_function_ = msg->data;
+    });
 }
 
 RobotState::RobotState(double x, double y, double theta) {
@@ -134,7 +142,11 @@ double Controller::getGoalAngle(double ang_diff) {
 void Controller::velocityInit(const geometry_msgs::msg::Pose & target) {
     total_distance_ = sqrt(pow(target.position.x - robot_pose_.x_, 2) + pow(target.position.y - robot_pose_.y_, 2));  // Target is in global frame
     // RCLCPP_INFO(logger_, "Total distance: %f", total_distance_);
-    ResetState();
+    if(controller_function_ == "NonStop"){
+        ResetState(VelocityState::CONSTANT);
+    } else {
+        ResetState(VelocityState::ACCELERATION);
+    }
 }
 
 bool Controller::computeVelocityCommand(
@@ -148,9 +160,15 @@ bool Controller::computeVelocityCommand(
 
     publishLocalGoal();
     
-    cmd.linear.x = ExtractVelocity(cmd.linear.x, global_distance, state_x_) * cos(local_angle);
-    cmd.linear.y = ExtractVelocity(cmd.linear.y, global_distance, state_y_) * sin(local_angle);
-    cmd.angular.z = getGoalAngle(global_angle);
+    if(controller_function_ == "NonStop") {
+        cmd.linear.x = ExtractVelocity(cmd.linear.x, global_distance, state_x_) * cos(local_angle);
+        cmd.linear.y = ExtractVelocity(cmd.linear.y, global_distance, state_y_) * sin(local_angle);
+        cmd.angular.z = getGoalAngle(global_angle);
+    } else {
+        cmd.linear.x = ExtractVelocity(cmd.linear.x, global_distance, state_x_) * cos(local_angle);
+        cmd.linear.y = ExtractVelocity(cmd.linear.y, global_distance, state_y_) * sin(local_angle);
+        cmd.angular.z = getGoalAngle(global_angle);
+    }
     
     return true;
 }

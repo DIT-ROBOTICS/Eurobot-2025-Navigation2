@@ -117,6 +117,8 @@ class Controller
     void declareAllControlParams();
     void updateParams();
     rclcpp::Subscription<std_msgs::msg::String>::SharedPtr dock_controller_selector_sub_;
+    rclcpp::Subscription<std_msgs::msg::String>::SharedPtr controller_function_sub_;
+    std::string controller_function_;
 
     // Parameters from the config file
     double max_linear_vel_, min_linear_vel_;
@@ -158,9 +160,9 @@ class Controller
     /** 
     * @brief Reset the state of the controller to acceleration 
     */
-    void ResetState() { 
-      state_x_ = VelocityState::ACCELERATION; 
-      state_y_ = VelocityState::ACCELERATION;
+    void ResetState(VelocityState state) { 
+      state_x_ = state; 
+      state_y_ = state;
       vel_error_sum_ = 0.0;
     }
 

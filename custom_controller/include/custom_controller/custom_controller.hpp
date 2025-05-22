@@ -101,6 +101,7 @@ class CustomController : public nav2_core::Controller{
 
         double speed_decade_;
         int costmap_tolerance_;
+        double non_stop_min_vel_;
 
         double target_vel_x_;
         double target_vel_y_;

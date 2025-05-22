@@ -21,6 +21,8 @@ void NavTypeSelector::setType(std::string const & mode, char & offset_direction,
         goal_checker_selector_msg_.data = "Unerring";
     } else if(strstr(mode.c_str(), "didilong") != nullptr) {
         goal_checker_selector_msg_.data = "DidilongGoalChecker";
+    } else if(strstr(mode.c_str(), "nonStop") != nullptr) {
+        goal_checker_selector_msg_.data = "NonStopGoalChecker";
     } else {
         goal_checker_selector_msg_.data = "Loose";
     }
@@ -45,6 +47,8 @@ void NavTypeSelector::setType(std::string const & mode, char & offset_direction,
         controller_function_msg_.data = "DelaySpin";
     } else if(strstr(mode.c_str(), "didilong") != nullptr) { 
         controller_function_msg_.data = "Didilong";
+    } else if(strstr(mode.c_str(), "nonStop") != nullptr) {
+        controller_function_msg_.data = "NonStop";
     } else {
         controller_function_msg_.data = "None";
     }

@@ -125,6 +125,14 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State &)
     "cmd_vel", rclcpp::QoS(1),
     std::bind(&VelocitySmoother::inputCommandCallback, this, std::placeholders::_1));
 
+  // Special function for controller
+  controller_function_sub_ = node->create_subscription<std_msgs::msg::String>(
+    "/controller_function",
+    rclcpp::QoS(10).reliable().transient_local(),
+    [this](const std_msgs::msg::String::SharedPtr msg) {
+        controller_function_ = msg->data;
+  });
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -256,13 +264,14 @@ void VelocitySmoother::smootherTimer()
 
   // Check for velocity timeout. If nothing received, publish zeros to apply deceleration
   if (now() - last_command_time_ > velocity_timeout_) {
+    if(controller_function_ == "NonStop") return;
     if (last_cmd_ == geometry_msgs::msg::Twist() || stopped_) {
       stopped_ = true;
       return;
     }
     *command_ = geometry_msgs::msg::Twist();
   }
-
+  
   stopped_ = false;
 
   // Get current velocity based on feedback type

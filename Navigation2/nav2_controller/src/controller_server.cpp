@@ -209,6 +209,14 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     speed_limit_topic, rclcpp::QoS(10),
     std::bind(&ControllerServer::speedLimitCallback, this, std::placeholders::_1));
 
+  // Special function for controller
+  controller_function_sub_ = node->create_subscription<std_msgs::msg::String>(
+      "/controller_function",
+      rclcpp::QoS(10).reliable().transient_local(),
+      [this](const std_msgs::msg::String::SharedPtr msg) {
+          controller_function_ = msg->data;
+  });
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -431,7 +439,8 @@ void ControllerServer::computeControl()
 
   RCLCPP_DEBUG(get_logger(), "Controller succeeded, setting result");
 
-  publishZeroVelocity();
+  // NonStop controller should not publish zero velocity
+  if(controller_function_ != "NonStop")  publishZeroVelocity();
 
   // TODO(orduno) #861 Handle a pending preemption and set controller name
   action_server_->succeeded_current();

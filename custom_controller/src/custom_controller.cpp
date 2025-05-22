@@ -92,6 +92,7 @@ void CustomController::configure(
     declare_parameter_if_not_declared(node, plugin_name_ + ".speed_decade", rclcpp::ParameterValue(0.7));
     declare_parameter_if_not_declared(node, plugin_name_ + ".keep_planning", rclcpp::ParameterValue(true));
     declare_parameter_if_not_declared(node, plugin_name_ + ".spin_delay_threshold", rclcpp::ParameterValue(0.5));
+    declare_parameter_if_not_declared(node, plugin_name_ + ".non_stop_min_vel", rclcpp::ParameterValue(0.3));
     
     //declare_parameter_if_not_declared(node, plugin_name_ + ".keepPlan", rclcpp::ParameterValue(ture));
     // Get parameters from the config file
@@ -136,6 +137,7 @@ void CustomController::configure(
     node->get_parameter(plugin_name_ + ".speed_decade", speed_decade_);
     node->get_parameter(plugin_name_ + ".keep_planning", keep_planning_);
     node->get_parameter(plugin_name_ + ".spin_delay_threshold", spin_delay_threshold_);
+    node->get_parameter(plugin_name_ + ".non_stop_min_vel", non_stop_min_vel_);
     double transform_tolerance;
     
     node->get_parameter(plugin_name_ + ".transform_tolerance", transform_tolerance);
@@ -497,6 +499,10 @@ geometry_msgs::msg::TwistStamped CustomController::computeVelocityCommands(
         cmd_vel.twist.linear.x = std::min(global_distance * 10.0, max_linear_vel_) * cos(local_angle);
         cmd_vel.twist.linear.y = std::min(global_distance * 10.0, max_linear_vel_) * sin(local_angle);
         cmd_vel.twist.angular.z = 0.0;
+    } else if(controller_function_ == "NonStop") {
+        cmd_vel.twist.linear.x = std::max(non_stop_min_vel_, std::min(global_distance * linear_kp_, max_linear_vel_)) * cos(local_angle);
+        cmd_vel.twist.linear.y = std::max(non_stop_min_vel_, std::min(global_distance * linear_kp_, max_linear_vel_)) * sin(local_angle);
+        cmd_vel.twist.angular.z = getGoalAngle(cur_pose_.theta_, final_goal_angle_);
     } else {
         cmd_vel.twist.linear.x = std::min(global_distance * linear_kp_, max_linear_vel_) * cos(local_angle);
         cmd_vel.twist.linear.y = std::min(global_distance * linear_kp_, max_linear_vel_) * sin(local_angle);

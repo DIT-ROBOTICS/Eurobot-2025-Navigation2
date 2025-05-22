@@ -26,6 +26,7 @@
 #include "nav2_util/node_utils.hpp"
 #include "nav2_util/odometry_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
+#include "std_msgs/msg/string.hpp"
 
 namespace nav2_velocity_smoother
 {
@@ -133,6 +134,8 @@ protected:
     smoothed_cmd_pub_;
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_sub_;
   rclcpp::TimerBase::SharedPtr timer_;
+  rclcpp::Subscription<std_msgs::msg::String>::SharedPtr controller_function_sub_;
+  std::string controller_function_;
 
   rclcpp::Clock::SharedPtr clock_;
   geometry_msgs::msg::Twist last_cmd_;
