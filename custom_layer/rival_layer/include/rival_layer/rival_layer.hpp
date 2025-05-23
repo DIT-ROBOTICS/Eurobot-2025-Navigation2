@@ -97,7 +97,8 @@ namespace custom_path_costmap_plugin {
             // Timeout for reset the costmap
             int reset_timeout_threshold_;
             // Parameters for expansion
-            double rival_inscribed_radius_;
+            double rival_inscribed_radius_, robot_inscribed_radius_;
+            std::string external_rival_data_path_;
             double halted_inflation_radius_, wandering_inflation_radius_, moving_inflation_radius_, unknown_inflation_radius_;
             double halted_cost_scaling_factor_, wandering_cost_scaling_factor_, moving_cost_scaling_factor_, unknown_cost_scaling_factor_;
             double max_extend_length_, cov_range_max_, cov_range_min_, vel_range_max_, vel_range_min_;
