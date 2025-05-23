@@ -16,6 +16,7 @@ namespace Object_costmap_plugin {
         }
 
         declareParameter("enabled", rclcpp::ParameterValue(true));
+        declareParameter("robot_inscribed_radius", rclcpp::ParameterValue(0.22));
         declareParameter("column_inscribed_radius", rclcpp::ParameterValue(0.75));
         declareParameter("board_inscribed_radius", rclcpp::ParameterValue(0.01));
         declareParameter("obstacle_inscribed_radius", rclcpp::ParameterValue(0.5));
@@ -31,12 +32,19 @@ namespace Object_costmap_plugin {
         
         node->get_parameter(name_ + "." + "base_frame", base_frame);
         node->get_parameter(name_ + "." + "enabled", enabled_);
+        node->get_parameter(name_ + "." + "robot_inscribed_radius", robot_inscribed_radius);
         node->get_parameter(name_ + "." + "column_inscribed_radius", column_inscribed_radius);
+        column_inscribed_radius += robot_inscribed_radius;
         node->get_parameter(name_ + "." + "board_inscribed_radius", board_inscribed_radius);
+        board_inscribed_radius += robot_inscribed_radius;
         node->get_parameter(name_ + "." + "obstacle_inscribed_radius", obstacle_inscribed_radius);
+        obstacle_inscribed_radius += robot_inscribed_radius;
         node->get_parameter(name_ + "." + "column_inflation_radius", column_inflation_radius);
+        column_inflation_radius += column_inscribed_radius;
         node->get_parameter(name_ + "." + "board_inflation_radius", board_inflation_radius);
+        board_inflation_radius += board_inscribed_radius;
         node->get_parameter(name_ + "." + "obstacle_inflation_radius", obstacle_inflation_radius);
+        obstacle_inflation_radius += obstacle_inscribed_radius;
         node->get_parameter(name_ + "." + "cost_scaling_factor", cost_scaling_factor);
         node->get_parameter(name_ + "." + "delay_mode", delay_mode);
         node->get_parameter(name_ + "." + "upper_x_range", upper_x_range);
@@ -88,21 +96,24 @@ namespace Object_costmap_plugin {
         }
         auto node = node_.lock();
         if(mode_param) {
-            column_inflation_radius = 0.1;
-            board_inflation_radius = 0.1;
-            obstacle_inflation_radius = 0.1;
+            column_inflation_radius = column_inscribed_radius + 0.02;
+            board_inflation_radius = board_inscribed_radius + 0.02;
+            obstacle_inflation_radius = obstacle_inscribed_radius + 0.02;
         }
         else {
             node->get_parameter(name_ + "." + "column_inflation_radius", column_inflation_radius);
+            column_inflation_radius += column_inscribed_radius;
             node->get_parameter(name_ + "." + "board_inflation_radius", board_inflation_radius);
+            board_inflation_radius += board_inscribed_radius;
             node->get_parameter(name_ + "." + "obstacle_inflation_radius", obstacle_inflation_radius);
+            obstacle_inflation_radius += obstacle_inscribed_radius;
         }
 
         for(auto object : columnList){
             if(eliminateObject(object)){
                 continue;
             }
-            else ExpandPointWithCircle(object.pose.position.x, object.pose.position.y, nav2_costmap_2d::LETHAL_OBSTACLE, column_inflation_radius, cost_scaling_factor, column_inscribed_radius);
+            else ExpandPointWithCircle(object.pose.position.x, object.pose.position.y, 200, column_inflation_radius, cost_scaling_factor, column_inscribed_radius);
             updateWithMax(master_grid, 0, 0, getSizeInCellsX(), getSizeInCellsY());
 
         }
@@ -110,18 +121,15 @@ namespace Object_costmap_plugin {
             if(eliminateObject(object)){
                 continue;
             }
-            else ExpandPointWithRectangle(object.pose.position.x, object.pose.position.y, nav2_costmap_2d::LETHAL_OBSTACLE, board_inflation_radius, cost_scaling_factor, board_inscribed_radius, object, 0);
+            else ExpandPointWithRectangle(object.pose.position.x, object.pose.position.y, 200, board_inflation_radius, cost_scaling_factor, board_inscribed_radius, object, 0);
             updateWithMax(master_grid, 0, 0, getSizeInCellsX(), getSizeInCellsY());
         }
         for(auto object : obstacleList){
-            if(eliminateObject(object)){
-                continue;
-            }
-            else ExpandPointWithCircle(object.pose.position.x, object.pose.position.y, nav2_costmap_2d::LETHAL_OBSTACLE, obstacle_inflation_radius, cost_scaling_factor, obstacle_inscribed_radius);
+            ExpandPointWithCircle(object.pose.position.x, object.pose.position.y, nav2_costmap_2d::MAX_NON_OBSTACLE, obstacle_inflation_radius, cost_scaling_factor, obstacle_inscribed_radius);
             updateWithMax(master_grid, 0, 0, getSizeInCellsX(), getSizeInCellsY());
         }
         for(auto object : overturnList){
-            ExpandPointWithRectangle(object.pose.position.x, object.pose.position.y, nav2_costmap_2d::LETHAL_OBSTACLE, board_inflation_radius, cost_scaling_factor, board_inscribed_radius, object, 1);
+            ExpandPointWithRectangle(object.pose.position.x, object.pose.position.y, 200, board_inflation_radius, cost_scaling_factor, board_inscribed_radius, object, 1);
             updateWithMax(master_grid, 0, 0, getSizeInCellsX(), getSizeInCellsY());
         }
         // updateWithMax(master_grid, 0, 0, getSizeInCellsX(), getSizeInCellsY());

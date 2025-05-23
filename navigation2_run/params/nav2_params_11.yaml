@@ -294,7 +294,7 @@ global_costmap:
         column_inflation_radius: 0.22
         board_inflation_radius: 0.22
         obstacle_inflation_radius: 0.6
-        cost_scaling_factor: 3.0
+        cost_scaling_factor: 10.0
       keepout_layer:
         plugin: "keepout_costmap_plugin::KeepoutLayer"
         enabled: True

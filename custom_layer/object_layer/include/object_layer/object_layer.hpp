@@ -76,6 +76,7 @@ namespace Object_costmap_plugin {
             double y_range;
             std::shared_ptr<tf2_ros::Buffer> tf2_buffer_;   
             std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+            double robot_inscribed_radius;
             double column_inscribed_radius, board_inscribed_radius;
             double column_inflation_radius, board_inflation_radius;
             double obstacle_inflation_radius, obstacle_inscribed_radius;
