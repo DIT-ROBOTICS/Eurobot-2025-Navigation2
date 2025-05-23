@@ -349,6 +349,7 @@ behavior_server:
     behavior_plugins: ["wait", "escape", "shrink"]
     escape:
       plugin: "nav2_behaviors/Escape"
+      scan_radius: 0.5
     wait:
       plugin: "nav2_behaviors/Wait"
     shrink:

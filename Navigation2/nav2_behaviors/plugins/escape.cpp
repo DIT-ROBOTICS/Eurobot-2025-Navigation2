@@ -52,6 +52,8 @@ namespace nav2_behaviors
             rclcpp::QoS(10), 
             std::bind(&Escape::rivalCallback, this, std::placeholders::_1));
         abort_escape = false;
+
+        node->get_parameter("scan_radius", scan_radius);
     }
 
     // New timer callback function
@@ -126,7 +128,6 @@ namespace nav2_behaviors
     }
 
     geometry_msgs::msg::Pose Escape::findTargetPoint() {
-        const double scan_radius = 0.3;  // meters
         const int num_points = 36;  // points per circle
         const double angle_increment = 2 * M_PI / num_points;
         
