@@ -188,20 +188,41 @@ namespace nav2_behaviors
     std::unique_ptr<geometry_msgs::msg::Twist> Escape::makeMove(double x, double y){
         auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>();
         double vel_x, vel_y, max_vel;
-        double dist = hypot(this->robotPose.pose.position.x - x, this->robotPose.pose.position.y - y);
-        // double ang_diff;
-        double first_ang_diff = atan2(y - this->robotPose.pose.position.y, x - this->robotPose.pose.position.x);
+
+        double dx = x - this->robotPose.pose.position.x;
+        double dy = y - this->robotPose.pose.position.y;
+        double dist = hypot(dx, dy);
+        double first_ang_diff = atan2(dy, dx);
+        
         double cur_linear_kp = 5;
         double linear_max_vel = 0.4;
-        max_vel = std::min(dist*cur_linear_kp, linear_max_vel);
-        vel_x = max_vel * cos(first_ang_diff);
-        vel_y = max_vel * sin(first_ang_diff);
+        max_vel = std::min(dist * cur_linear_kp, linear_max_vel);
+
+        // Velocity in global frame
+        double vel_x_global = max_vel * cos(first_ang_diff);
+        double vel_y_global = max_vel * sin(first_ang_diff);
+
+        // Get yaw from robot's orientation (quaternion)
+        tf2::Quaternion q(
+            this->robotPose.pose.orientation.x,
+            this->robotPose.pose.orientation.y,
+            this->robotPose.pose.orientation.z,
+            this->robotPose.pose.orientation.w
+        );
+        double roll, pitch, yaw;
+        tf2::Matrix3x3(q).getRPY(roll, pitch, yaw);  // extract yaw angle
+
+        // Rotate global velocity to robot frame
+        vel_x =  cos(yaw) * vel_x_global + sin(yaw) * vel_y_global;
+        vel_y = -sin(yaw) * vel_x_global + cos(yaw) * vel_y_global;
+
         cmd_vel->linear.x = vel_x;
         cmd_vel->linear.y = vel_y;
         cmd_vel->linear.z = 0;
         cmd_vel->angular.x = 0;
         cmd_vel->angular.y = 0;
         cmd_vel->angular.z = 0;
+
         return cmd_vel;
     }
 
