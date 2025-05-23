@@ -464,7 +464,7 @@ geometry_msgs::msg::TwistStamped CustomController::computeVelocityCommands(
     geometry_msgs::msg::TwistStamped cmd_vel;
     cmd_vel.header.frame_id = pose.header.frame_id;
     cmd_vel.header.stamp = clock_->now();
-
+    //test
     // if(!goal_checker->isGoalReached(pose.pose, global_plan_.poses.back().pose, velocity)){
         
         
