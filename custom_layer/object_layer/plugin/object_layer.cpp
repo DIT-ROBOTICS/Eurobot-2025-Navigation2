@@ -18,8 +18,10 @@ namespace Object_costmap_plugin {
         declareParameter("enabled", rclcpp::ParameterValue(true));
         declareParameter("column_inscribed_radius", rclcpp::ParameterValue(0.75));
         declareParameter("board_inscribed_radius", rclcpp::ParameterValue(0.01));
+        declareParameter("obstacle_inscribed_radius", rclcpp::ParameterValue(0.5));
         declareParameter("column_inflation_radius", rclcpp::ParameterValue(0.22));
         declareParameter("board_inflation_radius", rclcpp::ParameterValue(0.22));
+        declareParameter("obstacle_inflation_radius", rclcpp::ParameterValue(0.6));
         declareParameter("cost_scaling_factor", rclcpp::ParameterValue(3.0));
         declareParameter("delay_mode", rclcpp::ParameterValue(false));
         declareParameter("upper_x_range", rclcpp::ParameterValue(0.23));
@@ -31,8 +33,10 @@ namespace Object_costmap_plugin {
         node->get_parameter(name_ + "." + "enabled", enabled_);
         node->get_parameter(name_ + "." + "column_inscribed_radius", column_inscribed_radius);
         node->get_parameter(name_ + "." + "board_inscribed_radius", board_inscribed_radius);
+        node->get_parameter(name_ + "." + "obstacle_inscribed_radius", obstacle_inscribed_radius);
         node->get_parameter(name_ + "." + "column_inflation_radius", column_inflation_radius);
         node->get_parameter(name_ + "." + "board_inflation_radius", board_inflation_radius);
+        node->get_parameter(name_ + "." + "obstacle_inflation_radius", obstacle_inflation_radius);
         node->get_parameter(name_ + "." + "cost_scaling_factor", cost_scaling_factor);
         node->get_parameter(name_ + "." + "delay_mode", delay_mode);
         node->get_parameter(name_ + "." + "upper_x_range", upper_x_range);
@@ -45,6 +49,8 @@ namespace Object_costmap_plugin {
             "/detected/global_center_poses/column", 100, std::bind(&ObjectLayer::columnPoseArrayCallback, this, std::placeholders::_1));
         board_poseArray_sub = node->create_subscription<geometry_msgs::msg::PoseArray>(
             "/detected/global_center_poses/platform", 100, std::bind(&ObjectLayer::boardPoseArrayCallback, this, std::placeholders::_1));
+        obstacle_sub = node->create_subscription<geometry_msgs::msg::PoseArray>(
+            "/rival/obstacle", 100, std::bind(&ObjectLayer::obstaclePoseArrayCallback, this, std::placeholders::_1));
         robot_pose_sub = node->create_subscription<nav_msgs::msg::Odometry>(
             "/final_pose_nav", 100, std::bind(&ObjectLayer::robotPoseCallback, this, std::placeholders::_1));
         overturn_sub = node->create_subscription<geometry_msgs::msg::PoseArray>(
@@ -84,10 +90,12 @@ namespace Object_costmap_plugin {
         if(mode_param) {
             column_inflation_radius = 0.1;
             board_inflation_radius = 0.1;
+            obstacle_inflation_radius = 0.1;
         }
         else {
             node->get_parameter(name_ + "." + "column_inflation_radius", column_inflation_radius);
             node->get_parameter(name_ + "." + "board_inflation_radius", board_inflation_radius);
+            node->get_parameter(name_ + "." + "obstacle_inflation_radius", obstacle_inflation_radius);
         }
 
         for(auto object : columnList){
@@ -103,6 +111,13 @@ namespace Object_costmap_plugin {
                 continue;
             }
             else ExpandPointWithRectangle(object.pose.position.x, object.pose.position.y, nav2_costmap_2d::LETHAL_OBSTACLE, board_inflation_radius, cost_scaling_factor, board_inscribed_radius, object, 0);
+            updateWithMax(master_grid, 0, 0, getSizeInCellsX(), getSizeInCellsY());
+        }
+        for(auto object : obstacleList){
+            if(eliminateObject(object)){
+                continue;
+            }
+            else ExpandPointWithCircle(object.pose.position.x, object.pose.position.y, nav2_costmap_2d::LETHAL_OBSTACLE, obstacle_inflation_radius, cost_scaling_factor, obstacle_inscribed_radius);
             updateWithMax(master_grid, 0, 0, getSizeInCellsX(), getSizeInCellsY());
         }
         for(auto object : overturnList){
@@ -132,11 +147,13 @@ namespace Object_costmap_plugin {
         if(!delay_mode){
             boardList.clear();
             columnList.clear();
+            obstacleList.clear();
         }
         else if(delay_mode){
             if(clearTimer == 0){
                 boardList.clear();
                 columnList.clear();
+                obstacleList.clear();
                 clearTimer = 20;
             }
             clearTimer--;
@@ -210,6 +227,7 @@ namespace Object_costmap_plugin {
         current_ = true;
         columnList.clear();
         boardList.clear();
+        obstacleList.clear();
         overturnList.clear();
         tf2_buffer_->clear();
         resetMapToValue(0, 0, getSizeInCellsX(), getSizeInCellsY(), nav2_costmap_2d::FREE_SPACE);
@@ -262,6 +280,17 @@ namespace Object_costmap_plugin {
             poseStamped.pose = pose;
             poseStamped.header.frame_id = "map";
             boardList.push_back(poseStamped);
+        }
+        resetMapToValue(0, 0, getSizeInCellsX(), getSizeInCellsY(), nav2_costmap_2d::FREE_SPACE);
+    }
+
+    void ObjectLayer::obstaclePoseArrayCallback(const geometry_msgs::msg::PoseArray::SharedPtr object_poseArray){
+        obstacleList.clear();
+        for(auto pose : object_poseArray->poses){
+            geometry_msgs::msg::PoseStamped poseStamped;
+            poseStamped.pose = pose;
+            poseStamped.header.frame_id = "map";
+            obstacleList.push_back(poseStamped);
         }
         resetMapToValue(0, 0, getSizeInCellsX(), getSizeInCellsY(), nav2_costmap_2d::FREE_SPACE);
     }

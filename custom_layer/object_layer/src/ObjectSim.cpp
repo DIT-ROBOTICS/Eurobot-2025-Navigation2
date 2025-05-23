@@ -9,22 +9,28 @@ class ObjectSimPub : public rclcpp::Node {
     public:
         rclcpp::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr column_pub_;
         rclcpp::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr board_pub_;
+        rclcpp::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr obstacle_pub_;
         rclcpp::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr overturn_pub_; // New publisher
         rclcpp::TimerBase::SharedPtr column_timer_;
         rclcpp::TimerBase::SharedPtr board_timer_;
+        rclcpp::TimerBase::SharedPtr obstacle_timer_;
         rclcpp::TimerBase::SharedPtr overturn_timer_; // New timer
         int change_position_column = 50;
         int change_position_board = 90;
+        int change_position_obstacle = 50;
         geometry_msgs::msg::PoseArray column_message;
         geometry_msgs::msg::PoseArray board_message;
+        geometry_msgs::msg::PoseArray obstacle_message;
         geometry_msgs::msg::PoseArray overturn_message; // New message
-        int mode = 2;
+        int mode = 0;
         std::vector<double> column_pos_x {1.5, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 2.9, 2.9, 2.9, 2.9, 2.9, 2.9, 2.9, 2.9, 1.35, 1.3, 1.25, 1.2, 1.65, 1.7, 1.75, 1.8, 0.85, 0.8, 0.75, 0.7, 2.15, 2.2, 2.25, 2.3, 0.85, 0.8, 0.75, 0.7, 2.15, 2.2, 2.25, 2.3};
         std::vector<double> column_pos_y {1, 0.75, 0.7, 0.65, 0.6, 1.75, 1.7, 1.65, 1.6, 0.75, 0.7, 0.65, 0.6, 1.75, 1.7, 1.65, 1.6, 1, 1, 1, 1, 1, 1, 1, 1, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 1.8, 1.8, 1.8, 1.8, 1.8, 1.8, 1.8, 1.8};
         std::vector<double> custom_column_pos_x {1.5};
         std::vector<double> custom_column_pos_y {1};
         std::vector<double> board_pos_x {1.8};
         std::vector<double> board_pos_y {1};
+        std::vector<double> obstacle_pos_x {1.5, 1.7};
+        std::vector<double> obstacle_pos_y {0.5, 0.8};
         std::vector<double> board_orientation { /* fill with desired values */ };
         
         // New vectors for overturn positions
@@ -35,10 +41,12 @@ class ObjectSimPub : public rclcpp::Node {
         ObjectSimPub() : Node("object_sim_pub") {
             column_pub_ = this->create_publisher<geometry_msgs::msg::PoseArray>("/detected/global_center_poses/column", 100);
             board_pub_ = this->create_publisher<geometry_msgs::msg::PoseArray>("/detected/global_center_poses/platform", 100);
+            obstacle_pub_ = this->create_publisher<geometry_msgs::msg::PoseArray>("/rival/obstacle", 100);
             overturn_pub_ = this->create_publisher<geometry_msgs::msg::PoseArray>("/detected/global_center_poses/overturn", 100); // New publisher
             
             column_timer_ = this->create_wall_timer(std::chrono::milliseconds(1000), std::bind(&ObjectSimPub::column_timer_callback, this));
             board_timer_ = this->create_wall_timer(std::chrono::milliseconds(50), std::bind(&ObjectSimPub::board_timer_callback, this));
+            obstacle_timer_ = this->create_wall_timer(std::chrono::milliseconds(50), std::bind(&ObjectSimPub::obstacle_timer_callback, this));
             overturn_timer_ = this->create_wall_timer(std::chrono::milliseconds(500), std::bind(&ObjectSimPub::overturn_timer_callback, this)); // New timer
         }
     private:
@@ -121,7 +129,40 @@ class ObjectSimPub : public rclcpp::Node {
                 board_pub_->publish(board_message);
             }
         }
-
+        void obstacle_timer_callback() {
+            if(mode == 0){
+                if(change_position_obstacle == 0){
+                    obstacle_message = geometry_msgs::msg::PoseArray();
+                    obstacle_message.header.stamp = this->now();
+                    obstacle_message.header.frame_id = "map";
+                    for(int i = 0; i < 5; i++){
+                        auto obstacle_pose = generate_random_pose();
+                        obstacle_message.poses.push_back(obstacle_pose);
+                    }
+                    obstacle_pub_->publish(obstacle_message);
+                    change_position_obstacle = 50;
+                }
+                else obstacle_pub_->publish(obstacle_message);
+                change_position_obstacle--;
+            }
+            else if(mode == 1){
+                return;
+            }
+            else if(mode == 2) {
+                obstacle_message = geometry_msgs::msg::PoseArray();
+                obstacle_message.header.stamp = this->now();
+                obstacle_message.header.frame_id = "map";
+                for(int i = 0; i < obstacle_pos_x.size(); i++){
+                    geometry_msgs::msg::Pose pose;
+                    pose.position.x = obstacle_pos_x[i];
+                    pose.position.y = obstacle_pos_y[i];
+                    pose.orientation.z = std::sin(0.0 / 2.0);
+                    pose.orientation.w = std::cos(0.0 / 2.0);
+                    obstacle_message.poses.push_back(pose);
+                }
+                obstacle_pub_->publish(obstacle_message);
+            }
+        }
         // New callback for overturn timer
         void overturn_timer_callback() {
             if(mode == 0){

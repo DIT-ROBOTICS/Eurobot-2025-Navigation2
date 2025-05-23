@@ -290,8 +290,10 @@ global_costmap:
         enabled: True
         column_inscribed_radius: 0.075
         board_inscribed_radius: 0.01
+        obstacle_inscribed_radius: 0.5
         column_inflation_radius: 0.22
         board_inflation_radius: 0.22
+        obstacle_inflation_radius: 0.6
         cost_scaling_factor: 3.0
       keepout_layer:
         plugin: "keepout_costmap_plugin::KeepoutLayer"
