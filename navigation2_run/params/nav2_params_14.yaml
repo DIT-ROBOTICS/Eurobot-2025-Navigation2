@@ -489,5 +489,5 @@ final_pose_bridge:
 
 system_check:
   ros__parameters:
-    costmap_tolerance: 70
+    costmap_tolerance: 90
     external_rival_data_path: "/home/share/data/rival_params.yaml"
