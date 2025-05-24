@@ -424,6 +424,7 @@ bool CustomController::checkObstacle(int current_index, int check_index){
         check_goal_.pose.orientation.w = q.w();
         check_goal_pub_->publish(std::move(msg));
         for(int i = current_index; i < check_index; i++){
+            //desktop test
             // check_goal_.header.frame_id = global_plan_.header.frame_id;
             // check_goal_.header.stamp = global_plan_.header.stamp;
             // check_goal_.pose.position.x = vector_global_path_[i].x_;
