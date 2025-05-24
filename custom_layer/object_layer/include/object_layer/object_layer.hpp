@@ -49,6 +49,7 @@ namespace Object_costmap_plugin {
             void obstaclePoseArrayCallback(const geometry_msgs::msg::PoseArray::SharedPtr object_poseArray);
             void overturnPoseArrayCallback(const geometry_msgs::msg::PoseArray::SharedPtr object_poseArray);
             void robotPoseCallback(const nav_msgs::msg::Odometry::SharedPtr object_pose);
+            void timerCallback();
             void checkClear();    
             bool eliminateObject(geometry_msgs::msg::PoseStamped column);
             bool checkInBox(double x, double y);
@@ -63,9 +64,11 @@ namespace Object_costmap_plugin {
             rclcpp::Subscription<geometry_msgs::msg::PoseArray>::SharedPtr obstacle_sub;
             rclcpp::Subscription<geometry_msgs::msg::PoseArray>::SharedPtr overturn_sub;
             rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr robot_pose_sub;
+            rclcpp::TimerBase::SharedPtr update_timer_;
             geometry_msgs::msg::PoseStamped robot_pose;
             rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr set_mode_service_;
             bool mode_param = false;
+            bool update_ready_ = false;
             void handleSetMode(
                 const std::shared_ptr<std_srvs::srv::SetBool::Request> request,
                 const std::shared_ptr<std_srvs::srv::SetBool::Response> response);
@@ -84,7 +87,7 @@ namespace Object_costmap_plugin {
             double min_x_ = 0.0, min_y_ = 0.0, max_x_ = 3.0, max_y_ = 2.0;
             double board_width = 0.4, board_height = 0.1;
             double overturn_width = 0.11, overturn_height = 0.075;
-            geometry_msgs::msg::PoseStamped latest_object_;
+            std::mutex data_mutex_;
 
     };
 } // namespace Object_costmap_plgin

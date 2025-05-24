@@ -75,7 +75,19 @@ namespace Object_costmap_plugin {
         robot_pose.header.frame_id = "map";
         robot_pose.header.stamp = node->now();
         robot_pose.pose.orientation.w = 1.0;  // Identity quaternion
+        if (node) {
+            update_timer_ = node->create_wall_timer(
+            std::chrono::milliseconds(2000),  // 2 秒
+            std::bind(&ObjectLayer::timerCallback, this));
+        }
 
+    }
+
+    void ObjectLayer::timerCallback()
+    {
+        std::lock_guard<std::mutex> lock(data_mutex_);
+        if (!enabled_) return;
+        update_ready_ = true;
     }
 
     void ObjectLayer::updateBounds(double robot_x, double robot_y, double robot_yaw,
@@ -91,9 +103,12 @@ namespace Object_costmap_plugin {
     }
 
     void ObjectLayer::updateCosts(nav2_costmap_2d::Costmap2D &master_grid, int min_i, int min_j, int max_i, int max_j){
-        if(!enabled_){
+        updateWithMax(master_grid, 0, 0, getSizeInCellsX(), getSizeInCellsY());
+        if(!enabled_ || !update_ready_){
             return;
         }
+        resetMapToValue(0, 0, getSizeInCellsX(), getSizeInCellsY(), nav2_costmap_2d::FREE_SPACE);
+        
         auto node = node_.lock();
         if(mode_param) {
             column_inflation_radius = column_inscribed_radius + 0.02;
@@ -134,6 +149,11 @@ namespace Object_costmap_plugin {
         }
         // updateWithMax(master_grid, 0, 0, getSizeInCellsX(), getSizeInCellsY());
         // checkClear();
+        columnList.clear();
+        boardList.clear();
+        obstacleList.clear();
+        overturnList.clear();
+        update_ready_ = false;
     }
 
     void ObjectLayer::handleSetMode(
@@ -245,14 +265,14 @@ namespace Object_costmap_plugin {
     }
 
     void ObjectLayer::overturnPoseArrayCallback(const geometry_msgs::msg::PoseArray::SharedPtr object_poseArray){
-        overturnList.clear();
+        
         for(auto pose : object_poseArray->poses){
             geometry_msgs::msg::PoseStamped poseStamped;
             poseStamped.pose = pose;
             poseStamped.header.frame_id = "map";
             overturnList.push_back(poseStamped);
         }
-        resetMapToValue(0, 0, getSizeInCellsX(), getSizeInCellsY(), nav2_costmap_2d::FREE_SPACE);
+        //resetMapToValue(0, 0, getSizeInCellsX(), getSizeInCellsY(), nav2_costmap_2d::FREE_SPACE);
     }
 
     void ObjectLayer::robotPoseCallback(const nav_msgs::msg::Odometry::SharedPtr object_pose){
@@ -270,37 +290,37 @@ namespace Object_costmap_plugin {
     }
 
     void ObjectLayer::columnPoseArrayCallback(const geometry_msgs::msg::PoseArray::SharedPtr object_poseArray){
-        columnList.clear();
+        
         for(auto pose : object_poseArray->poses){
             geometry_msgs::msg::PoseStamped poseStamped;
             poseStamped.pose = pose;
             poseStamped.header.frame_id = "map";
             columnList.push_back(poseStamped);
         }
-        resetMapToValue(0, 0, getSizeInCellsX(), getSizeInCellsY(), nav2_costmap_2d::FREE_SPACE);
+        //resetMapToValue(0, 0, getSizeInCellsX(), getSizeInCellsY(), nav2_costmap_2d::FREE_SPACE);
 
     }
 
     void ObjectLayer::boardPoseArrayCallback(const geometry_msgs::msg::PoseArray::SharedPtr object_poseArray){
-        boardList.clear();
+        
         for(auto pose : object_poseArray->poses){
             geometry_msgs::msg::PoseStamped poseStamped;
             poseStamped.pose = pose;
             poseStamped.header.frame_id = "map";
             boardList.push_back(poseStamped);
         }
-        resetMapToValue(0, 0, getSizeInCellsX(), getSizeInCellsY(), nav2_costmap_2d::FREE_SPACE);
+        //resetMapToValue(0, 0, getSizeInCellsX(), getSizeInCellsY(), nav2_costmap_2d::FREE_SPACE);
     }
 
     void ObjectLayer::obstaclePoseArrayCallback(const geometry_msgs::msg::PoseArray::SharedPtr object_poseArray){
-        obstacleList.clear();
+        
         for(auto pose : object_poseArray->poses){
             geometry_msgs::msg::PoseStamped poseStamped;
             poseStamped.pose = pose;
             poseStamped.header.frame_id = "map";
             obstacleList.push_back(poseStamped);
         }
-        resetMapToValue(0, 0, getSizeInCellsX(), getSizeInCellsY(), nav2_costmap_2d::FREE_SPACE);
+        //resetMapToValue(0, 0, getSizeInCellsX(), getSizeInCellsY(), nav2_costmap_2d::FREE_SPACE);
     }
     // 0.22
     void ObjectLayer::ExpandPointWithCircle(double x, double y, double MaxCost, double InflationRadius, double CostScalingFactor, double InscribedRadius){
