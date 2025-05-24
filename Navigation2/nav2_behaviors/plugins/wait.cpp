@@ -45,6 +45,8 @@ Status Wait::onCycleUpdate()
   if (time_left.nanoseconds() > 0) {
     return Status::RUNNING;
   } else {
+    RCLCPP_INFO(
+      node_.lock()->get_logger(), "\033[1;32mWait SUCCESSED\033[0m");
     return Status::SUCCEEDED;
   }
 }
