@@ -79,6 +79,7 @@ namespace Object_costmap_plugin {
             double min_x_ = 0.0, min_y_ = 0.0, max_x_ = 3.0, max_y_ = 2.0;
             double board_width = 0.4, board_height = 0.1;
             double overturn_width = 0.11, overturn_height = 0.075;
+            geometry_msgs::msg::PoseStamped latest_object_;
 
     };
 } // namespace Object_costmap_plgin
