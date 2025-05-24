@@ -45,7 +45,7 @@ The keepout zones correspond to specific regions on the Eurobot 2025 field, used
 
 - **Functional Tags**:  
   - **Controller Type**: `fast`, `slow`, `linearBoost`, `angularBoost`  
-  - **Goal Checker Type**: `precise`, `loose`  
+  - **Goal Checker Type**: `precise`, `loose`, `unerring`
   - **Offset Direction**: `x`, `y`, `z`  
   - **Docking Style**: `ordinary`, `gentle`, `rush`  
   - **Special Control**: `delaySpin`, `nonStop`, `didilong`
