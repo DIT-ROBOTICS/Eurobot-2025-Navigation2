@@ -54,9 +54,9 @@ Applies a positional offset to the final goal before docking.
 
 | Keyword | Behavior                                                                                 |
 |---------|------------------------------------------------------------------------------------------|
-| `x`     | Shifts the docking goal along the X-axis. Useful to avoid obstructions or align with hardware. |
-| `y`     | Shifts the docking goal along the Y-axis.                                               |
-| `z`     | Shifts the docking goal along the Z-axis (if applicable, e.g., in 3D simulation or aerial robots). |
+| `x`     | Shifts the docking goal along the X-axis.                                                |
+| `y`     | Shifts the docking goal along the Y-axis.                                                |
+| `z`     | Shifts the docking goal along both the X-axis & Y-axis                                   |
 
 **Default:** z
 
