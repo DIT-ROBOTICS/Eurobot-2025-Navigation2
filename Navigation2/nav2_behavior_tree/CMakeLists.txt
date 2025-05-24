@@ -186,6 +186,9 @@ list(APPEND plugin_libs nav2_pipeline_sequence_bt_node)
 add_library(nav2_round_robin_node_bt_node SHARED plugins/control/round_robin_node.cpp)
 list(APPEND plugin_libs nav2_round_robin_node_bt_node)
 
+add_library(nav2_custom_sequence_node_bt_node SHARED plugins/control/custom_sequence_node.cpp)
+list(APPEND plugin_libs nav2_custom_sequence_node_bt_node)
+
 add_library(nav2_single_trigger_bt_node SHARED plugins/decorator/single_trigger_node.cpp)
 list(APPEND plugin_libs nav2_single_trigger_bt_node)
 

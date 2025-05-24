@@ -33,6 +33,13 @@ namespace nav2_behaviors
             throw std::runtime_error("Failed to lock node in onConfigure");
         }
         
+        // Declare the scan_radius parameter with default value
+        nav2_util::declare_parameter_if_not_declared(
+            node, "escape.scan_radius", rclcpp::ParameterValue(0.5));
+        
+        // Get the parameter value
+        node->get_parameter("escape.scan_radius", scan_radius);
+        
         // Create the timer for updating target points
         target_update_timer_ = node->create_wall_timer(
             std::chrono::duration<double>(1.0 / target_update_frequency_),
@@ -52,8 +59,6 @@ namespace nav2_behaviors
             rclcpp::QoS(10), 
             std::bind(&Escape::rivalCallback, this, std::placeholders::_1));
         abort_escape = false;
-
-        node->get_parameter("scan_radius", scan_radius);
     }
 
     // New timer callback function
@@ -85,9 +90,6 @@ namespace nav2_behaviors
             double new_cost = getOneGridCost(new_target.position.x, new_target.position.y);
             
             if (new_cost < old_cost) {
-                RCLCPP_INFO(logger_, "Updating target from (%f, %f) to (%f, %f)", 
-                    target_point.position.x, target_point.position.y,
-                    new_target.position.x, new_target.position.y);
                 target_point = new_target;
             }
         }
@@ -248,10 +250,17 @@ namespace nav2_behaviors
             return Status::FAILED;
         }
 
-        if(isEscape() || outOfBound(robotPose.pose.position.x, robotPose.pose.position.y)){
+        if(outOfBound(robotPose.pose.position.x, robotPose.pose.position.y)){
             stopRobot();
             is_active = false;
-            RCLCPP_INFO(logger_, "Escape successfully");
+            RCLCPP_INFO(logger_, "\033[1;31mEscape Fail, Out of Bound\033[0m");  // Bold red
+            return Status::FAILED;
+        }
+
+        if(isEscape()){
+            stopRobot();
+            is_active = false;
+            RCLCPP_INFO(logger_, "\033[1;32mEscape SUCCESSED\033[0m");  // Bold green
             return Status::SUCCEEDED;
         }
         
@@ -260,6 +269,7 @@ namespace nav2_behaviors
             stopRobot();
             is_active = false;
             abort_escape = false;
+            RCLCPP_INFO(logger_, "\033[1;31mEscape Fail, No Target Point\033[0m");  // Bold red
             return Status::FAILED;
         }
         

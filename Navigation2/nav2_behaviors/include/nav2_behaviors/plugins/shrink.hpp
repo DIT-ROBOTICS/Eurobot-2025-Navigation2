@@ -8,6 +8,7 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "std_srvs/srv/set_bool.hpp"
 #include "std_msgs/msg/bool.hpp"
+#include <string>
 
 namespace nav2_behaviors
 {
@@ -35,7 +36,8 @@ namespace nav2_behaviors
         int times;
         int unused_shrink;
         bool shrinkBack;
-        double costmap_tolerance;
+        int costmap_tolerance;
+        int timer_duration;
         double original_inflation_radius;
         double getOneGridCost(double x, double y);
         void costmapCallback(const nav_msgs::msg::OccupancyGrid& msg);
@@ -52,7 +54,6 @@ namespace nav2_behaviors
         void changeInflationLayer(bool doShrink);
         void changeRivalLayer(bool doShrink);
         void changeObjectLayer(bool doShrink);
-        void getOriginalParam();
         void setToOriginal();
         void setToShrink();
     };
