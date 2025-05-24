@@ -81,11 +81,14 @@ class CustomController : public nav2_core::Controller{
         
         rcl_interfaces::msg::SetParametersResult
         dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
+        void updateMaxSpeed();
+        double max_linear_vel_prev = -1.0, max_angular_vel_prev = -1.0;
 
         // Parameters from the config file
         double control_frequency_;
         double max_linear_vel_, min_linear_vel_;
         double linear_acceleration_;
+        std::string external_velocity_data_path_;
         double max_angular_vel_, min_angular_vel_;
         double max_linear_acc_, max_angular_acc_;
         double yaw_goal_tolerance_;
