@@ -16,7 +16,7 @@ namespace nav2_behaviors
         if (!node) {
             throw std::runtime_error("Failed to lock node");
         }
-
+            
         radius_param_client = std::make_shared<rclcpp::AsyncParametersClient>(
             node, 
             "/global_costmap/global_costmap"
@@ -33,9 +33,19 @@ namespace nav2_behaviors
             rclcpp::SystemDefaultsQoS(), 
             std::bind(&Shrink::goalPoseCallback, this, std::placeholders::_1)
         );
+        
         shrinkBack = false;
-        node->get_parameter("costmap_tolerance", costmap_tolerance);
+        
+        // Use the behavior name to get the namespaced parameters
+        nav2_util::declare_parameter_if_not_declared(
+            node, "shrink.costmap_tolerance", rclcpp::ParameterValue(50));
+        nav2_util::declare_parameter_if_not_declared(
+            node, "shrink.timer_duration", rclcpp::ParameterValue(20));
 
+        // Get the parameter values using the proper namespace
+        node->get_parameter("shrink.costmap_tolerance", costmap_tolerance);
+        node->get_parameter("shrink.timer_duration", timer_duration);
+    
         shrinkCheck_srv = node->create_service<std_srvs::srv::SetBool>(
             "/shrink/doneShrink",
             std::bind(&Shrink::handleShrinkCheck, this, std::placeholders::_1, std::placeholders::_2)
@@ -73,15 +83,16 @@ namespace nav2_behaviors
             setToShrink();
         }
 
-        if(noCostInMiddle() && noCostAtGoal() && times > 20){
+        if(noCostInMiddle() && noCostAtGoal() && times > timer_duration){
             times = 0;
             shrinkBack = true;
+            RCLCPP_INFO(logger_, "\033[1;32mShrink SUCCESSED\033[0m");  // Bold green
             return Status::SUCCEEDED;
         }
-        else if(times > 20){
-            RCLCPP_ERROR(logger_, "shrink the inflation radius is not working");
+        else if(times > timer_duration){
             times = 0;
             shrinkBack = true;
+            RCLCPP_INFO(logger_, "\033[1;31mShrink FAILED\033[0m");  // Bold red
             return Status::FAILED;
         }
         else return Status::RUNNING;
@@ -98,15 +109,6 @@ namespace nav2_behaviors
         }
     }
 
-    void Shrink::getOriginalParam(){
-        if(radius_param_client->service_is_ready()){
-            radius_param_client->get_parameters({"inflation_layer.inflation_radius"}, [this](std::shared_future<std::vector<rclcpp::Parameter>> future){
-                future.wait();
-                auto result = future.get();
-                original_inflation_radius = result[0].as_double();
-            });
-        }
-    }
 
     void Shrink::setToOriginal(){
         RCLCPP_INFO(logger_, "set the inflation radius to original");
@@ -163,8 +165,6 @@ namespace nav2_behaviors
                     RCLCPP_ERROR(logger_, "Exception in inflation layer callback: %s", e.what());
                 }
             });
-
-        RCLCPP_INFO(logger_, "Requested inflation layer update");
     }
 
     void Shrink::changeRivalLayer(bool doShrink) {
@@ -189,9 +189,7 @@ namespace nav2_behaviors
                 } catch (const std::exception& e) {
                     RCLCPP_ERROR(logger_, "Exception in rival layer callback: %s", e.what());
                 }
-            });
-        
-        RCLCPP_INFO(logger_, "Requested rival layer update asynchronously");
+            });        
     }
 
     void Shrink::changeObjectLayer(bool doShrink) {
@@ -217,9 +215,7 @@ namespace nav2_behaviors
                 } catch (const std::exception& e) {
                     RCLCPP_ERROR(logger_, "Exception in object layer callback: %s", e.what());
                 }
-            });
-        
-        RCLCPP_INFO(logger_, "Requested object layer update asynchronously");
+            });        
     }
 
     bool Shrink::noCostInMiddle(){
