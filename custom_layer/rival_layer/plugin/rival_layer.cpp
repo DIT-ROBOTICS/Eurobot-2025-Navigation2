@@ -485,8 +485,6 @@ namespace custom_path_costmap_plugin {
                             rclcpp::get_logger("RivalLayer"), 
                             "\033[1;35m Rival inscribed radius is updated to %f \033[0m", config["nav_rival_parameters"]["rival_inscribed_radius"].as<double>());
                     }
-                } else {
-                    RCLCPP_WARN(rclcpp::get_logger("RivalLayer"), "rival_inscribed_radius not found in YAML file, using default value");
                 }
             } catch (const std::exception &e) {
                 RCLCPP_ERROR(rclcpp::get_logger("RivalLayer"), "Failed to load YAML file: %s, using default value", e.what());

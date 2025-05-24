@@ -159,6 +159,14 @@ def generate_launch_description():
                               'container_name': 'nav2_container'}.items()),
     ])
 
+    system_check_cmd = Node(
+        package='navigation2_run',
+        executable='system_check',
+        name='system_check',
+        output='screen',
+        parameters=[params_file]
+    )
+
     # Create the launch description and populate
     ld = LaunchDescription()
 
@@ -179,5 +187,8 @@ def generate_launch_description():
 
     # Add the actions to launch all of the navigation nodes
     ld.add_action(bringup_cmd_group)
+
+    # Add the system check node
+    ld.add_action(system_check_cmd)
 
     return ld

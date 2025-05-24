@@ -478,3 +478,8 @@ final_pose_bridge:
   ros__parameters:
     # twist_topic: "/driving_duaiduaiduai"
     twist_topic: "/odoo_googoogoo"
+
+system_check:
+  ros__parameters:
+    costmap_tolerance: 70
+    external_rival_data_path: "/home/user/Eurobot-2025-Navigation2-ws/src/Eurobot-2025-Navigation2/navigation2_run/params/dynamic_params/rival_params.yaml"
