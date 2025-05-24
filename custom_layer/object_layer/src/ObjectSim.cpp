@@ -41,7 +41,7 @@ class ObjectSimPub : public rclcpp::Node {
         ObjectSimPub() : Node("object_sim_pub") {
             column_pub_ = this->create_publisher<geometry_msgs::msg::PoseArray>("/detected/global_center_poses/column", 100);
             board_pub_ = this->create_publisher<geometry_msgs::msg::PoseArray>("/detected/global_center_poses/platform", 100);
-            obstacle_pub_ = this->create_publisher<geometry_msgs::msg::PoseArray>("/rival/obstacle", 100);
+            obstacle_pub_ = this->create_publisher<geometry_msgs::msg::PoseArray>("/scan_obstacles", 100);
             overturn_pub_ = this->create_publisher<geometry_msgs::msg::PoseArray>("/detected/global_center_poses/overturn", 100); // New publisher
             
             column_timer_ = this->create_wall_timer(std::chrono::milliseconds(1000), std::bind(&ObjectSimPub::column_timer_callback, this));

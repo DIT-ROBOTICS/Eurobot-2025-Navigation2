@@ -58,7 +58,7 @@ namespace Object_costmap_plugin {
         board_poseArray_sub = node->create_subscription<geometry_msgs::msg::PoseArray>(
             "/detected/global_center_poses/platform", 100, std::bind(&ObjectLayer::boardPoseArrayCallback, this, std::placeholders::_1));
         obstacle_sub = node->create_subscription<geometry_msgs::msg::PoseArray>(
-            "/rival/obstacle", 100, std::bind(&ObjectLayer::obstaclePoseArrayCallback, this, std::placeholders::_1));
+            "/scan_obstacles", 100, std::bind(&ObjectLayer::obstaclePoseArrayCallback, this, std::placeholders::_1));
         robot_pose_sub = node->create_subscription<nav_msgs::msg::Odometry>(
             "/final_pose_nav", 100, std::bind(&ObjectLayer::robotPoseCallback, this, std::placeholders::_1));
         overturn_sub = node->create_subscription<geometry_msgs::msg::PoseArray>(
