@@ -261,6 +261,10 @@
 
     <Control ID="RoundRobin"/>
 
+    <Control ID="CustomSequence">
+      <input_port name="goalUpdated"></input_port>
+    </Control>
+
     <!-- ############################### DECORATOR NODES ############################## -->
     <Decorator ID="RateController">
       <input_port name="hz">Rate</input_port>
@@ -271,6 +275,7 @@
     </Decorator>
 
     <Decorator ID="SetupUpdater">
+      <output_port name="goalUpdated"></output_port>
     </Decorator>
 
     <Decorator ID="DistanceController">
