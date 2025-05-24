@@ -167,7 +167,7 @@ private:
               double rival_inscribed_radius = config["nav_rival_parameters"]["rival_inscribed_radius"].as<double>();
               rival_inscribed_radius -= 0.01;
               config["nav_rival_parameters"]["rival_inscribed_radius"] = std::max(rival_inscribed_radius, 0.0);
-              RCLCPP_INFO(this->get_logger(), "\033[1;35m Shrunk rival_inscribed_radius to %f \033[0m", rival_inscribed_radius);
+              RCLCPP_INFO(this->get_logger(), "\033[1;35m Shrunk rival_inscribed_radius to %f \033[0m", config["nav_rival_parameters"]["rival_inscribed_radius"].as<double>());
           } else {
               RCLCPP_WARN(this->get_logger(), "rival_inscribed_radius not found in YAML file, cannot shrink automatically");
               return;
