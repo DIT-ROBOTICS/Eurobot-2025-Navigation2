@@ -16,7 +16,7 @@ Offers a variety of commands for enhanced control and flexibility:
 - `/stopRobot`: Lock/unlock the robot.  
 - `/keepout_zone`: Dynamically set keepout zones to avoid certain areas.  
 - `/dock_robot`: Supports flexible keyword-based commands via the `dock_type` parameter.  
-- `rival_param.yaml`: Supports dynamic rival data setup adjustments.
+- `external yaml file`: Supports dynamic parameter data setup adjustments.
 
 #### ✅ Stop Robot
 
@@ -48,13 +48,47 @@ The keepout zones correspond to specific regions on the Eurobot 2025 field, used
   - **Goal Checker Type**: `precise`, `loose`  
   - **Offset Direction**: `x`, `y`, `z`  
   - **Docking Style**: `ordinary`, `gentle`, `rush`  
-  - **Special Control**: `delaySpin`
+  - **Special Control**: `delaySpin`, `nonStop`, `didilong`
 
-#### ✅ Format for `rival_param.yaml`
+#### ✅ Format for yaml files (path set in `nav2_params`)
 
+`rival_params.yaml`
 ```yaml
-rival_parameters:
-  rival_inscribed_radius: *data(double)*
+nav_rival_parameters:
+  rival_inscribed_radius: 0.22
+dock_rival_parameters:
+  dock_rival_radius: 0.46
+  dock_rival_degree: 120
+```
+`nav_didilong_params.yaml`
+```yaml
+robot_parameters:
+  max_linear_velocity: 1.5
+  max_angular_velocity: 1.0
+```
+`nav_fast_params.yaml`
+```yaml
+robot_parameters:
+  max_linear_velocity: 1.1
+  max_angular_velocity: 12.0
+```
+`nav_slow_params.yaml`
+```yaml
+robot_parameters:
+  max_linear_velocity: 0.8
+  max_angular_velocity: 2.0
+  ```
+`nav_linearBoost_params.yaml`
+```yaml
+robot_parameters:
+  max_linear_velocity: 1.1
+  max_angular_velocity: 2.0
+```
+`nav_angularBoost_params.yaml`
+```yaml
+robot_parameters:
+  max_linear_velocity: 0.5
+  max_angular_velocity: 12.0
 ```
 
 ---
