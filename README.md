@@ -50,46 +50,13 @@ The keepout zones correspond to specific regions on the Eurobot 2025 field, used
   - **Docking Style**: `ordinary`, `gentle`, `rush`  
   - **Special Control**: `delaySpin`, `nonStop`, `didilong`
 
-#### ✅ Format for yaml files (path set in `nav2_params`)
+For more details, please refer to the [**README file**](opennav_docking/docs/dock_robot_keywords.md)
 
-`rival_params.yaml`
-```yaml
-nav_rival_parameters:
-  rival_inscribed_radius: 0.22
-dock_rival_parameters:
-  dock_rival_radius: 0.46
-  dock_rival_degree: 120
-```
-`nav_didilong_params.yaml`
-```yaml
-robot_parameters:
-  max_linear_velocity: 1.5
-  max_angular_velocity: 1.0
-```
-`nav_fast_params.yaml`
-```yaml
-robot_parameters:
-  max_linear_velocity: 1.1
-  max_angular_velocity: 12.0
-```
-`nav_slow_params.yaml`
-```yaml
-robot_parameters:
-  max_linear_velocity: 0.8
-  max_angular_velocity: 2.0
-  ```
-`nav_linearBoost_params.yaml`
-```yaml
-robot_parameters:
-  max_linear_velocity: 1.1
-  max_angular_velocity: 2.0
-```
-`nav_angularBoost_params.yaml`
-```yaml
-robot_parameters:
-  max_linear_velocity: 0.5
-  max_angular_velocity: 12.0
-```
+#### ✅ Format for external yaml files
+
+Follow the format and specify the path to the external YAML file to achieve this function.
+
+For more details, please refer to the [**README file**](navigation2_run/params/dynamic_params/params_formats.md)
 
 ---
 
