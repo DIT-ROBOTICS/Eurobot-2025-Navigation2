@@ -162,6 +162,7 @@ namespace custom_path_costmap_plugin {
 
             // Functions for update radius
             void updateRadius();
+            double rival_inscribed_radius_prev_;
 
             // Rival pose subscibtion
             rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr rival_distance_sub_;
