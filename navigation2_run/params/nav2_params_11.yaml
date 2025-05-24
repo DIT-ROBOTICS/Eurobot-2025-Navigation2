@@ -44,6 +44,7 @@ bt_navigator:
       - nav2_recovery_node_bt_node
       - nav2_pipeline_sequence_bt_node
       - nav2_round_robin_node_bt_node
+      - nav2_custom_sequence_node_bt_node
       - nav2_transform_available_condition_bt_node
       - nav2_time_expired_condition_bt_node
       - nav2_path_expiring_timer_condition
@@ -356,6 +357,8 @@ behavior_server:
       plugin: "nav2_behaviors/Wait"
     shrink:
       plugin: "nav2_behaviors/Shrink"
+      costmap_tolerance: 95
+      timer_duration: 20
     global_frame: map
     robot_base_frame: base_footprint
     transform_tolerance: 0.1
