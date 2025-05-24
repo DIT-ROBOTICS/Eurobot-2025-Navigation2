@@ -12,6 +12,12 @@ namespace custom_path_costmap_plugin {
         current_ = true;
         resetMapToValue(0, 0, getSizeInCellsX(), getSizeInCellsY(), nav2_costmap_2d::FREE_SPACE);
 
+        // Get the node
+        auto node = node_.lock();
+        if (!node) {
+            throw std::runtime_error{"Failed to lock node"};
+        }
+
         // Declare the parameters
         declareParameter("enabled", rclcpp::ParameterValue(true));
 
@@ -23,12 +29,15 @@ namespace custom_path_costmap_plugin {
 
         declareParameter("reset_timeout_threshold", rclcpp::ParameterValue(40));
 
+        declareParameter("robot_inscribed_radius", rclcpp::ParameterValue(0.22));
+        // If given external_rival_data_path, use it to load the rival's data
+        declareParameter("external_rival_data_path", rclcpp::ParameterValue(""));
         declareParameter("rival_inscribed_radius", rclcpp::ParameterValue(0.22));
 
-        declareParameter("halted_inflation_radius", rclcpp::ParameterValue(0.5));
-        declareParameter("wandering_inflation_radius", rclcpp::ParameterValue(0.5));
-        declareParameter("moving_inflation_radius", rclcpp::ParameterValue(0.2));
-        declareParameter("unknown_inflation_radius", rclcpp::ParameterValue(0.55));
+        declareParameter("halted_inflation_radius", rclcpp::ParameterValue(0.1));
+        declareParameter("wandering_inflation_radius", rclcpp::ParameterValue(0.1));
+        declareParameter("moving_inflation_radius", rclcpp::ParameterValue(0.1));
+        declareParameter("unknown_inflation_radius", rclcpp::ParameterValue(0.1));
 
         declareParameter("halted_cost_scaling_factor", rclcpp::ParameterValue(10.0));
         declareParameter("wandering_cost_scaling_factor", rclcpp::ParameterValue(3.0));
@@ -54,14 +63,6 @@ namespace custom_path_costmap_plugin {
         declareParameter("safe_distance", rclcpp::ParameterValue(0.5));
         declareParameter("expand_vel_factor_weight_localization", rclcpp::ParameterValue(0.20));
         declareParameter("use_statistic_method", rclcpp::ParameterValue(false));
-        declareParameter("rival_correction_factor_x", rclcpp::ParameterValue(0.1));
-        declareParameter("rival_correction_factor_y", rclcpp::ParameterValue(0.1));
-        declareParameter("rival_correction_factor_z", rclcpp::ParameterValue(0.1));
-        // Get the node
-        auto node = node_.lock();
-        if (!node) {
-            throw std::runtime_error{"Failed to lock node"};
-        }
     
         // Get the parameters
         node->get_parameter(name_ + "." + "enabled", enabled_);
@@ -74,12 +75,37 @@ namespace custom_path_costmap_plugin {
 
         node->get_parameter(name_ + "." + "reset_timeout_threshold", reset_timeout_threshold_);
 
+        node->get_parameter(name_ + "." + "robot_inscribed_radius", robot_inscribed_radius_);
+        
+        node->get_parameter(name_ + "." + "external_rival_data_path", external_rival_data_path_);
         node->get_parameter(name_ + "." + "rival_inscribed_radius", rival_inscribed_radius_);
+        if(!external_rival_data_path_.empty()) {
+            try {
+                YAML::Node config = YAML::LoadFile(external_rival_data_path_);
+                if (config["nav_rival_parameters"] && config["nav_rival_parameters"]["rival_inscribed_radius"]) {
+                    rival_inscribed_radius_ = config["nav_rival_parameters"]["rival_inscribed_radius"].as<double>();
+                } else {
+                    RCLCPP_WARN(rclcpp::get_logger("RivalLayer"), "rival_inscribed_radius not found in YAML file, using default value");
+                }
+            } catch (const std::exception &e) {
+                RCLCPP_ERROR(rclcpp::get_logger("RivalLayer"), "Failed to load YAML file: %s, using default value", e.what());
+            }
+        } 
+        // TODO: Refactor the implementation code for rival_inscribed_radius_ to avoid misleading the variable name
+        rival_inscribed_radius_ += robot_inscribed_radius_;
+        RCLCPP_INFO(
+            rclcpp::get_logger("RivalLayer"), 
+            "\033[1;35m Rival inscribed radius is set to %f \033[0m", rival_inscribed_radius_);
 
         node->get_parameter(name_ + "." + "halted_inflation_radius", halted_inflation_radius_);
         node->get_parameter(name_ + "." + "wandering_inflation_radius", wandering_inflation_radius_);
         node->get_parameter(name_ + "." + "moving_inflation_radius", moving_inflation_radius_);
         node->get_parameter(name_ + "." + "unknown_inflation_radius", unknown_inflation_radius_);
+        // TODO: Refactor the implementation code for inflation_radius_ to avoid misleading the variable name
+        halted_inflation_radius_ += rival_inscribed_radius_;
+        wandering_inflation_radius_ += rival_inscribed_radius_;
+        moving_inflation_radius_ += rival_inscribed_radius_;
+        unknown_inflation_radius_ += rival_inscribed_radius_;
 
         node->get_parameter(name_ + "." + "halted_cost_scaling_factor", halted_cost_scaling_factor_);
         node->get_parameter(name_ + "." + "wandering_cost_scaling_factor", wandering_cost_scaling_factor_);
@@ -107,19 +133,17 @@ namespace custom_path_costmap_plugin {
         node->get_parameter(name_ + "." + "safe_distance", safe_distance_);
 
         node->get_parameter(name_ + "." + "use_statistic_method", use_statistic_method_);
-        node->get_parameter(name_ + "." + "rival_correction_factor_x", rival_correction_factor_x_);
-        node->get_parameter(name_ + "." + "rival_correction_factor_y", rival_correction_factor_y_);
-        node->get_parameter(name_ + "." + "rival_correction_factor_z", rival_correction_factor_z_);
+
         // Subscribe to the rival's pose
         rival_pose_sub_ = node->create_subscription<nav_msgs::msg::Odometry>(
             "/rival/final_pose", 100, std::bind(&RivalLayer::rivalPoseCallback, this, std::placeholders::_1));
         rival_distance_sub_ = node->create_subscription<std_msgs::msg::Float64>(
             "/rival_distance", 100, std::bind(&RivalLayer::rivalDistanceCallback, this, std::placeholders::_1));
-        robot_pose_sub_ = node->create_subscription<geometry_msgs::msg::PoseStamped>(
-            "/robot_pose", 100, std::bind(&RivalLayer::robotPoseCallback, this, std::placeholders::_1));
-        robot_vel_sub_ = node->create_subscription<geometry_msgs::msg::Twist>(
-            "/cmd_vel", 100, std::bind(&RivalLayer::robotVelCallback, this, std::placeholders::_1));
         
+        set_mode_service_ = node->create_service<std_srvs::srv::SetBool>(
+            "/rival_layer/set_mode", std::bind(&RivalLayer::handleSetMode, this, std::placeholders::_1, std::placeholders::_2));
+        mode_param = 0;
+
         // Initialize the queue
         rival_path_.init(model_size_);
     }
@@ -144,12 +168,8 @@ namespace custom_path_costmap_plugin {
             return;
         }
 
-        auto node = node_.lock();
-        node->get_parameter(name_ + "." + "halted_inflation_radius", halted_inflation_radius_);
-        node->get_parameter(name_ + "." + "wandering_inflation_radius", wandering_inflation_radius_);
-        node->get_parameter(name_ + "." + "moving_inflation_radius", moving_inflation_radius_);
-        node->get_parameter(name_ + "." + "unknown_inflation_radius", unknown_inflation_radius_);
-
+        updateRadius();
+        
         // Set the rival as a lethal obstacle & Update the costmap with the rival's path
         if(rival_pose_received_) {
             resetMapToValue(0, 0, getSizeInCellsX(), getSizeInCellsY(), nav2_costmap_2d::FREE_SPACE);
@@ -168,6 +188,20 @@ namespace custom_path_costmap_plugin {
 
     bool RivalLayer::isClearable() {
         return true;
+    }
+
+    void RivalLayer::handleSetMode(
+        const std::shared_ptr<std_srvs::srv::SetBool::Request> request,
+        const std::shared_ptr<std_srvs::srv::SetBool::Response> response) {
+        if(request->data) {
+            mode_param = 1;
+            response->success = true;
+            response->message = "RivalLayer is in shrink mode";
+        } else {
+            mode_param = 0;
+            response->success = true;
+            response->message = "RivalLayer is in default mode";
+        }
     }
 
     void RivalLayer::reset() {
@@ -354,8 +388,12 @@ namespace custom_path_costmap_plugin {
                 if (worldToMap(mark_x, mark_y, mx, my)) {
                     Distance = sqrt(pow(fabs(x - currentPointX), 2) + pow(fabs(y - currentPointY), 2));
 
-                    cost = ceil(252 * exp(-CostScalingFactor * (Distance - InscribedRadius)));
-                    cost = std::max(std::min(cost, MaxCost), 0.0);
+                    if (Distance <= InscribedRadius) {
+                        cost = MaxCost;
+                    } else {
+                        cost = ceil(252 * exp(-CostScalingFactor * (Distance - InscribedRadius)));
+                        cost = std::max(std::min(cost, MaxCost), 0.0);
+                    }
                     
                     if (getCost(mx, my) != nav2_costmap_2d::NO_INFORMATION) {
                         setCost(mx, my, std::max((unsigned char)cost, getCost(mx, my)));
@@ -399,31 +437,31 @@ namespace custom_path_costmap_plugin {
         // Expand the costmap based on the rival's state
         switch (rival_state_) {
             case RivalState::HALTED:
-                ExpandPointWithCircle(x, y, nav2_costmap_2d::LETHAL_OBSTACLE, halted_inflation_radius_, halted_cost_scaling_factor_, rival_inscribed_radius_);
+                ExpandPointWithCircle(x, y, nav2_costmap_2d::MAX_NON_OBSTACLE, halted_inflation_radius_, halted_cost_scaling_factor_, rival_inscribed_radius_);
                 break;
             
             case RivalState::WANDERING:
-                ExpandPointWithCircle(x, y, nav2_costmap_2d::LETHAL_OBSTACLE, wandering_inflation_radius_, wandering_cost_scaling_factor_, rival_inscribed_radius_);
+                ExpandPointWithCircle(x, y, nav2_costmap_2d::MAX_NON_OBSTACLE, wandering_inflation_radius_, wandering_cost_scaling_factor_, rival_inscribed_radius_);
                 break;
 
             case RivalState::MOVING:
                 if(use_statistic_method_) {
                     vel_factor_ = std::min(1.0, hypot(rival_x_cov_, rival_y_cov_)/(cov_range_max_-cov_range_min_));
                     position_offset_ = std::max((rival_distance_ - safe_distance_), 0.0) * vel_factor_ * offset_vel_factor_weight_statistic_;
-                    ExpandPointWithCircle(x, y, nav2_costmap_2d::LETHAL_OBSTACLE, halted_inflation_radius_, halted_cost_scaling_factor_, rival_inscribed_radius_);
-                    ExpandLine(x, y, nav2_costmap_2d::LETHAL_OBSTACLE, moving_inflation_radius_, moving_cost_scaling_factor_, 0, 
+                    ExpandPointWithCircle(x, y, nav2_costmap_2d::MAX_NON_OBSTACLE, halted_inflation_radius_, halted_cost_scaling_factor_, rival_inscribed_radius_);
+                    ExpandLine(x, y, nav2_costmap_2d::MAX_NON_OBSTACLE, moving_inflation_radius_, moving_cost_scaling_factor_, 0, 
                         max_extend_length_* vel_factor_ * expand_vel_factor_weight_statistic_ / std::max(rival_distance_, 1.0));
                 } else {
                     vel_factor_ = std::min(1.0, hypot(v_from_localization_x_, v_from_localization_y_)/(vel_range_max_-vel_range_min_));
                     position_offset_ = std::max((rival_distance_ - safe_distance_), 0.0) * vel_factor_ * offset_vel_factor_weight_localization_;
-                    ExpandPointWithCircle(x, y, nav2_costmap_2d::LETHAL_OBSTACLE, halted_inflation_radius_, halted_cost_scaling_factor_, rival_inscribed_radius_);
-                    ExpandLine(x, y, nav2_costmap_2d::LETHAL_OBSTACLE, moving_inflation_radius_, moving_cost_scaling_factor_, 0, 
+                    ExpandPointWithCircle(x, y, nav2_costmap_2d::MAX_NON_OBSTACLE, halted_inflation_radius_, halted_cost_scaling_factor_, rival_inscribed_radius_);
+                    ExpandLine(x, y, nav2_costmap_2d::MAX_NON_OBSTACLE, moving_inflation_radius_, moving_cost_scaling_factor_, 0, 
                         max_extend_length_ * vel_factor_ * expand_vel_factor_weight_localization_ / std::max(rival_distance_, 1.0));
                 }
                 break;
             
             case RivalState::UNKNOWN:
-                ExpandPointWithCircle(x, y, nav2_costmap_2d::LETHAL_OBSTACLE, unknown_inflation_radius_, unknown_cost_scaling_factor_, rival_inscribed_radius_);
+                ExpandPointWithCircle(x, y, nav2_costmap_2d::MAX_NON_OBSTACLE, unknown_inflation_radius_, unknown_cost_scaling_factor_, rival_inscribed_radius_);
                 break;
             
             default:
@@ -434,38 +472,60 @@ namespace custom_path_costmap_plugin {
         }
     }
 
-    // Subscribe to the rival's pose
+    void RivalLayer::updateRadius() {
+        auto node = node_.lock();
+        // Update the inflation radius of the rival
+        node->get_parameter(name_ + "." + "rival_inscribed_radius", rival_inscribed_radius_);
+        if(!external_rival_data_path_.empty()) {
+            try {
+                YAML::Node config = YAML::LoadFile(external_rival_data_path_);
+                if (config["nav_rival_parameters"] && config["nav_rival_parameters"]["rival_inscribed_radius"]) {
+                    rival_inscribed_radius_ = config["nav_rival_parameters"]["rival_inscribed_radius"].as<double>();
+                } else {
+                    RCLCPP_WARN(rclcpp::get_logger("RivalLayer"), "rival_inscribed_radius not found in YAML file, using default value");
+                }
+            } catch (const std::exception &e) {
+                RCLCPP_ERROR(rclcpp::get_logger("RivalLayer"), "Failed to load YAML file: %s, using default value", e.what());
+            }
+        }
+        rival_inscribed_radius_ += robot_inscribed_radius_;
+        if(mode_param == 0) {
+            node->get_parameter(name_ + "." + "halted_inflation_radius", halted_inflation_radius_);
+            node->get_parameter(name_ + "." + "wandering_inflation_radius", wandering_inflation_radius_);
+            node->get_parameter(name_ + "." + "moving_inflation_radius", moving_inflation_radius_);
+            node->get_parameter(name_ + "." + "unknown_inflation_radius", unknown_inflation_radius_);
+        } else if(mode_param == 1) {
+            halted_inflation_radius_ = 0.02;
+            wandering_inflation_radius_ = 0.02;
+            moving_inflation_radius_ = 0.02;
+            unknown_inflation_radius_ = 0.02;
+        }
+        // TODO: Refactor the implementation code for inflation_radius_ to avoid misleading the variable name
+        halted_inflation_radius_ += rival_inscribed_radius_;
+        wandering_inflation_radius_ += rival_inscribed_radius_;
+        moving_inflation_radius_ += rival_inscribed_radius_;
+        unknown_inflation_radius_ += rival_inscribed_radius_;
+    }
+
     void RivalLayer::activate() {
         RCLCPP_INFO(
             rclcpp::get_logger("RivalLayer"), 
             "Activating RivalLayer");
     }
-
+        
     void RivalLayer::deactivate() {
         RCLCPP_INFO(
             rclcpp::get_logger("RivalLayer"), 
             "Deactivating RivalLayer");
     }
-
+            
+    // Subscribe to the rival's pose
     void RivalLayer::rivalPoseCallback(const nav_msgs::msg::Odometry::SharedPtr rival_pose) {
         // Store the rival's pose
         rival_x_ = rival_pose->pose.pose.position.x;
         rival_y_ = rival_pose->pose.pose.position.y;
         v_from_localization_x_ = rival_pose->twist.twist.linear.x;
         v_from_localization_y_ = rival_pose->twist.twist.linear.y;
-        if(robot_pose_received_ == true && robot_vel_received_ == true){
-            global_robot_vel_x_ =  (local_robot_vel_x_) * cos(-robot_pose_angle_) + (local_robot_vel_y_) * sin(-robot_pose_angle_);
-            global_robot_vel_y_ =  (local_robot_vel_y_) * cos(-robot_pose_angle_) - (local_robot_vel_x_) * sin(-robot_pose_angle_);   
-            //RCLCPP_INFO(logger_,"rival pose is changing");
-            rival_x_ -= global_robot_vel_x_ * rival_correction_factor_x_;
-            rival_y_ -= global_robot_vel_y_ * rival_correction_factor_y_;
-            double rival_x_vector_ = rival_x_ - robot_pose_x_;
-            double rival_y_vector_ = rival_y_ - robot_pose_y_;
-            rival_x_ -= local_robot_vel_z_ * (-rival_y_vector_) * rival_correction_factor_z_;
-            rival_y_ -= local_robot_vel_z_ * (rival_x_vector_) * rival_correction_factor_z_;
-            robot_pose_received_ = false;
-            robot_vel_received_ = false;
-        }
         rival_pose_received_ = true;
         
         // Pop the oldest pose if the queue is full
@@ -495,29 +555,6 @@ namespace custom_path_costmap_plugin {
     {
         rival_distance_ = msg->data;
         // RCLCPP_INFO(logger_, "rival_distance is : %f", msg->data);
-    }
-
-    void RivalLayer::robotPoseCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg){
-        tf2::Quaternion q;
-        tf2::fromMsg(msg->pose.orientation, q);
-        tf2::Matrix3x3 qt(q);
-        double pitch, row, yaw;
-        qt.getRPY(pitch, row, yaw);
-        robot_pose_angle_ = yaw;
-        robot_pose_x_ = msg->pose.position.x;
-        robot_pose_y_ = msg->pose.position.y;
-        robot_pose_received_ = true;
-        RCLCPP_INFO(logger_,"robot pose received");
-    }
-
-    void RivalLayer::robotVelCallback(const geometry_msgs::msg::Twist::SharedPtr msg){
-        if(msg->linear.x != 0 || msg->linear.y != 0 || msg->angular.z != 0){
-            local_robot_vel_x_ = msg->linear.x;
-            local_robot_vel_y_ = msg->linear.y;
-            local_robot_vel_z_ = msg->angular.z;
-            robot_vel_received_ = true;
-            //RCLCPP_INFO(logger_,"robot vel received");
-        }
     }
 
     void RivalLayer::PrintRivalState() {

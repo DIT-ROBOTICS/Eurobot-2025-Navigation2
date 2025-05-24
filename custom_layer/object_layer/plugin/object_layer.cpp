@@ -75,9 +75,6 @@ namespace Object_costmap_plugin {
         robot_pose.header.frame_id = "map";
         robot_pose.header.stamp = node->now();
         robot_pose.pose.orientation.w = 1.0;  // Identity quaternion
-        timer_ = node_->create_wall_timer(
-        std::chrono::seconds(2),
-        std::bind(&ObjectLayer::checkAndUpdateObjects, this));
 
     }
 
