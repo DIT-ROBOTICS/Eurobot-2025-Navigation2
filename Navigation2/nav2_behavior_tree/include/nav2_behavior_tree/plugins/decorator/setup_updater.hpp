@@ -14,13 +14,18 @@ namespace nav2_behavior_tree
     {
         public:
             SetupUpdater(const std::string & name, const BT::NodeConfiguration & conf);
+            BT::NodeStatus tick() override;
+            
             static BT::PortsList providedPorts()
             {
-                return { BT::InputPort<bool>("setup") };
+                return {
+                    BT::OutputPort<bool>("goalUpdated", "goal was changed")
+                };
             }
-            BT::NodeStatus tick() override;
+
         private:
             rclcpp::Node::SharedPtr node_;
+            bool isGoalUpdated{false};
             rclcpp::Client<std_srvs::srv::SetBool>::SharedPtr shrink_client_;
             geometry_msgs::msg::PoseStamped incomming_goal;
             std::vector<geometry_msgs::msg::PoseStamped> incomming_goal_list;
@@ -30,6 +35,5 @@ namespace nav2_behavior_tree
             bool goalUpdated();
     };
 }
-
 
 #endif  // NAV2_BEHAVIOR_TREE__PLUGINS__DECORATOR__SETUP_UPDATER_HPP_

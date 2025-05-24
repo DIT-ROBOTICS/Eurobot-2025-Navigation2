@@ -10,6 +10,7 @@ namespace nav2_behavior_tree
         // Retrieve node from the blackboard
         node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
 
+        isGoalUpdated = false;
         // Create client to shrink's service
         shrink_client_ = node_->create_client<std_srvs::srv::SetBool>(
             "/shrink/doneShrink",
@@ -52,7 +53,11 @@ namespace nav2_behavior_tree
 
     inline BT::NodeStatus SetupUpdater::tick()
     {
-        if(goalUpdated()) requestShrinkBack();
+        isGoalUpdated = goalUpdated();
+        setOutput("goalUpdated", isGoalUpdated);
+        if(isGoalUpdated){
+            requestShrinkBack();
+        }
 
         return child_node_->executeTick();
     }
