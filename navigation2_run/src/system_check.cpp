@@ -134,6 +134,8 @@ private:
         auto response = future.get();
         if (response->success) {
             RCLCPP_INFO(this->get_logger(), "\033[1;32m ReadySignal SUCCESS: group=%d \033[0m", response->group);
+            running_ = true; // Set running state to true after successful signal
+            return;
         } else {
             RCLCPP_WARN(this->get_logger(), "ReadySignal FAILED");
         }
