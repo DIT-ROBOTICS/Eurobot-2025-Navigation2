@@ -6,7 +6,7 @@
 class RivalSimPub : public rclcpp::Node {
     public:
         RivalSimPub() : Node("rival_sim_pub") {
-            rival_pub_ = this->create_publisher<nav_msgs::msg::Odometry>("/rival/final_pose", 100);
+            rival_pub_ = this->create_publisher<nav_msgs::msg::Odometry>("/rhino_pose", 100);
             rival_timer_ = this->create_wall_timer(std::chrono::milliseconds(time_span_), std::bind(&RivalSimPub::timer_callback, this));
 
             // Get the rival mode -> 0: Halted, 1: Wandering, 2: Moving, 3: Moving with noise

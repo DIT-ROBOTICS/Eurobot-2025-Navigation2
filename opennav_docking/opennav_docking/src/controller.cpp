@@ -64,7 +64,7 @@ Controller::Controller(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node) 
     
     // Subscribe to the rival's pose
     rival_pose_sub_ = node->create_subscription<nav_msgs::msg::Odometry>(
-        "/rival/final_pose",
+        "/rhino_pose",
         rclcpp::QoS(10).durability_volatile(),
         [this](const nav_msgs::msg::Odometry::SharedPtr msg) {
             rival_pose_.x_ = (*msg).pose.pose.position.x;

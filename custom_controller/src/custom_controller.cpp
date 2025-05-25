@@ -59,7 +59,7 @@ void CustomController::configure(
         });
 
     rival_pose_subscription_ = node->create_subscription<nav_msgs::msg::Odometry>(
-        "/rival/final_pose",  // Replace with your actual rival pose topic
+        "/rhino_pose",  // Replace with your actual rival pose topic
         rclcpp::QoS(10),
         [this](const nav_msgs::msg::Odometry::SharedPtr msg) {
             rival_pose_ = *msg;
