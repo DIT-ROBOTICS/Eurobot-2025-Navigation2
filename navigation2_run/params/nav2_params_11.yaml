@@ -288,7 +288,7 @@ global_costmap:
         safe_distance: 0.5
       object_layer:
         plugin: "Object_costmap_plugin::ObjectLayer"
-        enabled: True
+        enabled: False
         robot_inscribed_radius: 0.22
         column_inscribed_radius: 0.075
         board_inscribed_radius: 0.01
