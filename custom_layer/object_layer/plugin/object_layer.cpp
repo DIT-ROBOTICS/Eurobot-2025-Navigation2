@@ -298,6 +298,13 @@ namespace Object_costmap_plugin {
             geometry_msgs::msg::PoseStamped poseStamped;
             poseStamped.pose = pose;
             poseStamped.header.frame_id = "map";
+            // Skip out of range poses
+            if(poseStamped.pose.position.x < 0.0 || poseStamped.pose.position.x > 3.0){
+                continue;
+            }
+            if(poseStamped.pose.position.y < 0.0 || poseStamped.pose.position.y > 2.0){
+                continue;
+            }
             obstacleList.push_back(poseStamped);
         }
         resetMapToValue(0, 0, getSizeInCellsX(), getSizeInCellsY(), nav2_costmap_2d::FREE_SPACE);
