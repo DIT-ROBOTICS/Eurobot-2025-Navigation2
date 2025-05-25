@@ -317,7 +317,7 @@ global_costmap:
                              2.775, 0.075, 0.45, 0.15,  # H
                              2.775, 0.875, 0.45, 0.45,  # I
                              2.625, 1.775, 0.45, 0.45,] # J 
-        inflation_length: 0.2
+        inflation_length: 0.3
         cost_scaling_factor: 5.0
       always_send_full_costmap: True
 
@@ -415,6 +415,7 @@ docking_server:
     fixed_frame: "map"
     dock_backwards: false
     dock_prestaging_tolerance: 0.01
+    enable_stop_robot: false
     velocity_smoother_wait: 0.12
 
     # Types of docks
