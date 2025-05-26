@@ -412,6 +412,10 @@ docking_server:
     dock_prestaging_tolerance: 0.01
     enable_stop_robot: false
     velocity_smoother_wait: 0.12
+    external_rival_data_path: "/home/share/data/rival_params.yaml"
+    shrink_nav_rival_radius: 0.05
+    shrink_dock_rival_radius: 0.27
+    shrink_dock_rival_degree: 60.0
 
     # Types of docks
     dock_plugins: ["dock"]
