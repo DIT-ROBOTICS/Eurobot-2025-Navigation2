@@ -88,6 +88,7 @@ namespace Object_costmap_plugin {
             double board_width = 0.4, board_height = 0.1;
             double overturn_width = 0.11, overturn_height = 0.075;
             std::mutex data_mutex_;
+            int timer_period; //milliseconds
 
     };
 } // namespace Object_costmap_plgin

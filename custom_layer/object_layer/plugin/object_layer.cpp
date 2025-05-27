@@ -29,7 +29,8 @@ namespace Object_costmap_plugin {
         declareParameter("lower_x_range", rclcpp::ParameterValue(0.11));
         declareParameter("y_range", rclcpp::ParameterValue(0.22));
         declareParameter("base_frame", rclcpp::ParameterValue("base_footprint"));
-        
+        declareParameter("timer_period", rclcpp::ParameterValue(200));
+
         node->get_parameter(name_ + "." + "base_frame", base_frame);
         node->get_parameter(name_ + "." + "enabled", enabled_);
         node->get_parameter(name_ + "." + "robot_inscribed_radius", robot_inscribed_radius);
@@ -50,6 +51,7 @@ namespace Object_costmap_plugin {
         node->get_parameter(name_ + "." + "upper_x_range", upper_x_range);
         node->get_parameter(name_ + "." + "lower_x_range", lower_x_range);
         node->get_parameter(name_ + "." + "y_range", y_range);
+        node->get_parameter(name_ + "." + "timer_period", timer_period);
         RCLCPP_INFO(
             rclcpp::get_logger("ObjectLayer"), 
             "ObjectLayer parameter enable %d", enabled_);
@@ -77,7 +79,7 @@ namespace Object_costmap_plugin {
         robot_pose.pose.orientation.w = 1.0;  // Identity quaternion
         if (node) {
             update_timer_ = node->create_wall_timer(
-            std::chrono::milliseconds(2000),  // 2 秒
+            std::chrono::milliseconds(timer_period), 
             std::bind(&ObjectLayer::timerCallback, this));
         }
 
