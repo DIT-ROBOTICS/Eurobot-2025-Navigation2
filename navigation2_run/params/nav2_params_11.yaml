@@ -404,7 +404,7 @@ docking_server:
     controller_frequency: 20.0
     initial_perception_timeout: 5.0
     wait_charge_timeout: 5.0
-    dock_approach_timeout: 3.0
+    dock_approach_timeout: 5.0
     max_retries: 0
     base_frame: "base_footprint"
     fixed_frame: "map"
@@ -461,9 +461,9 @@ docking_server:
       min_linear_vel: 0.0
       linear_kp_accel_vel: 0.5
       linear_ki_accel_vel: 0.1
-      linear_kp_decel_dis: 3.0
+      linear_kp_decel_dis: 2.5
       angular_kp: 4.0
-      deceleration_distance: 0.05
+      deceleration_distance: 0.7
       reserved_distance: 0.0
       external_rival_data_path: "/home/share/data/rival_params.yaml"
       stop_degree: 120.0
