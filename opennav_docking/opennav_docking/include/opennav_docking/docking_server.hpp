@@ -245,6 +245,8 @@ protected:
   double dock_prestaging_tolerance_;
   // The adjustment for graceful controller
   double backward_projection_;
+  // If true, the robot will stop when stop_robot_ is set to true
+  bool enable_stop_robot_;
 
   // This is a class member so it can be accessed in publish feedback
   rclcpp::Time action_start_time_;

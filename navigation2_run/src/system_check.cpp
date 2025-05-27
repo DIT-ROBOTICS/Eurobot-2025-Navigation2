@@ -62,10 +62,13 @@ private:
   rclcpp_action::Client<NavigateToPose>::SharedPtr navigate_to_pose_client_;
   rclcpp_action::Client<DockRobot>::SharedPtr dock_robot_client_;
   rclcpp::TimerBase::SharedPtr obstacle_timer_;
+  rclcpp::TimerBase::SharedPtr ready_signal_timer_;
   bool running_;
   int costmap_tolerance_;
   std::string external_rival_data_path_;
   int obstacle_check_count_;
+  bool warn_once_ = true;
+  int fail_count_ = 0;
 
   void readyCallback(const std_msgs::msg::String::SharedPtr msg)
   {
@@ -123,24 +126,45 @@ private:
     }
   }
 
+  // Update sendReadySignal as follows:
   void sendReadySignal(int group, int state)
   {
     auto request = std::make_shared<btcpp_ros2_interfaces::srv::StartUpSrv::Request>();
     request->group = group;
     request->state = state;
-
     ready_srv_client_->async_send_request(request,
-      [this](rclcpp::Client<btcpp_ros2_interfaces::srv::StartUpSrv>::SharedFuture future) {
+      [this, group, state](rclcpp::Client<btcpp_ros2_interfaces::srv::StartUpSrv>::SharedFuture future) {
         auto response = future.get();
         if (response->success) {
             RCLCPP_INFO(this->get_logger(), "\033[1;32m ReadySignal SUCCESS: group=%d \033[0m", response->group);
+            RCLCPP_INFO(this->get_logger(), "\033[1;32m Check again after 5 second... \033[0m");
+            // Wait 5 seconds before next action
+            ready_signal_timer_ = this->create_wall_timer(
+                5s, [this]() {
+                    ready_signal_timer_->cancel();
+                    running_ = false;
+                    warn_once_ = true; // Reset warning flag for next signal
+                });
         } else {
-            RCLCPP_WARN(this->get_logger(), "ReadySignal FAILED");
+            RCLCPP_WARN(this->get_logger(), "ReadySignal FAILED, retrying after 1 second...");
+            fail_count_++;
+            // Wait 1 second before next action
+            ready_signal_timer_ = this->create_wall_timer(
+                1s, [this, group, state]() {
+                    ready_signal_timer_->cancel();
+                    // Retry sending the signal after 1 second
+                    if(fail_count_ >= 3) {
+                        RCLCPP_ERROR(this->get_logger(), "Failed to send ReadySignal 3 times, aborting...");
+                        running_ = false; // Reset running state
+                        warn_once_ = true; // Reset warning flag for next signal
+                        fail_count_ = 0; // Reset fail count
+                        return;
+                    }
+                    sendReadySignal(group, state);
+                });
         }
       });
-
-      running_ = false; // Reset running state after sending the signal
-  }
+  } 
 
   bool inObstacle() {
     if (!latest_costmap_ || !latest_pose_) {
@@ -161,23 +185,31 @@ private:
   }
 
   void shrinkRivalRadius() {
-      try {
-          YAML::Node config = YAML::LoadFile(external_rival_data_path_);
-          if (config["nav_rival_parameters"] && config["nav_rival_parameters"]["rival_inscribed_radius"]) {
-              double rival_inscribed_radius = config["nav_rival_parameters"]["rival_inscribed_radius"].as<double>();
-              rival_inscribed_radius -= 0.01;
-              config["nav_rival_parameters"]["rival_inscribed_radius"] = std::max(rival_inscribed_radius, 0.0);
-              RCLCPP_INFO(this->get_logger(), "\033[1;35m Shrunk rival_inscribed_radius to %f \033[0m", config["nav_rival_parameters"]["rival_inscribed_radius"].as<double>());
-          } else {
-              RCLCPP_WARN(this->get_logger(), "rival_inscribed_radius not found in YAML file, cannot shrink automatically");
-              return;
-          }
-          std::ofstream fout(external_rival_data_path_);
-          fout << config;
-          fout.close();
-      } catch (const std::exception &e) {
-          RCLCPP_ERROR(this->get_logger(), "%s %s -> Failed to update YAML file, cannot shrink automatically", e.what(), external_rival_data_path_.c_str());
-      }
+    try {
+        YAML::Node config = YAML::LoadFile(external_rival_data_path_);
+        if (config["nav_rival_parameters"] && config["nav_rival_parameters"]["rival_inscribed_radius"]) {
+            double rival_inscribed_radius = config["nav_rival_parameters"]["rival_inscribed_radius"].as<double>();
+            if (rival_inscribed_radius > 0.0) {
+                rival_inscribed_radius = std::max(0.0, std::round((rival_inscribed_radius - 0.01) * 100.0) / 100.0);
+                config["nav_rival_parameters"]["rival_inscribed_radius"] = rival_inscribed_radius;
+                std::ofstream fout(external_rival_data_path_);
+                fout << config;
+                fout.close();
+            } else {
+                if(warn_once_) {
+                    RCLCPP_WARN(this->get_logger(), "rival_inscribed_radius is already at 0, cannot shrink further");
+                    RCLCPP_WARN(this->get_logger(), "Aborting automatic shrinking process...");
+                    warn_once_ = false; // Prevent further warnings
+                } else {
+                  return; // Avoid repeated warnings
+                }
+            }
+        } else {
+            RCLCPP_WARN(this->get_logger(), "rival_inscribed_radius not found in YAML file, cannot shrink automatically");
+        }
+    } catch (const std::exception &e) {
+        RCLCPP_ERROR(this->get_logger(), "%s %s -> Failed to update YAML file, cannot shrink automatically", e.what(), external_rival_data_path_.c_str());
+    }
   }
 };
 

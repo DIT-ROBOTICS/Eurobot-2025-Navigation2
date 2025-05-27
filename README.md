@@ -4,11 +4,24 @@
 
 ### 🧭 Basic Navigation  
 Enables smooth and efficient autonomous movement.  
-- Uses `/nav_to_pose` and `/nav_thru_poses` action servers for basic navigation.
+- Uses `/navigate_to_pose` and `/navigate_thru_poses` action servers for basic navigation.
 
 ### 🧭 Docking Integration  
 Seamlessly integrates docking and navigation for autonomous charging or station return.  
 - Utilizes the `/dock_robot` action server to control the docking process.
+
+### ✅ System Check
+
+Ensures the navigation system is fully operational before mission start.
+
+The system performs the following checks:
+
+- ✅ Verifies the **ready signal service server** is available.
+- ✅ Confirms the **`/navigate_to_pose`** action server is online.
+- ✅ Confirms the **`/dock_robot`** action server is online.
+- ✅ Checks whether the robot is **within the rival radius**; if so, it triggers the **shrinking behavior** to avoid conflicts.
+
+Once all conditions are met, the system will send a **"ready" signal** automatically.
 
 ### 🧩 Multi-Functional Interfaces  
 Offers a variety of commands for enhanced control and flexibility:
@@ -49,6 +62,7 @@ The keepout zones correspond to specific regions on the Eurobot 2025 field, used
   - **Offset Direction**: `x`, `y`, `z`  
   - **Docking Style**: `ordinary`, `gentle`, `rush`  
   - **Special Control**: `delaySpin`, `nonStop`, `didilong`
+  - **Special Robot Status**: `constructing`
 
 For more details, please refer to the [**README file**](opennav_docking/docs/dock_robot_keywords.md)
 

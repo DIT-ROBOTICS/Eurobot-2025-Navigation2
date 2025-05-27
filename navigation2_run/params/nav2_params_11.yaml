@@ -312,7 +312,7 @@ global_costmap:
                              2.775, 0.075, 0.45, 0.15,  # H
                              2.775, 0.875, 0.45, 0.45,  # I
                              2.625, 1.775, 0.45, 0.45,] # J 
-        inflation_length: 0.2
+        inflation_length: 0.3
         cost_scaling_factor: 5.0
       always_send_full_costmap: True
 
@@ -404,13 +404,18 @@ docking_server:
     controller_frequency: 20.0
     initial_perception_timeout: 5.0
     wait_charge_timeout: 5.0
-    dock_approach_timeout: 3.0
+    dock_approach_timeout: 5.0
     max_retries: 0
     base_frame: "base_footprint"
     fixed_frame: "map"
     dock_backwards: false
     dock_prestaging_tolerance: 0.01
+    enable_stop_robot: false
     velocity_smoother_wait: 0.12
+    external_rival_data_path: "/home/share/data/rival_params.yaml"
+    shrink_nav_rival_radius: 0.05
+    shrink_dock_rival_radius: 0.27
+    shrink_dock_rival_degree: 60.0
 
     # Types of docks
     dock_plugins: ["dock"]
@@ -456,9 +461,9 @@ docking_server:
       min_linear_vel: 0.0
       linear_kp_accel_vel: 0.5
       linear_ki_accel_vel: 0.1
-      linear_kp_decel_dis: 3.0
+      linear_kp_decel_dis: 2.5
       angular_kp: 4.0
-      deceleration_distance: 0.05
+      deceleration_distance: 0.7
       reserved_distance: 0.0
       external_rival_data_path: "/home/share/data/rival_params.yaml"
       stop_degree: 120.0
