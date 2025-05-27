@@ -89,3 +89,15 @@ Additional behaviors for special use.
 **Default:** none
 
 ---
+
+### 7. Special Robot Status
+
+Declares a special status of the robot that influences rival detection logic or behavior.
+
+| Keyword         | Behavior                                                                                                   | 
+|-----------------|------------------------------------------------------------------------------------------------------------|
+| `consturcting` | Declares that the robot is entering a *construction phase*, which temporarily loosens rival detection criteria. This helps prevent false positives that might interrupt mission flow. |
+
+- **Default:** none
+
+---

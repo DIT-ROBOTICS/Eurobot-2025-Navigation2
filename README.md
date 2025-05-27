@@ -49,6 +49,7 @@ The keepout zones correspond to specific regions on the Eurobot 2025 field, used
   - **Offset Direction**: `x`, `y`, `z`  
   - **Docking Style**: `ordinary`, `gentle`, `rush`  
   - **Special Control**: `delaySpin`, `nonStop`, `didilong`
+  - **Special Robot Status**: `constructing`
 
 For more details, please refer to the [**README file**](opennav_docking/docs/dock_robot_keywords.md)
 

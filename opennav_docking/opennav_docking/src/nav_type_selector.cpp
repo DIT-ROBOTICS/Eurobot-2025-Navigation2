@@ -63,12 +63,12 @@ void NavTypeSelector::setType(std::string const & mode, char & offset_direction,
     }
 
     // Determine special robot status
-    if(strstr(mode.c_str(), "startConstruct") != nullptr) {
-        setRivalParams(shrink_nav_rival_radius_, shrink_dock_rival_radius_, shrink_dock_rival_degree_, true);
-        RCLCPP_INFO(node_->get_logger(), "\033[1;35m Start constructing... \033[0m");
-    } else if(strstr(mode.c_str(), "endConstruct") != nullptr) {
-        setRivalParams(initial_nav_rival_radius_, initial_dock_rival_radius_, initial_dock_rival_degree_, false);
-        RCLCPP_INFO(node_->get_logger(), "\033[1;35m End constructing... \033[0m");
+    if(strstr(mode.c_str(), "constructing") != nullptr) {
+        setRivalParams(shrink_nav_rival_radius_, shrink_dock_rival_radius_, shrink_dock_rival_degree_);
+        RCLCPP_INFO(node_->get_logger(), "\033[1;35m Constructing... \033[0m");
+    } else {
+        setRivalParams(initial_nav_rival_radius_, initial_dock_rival_radius_, initial_dock_rival_degree_);
+        is_initial_rival_params_set_ = false;  // Reset the flag for next construction
     }
 
     // Determine the dock controller type
@@ -116,11 +116,11 @@ void NavTypeSelector::publishAll() {
     dock_controller_selector_pub_->publish(dock_controller_selector_msg_);    // Publish the dock controller type
 }
 
-void NavTypeSelector::setRivalParams(double navRadius, double dockRadius, double dockDegree, bool setInitialValue) {
+void NavTypeSelector::setRivalParams(double navRadius, double dockRadius, double dockDegree) {
     try {
         YAML::Node config = YAML::LoadFile(external_rival_data_path_);
         if (config["nav_rival_parameters"] && config["nav_rival_parameters"]["rival_inscribed_radius"]) {
-            if(setInitialValue) initial_nav_rival_radius_ = config["nav_rival_parameters"]["rival_inscribed_radius"].as<double>();
+            if(!is_initial_rival_params_set_) initial_nav_rival_radius_ = config["nav_rival_parameters"]["rival_inscribed_radius"].as<double>();
             double rival_inscribed_radius = std::round(navRadius * 100.0) / 100.0;
             config["nav_rival_parameters"]["rival_inscribed_radius"] = rival_inscribed_radius;
         } else {
@@ -128,7 +128,7 @@ void NavTypeSelector::setRivalParams(double navRadius, double dockRadius, double
             return;
         }
         if (config["dock_rival_parameters"] && config["dock_rival_parameters"]["dock_rival_radius"]) {
-            if(setInitialValue) initial_dock_rival_radius_ = config["dock_rival_parameters"]["dock_rival_radius"].as<double>();
+            if(!is_initial_rival_params_set_) initial_dock_rival_radius_ = config["dock_rival_parameters"]["dock_rival_radius"].as<double>();
             double dock_rival_radius = std::round(dockRadius * 100.0) / 100.0;
             config["dock_rival_parameters"]["dock_rival_radius"] = dock_rival_radius;
         } else {
@@ -136,7 +136,7 @@ void NavTypeSelector::setRivalParams(double navRadius, double dockRadius, double
             return;
         }
         if (config["dock_rival_parameters"] && config["dock_rival_parameters"]["dock_rival_degree"]) {
-            if(setInitialValue) initial_dock_rival_degree_ = config["dock_rival_parameters"]["dock_rival_degree"].as<double>();
+            if(!is_initial_rival_params_set_) initial_dock_rival_degree_ = config["dock_rival_parameters"]["dock_rival_degree"].as<double>();
             double dock_rival_degree = std::round(dockDegree * 100.0) / 100.0;
             config["dock_rival_parameters"]["dock_rival_degree"] = dock_rival_degree;
         } else {
@@ -146,6 +146,10 @@ void NavTypeSelector::setRivalParams(double navRadius, double dockRadius, double
         std::ofstream fout(external_rival_data_path_);
         fout << config;
         fout.close();
+
+        if(!is_initial_rival_params_set_) {
+            is_initial_rival_params_set_ = true;
+        }
     } catch (const std::exception &e) {
         RCLCPP_ERROR(node_->get_logger(), "%s %s -> Failed to update rival YAML file", e.what(), external_rival_data_path_.c_str());
         return;

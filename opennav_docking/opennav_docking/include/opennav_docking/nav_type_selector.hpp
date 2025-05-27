@@ -17,7 +17,7 @@ public:
 
 private:
   void publishAll();
-  void setRivalParams(double navRadius, double dockRadius, double dockDegree, bool setInitialValue);
+  void setRivalParams(double navRadius, double dockRadius, double dockDegree);
 
   std::shared_ptr<rclcpp_lifecycle::LifecycleNode> node_;
 
@@ -34,4 +34,6 @@ private:
   std::string external_rival_data_path_;
   double initial_nav_rival_radius_, initial_dock_rival_radius_, initial_dock_rival_degree_;
   double shrink_nav_rival_radius_, shrink_dock_rival_radius_, shrink_dock_rival_degree_;
+
+  bool is_initial_rival_params_set_ = false;
 };
