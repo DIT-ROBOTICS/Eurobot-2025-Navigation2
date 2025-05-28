@@ -116,7 +116,7 @@ void NavTypeSelector::publishAll() {
     dock_controller_selector_pub_->publish(dock_controller_selector_msg_);    // Publish the dock controller type
 }
 
-void NavTypeSelector::setRivalParams(double navRadius, double dockRadius, double dockDegree) {
+void NavTypeSelector::setRivalParams(double & navRadius, double & dockRadius, double & dockDegree) {
     try {
         YAML::Node config = YAML::LoadFile(external_rival_data_path_);
         if (config["nav_rival_parameters"] && config["nav_rival_parameters"]["rival_inscribed_radius"]) {

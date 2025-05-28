@@ -455,7 +455,7 @@ docking_server:
       linear_ki_accel_vel: 0.1
       linear_kp_decel_dis: 3.0
       angular_kp: 3.0
-      deceleration_distance: 0.1
+      deceleration_distance: 0.08
       reserved_distance: 0.0
       external_rival_data_path: "/home/share/data/rival_params.yaml"
       stop_degree: 120.0
