@@ -17,7 +17,7 @@ public:
 
 private:
   void publishAll();
-  void setRivalParams(double navRadius, double dockRadius, double dockDegree);
+  void setRivalParams(double & navRadius, double & dockRadius, double & dockDegree);
 
   std::shared_ptr<rclcpp_lifecycle::LifecycleNode> node_;
 
