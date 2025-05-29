@@ -49,6 +49,12 @@ public:
     this->declare_parameter("external_rival_data_path", "");
     this->get_parameter("external_rival_data_path", external_rival_data_path_);
 
+    // send goal
+    this->declare_parameter("goal_x", 1.5);
+    this->declare_parameter("goal_y", 1.0);
+    this->get_parameter("goal_x", goal_x);
+    this->get_parameter("goal_y", goal_y);
+
     RCLCPP_INFO(this->get_logger(), "\033[1;35m SystemCheck started, waiting for startup plan... \033[0m");
   }
 
@@ -69,6 +75,8 @@ private:
   int obstacle_check_count_;
   bool warn_once_ = true;
   int fail_count_ = 0;
+  double goal_x = 0.0;
+  double goal_y = 0.0;
 
   void readyCallback(const std_msgs::msg::String::SharedPtr msg)
   {
@@ -100,9 +108,45 @@ private:
       return;
     }
 
+    // test a point 
+    if(sendGoal(goal_x, goal_y)) {
+      RCLCPP_INFO(this->get_logger(), "\033[1;32m Goal reach successfully! \033[0m");
+    } else {
+      RCLCPP_ERROR(this->get_logger(), "Failed to send goal.");
+      return;
+    }
+
+
     // All systems ready
     RCLCPP_INFO(this->get_logger(), "\033[1;32m All systems ready !!! \033[0m");
     sendReadySignal(3, 3);  // group = 3 (navigation), state = 3 (START)
+  }
+
+
+  bool sendGoal(double map_x, double map_y)
+  {
+    RCLCPP_INFO(this->get_logger(), "Sending goal to navigate to pose: (%.2f, %.2f)", map_x, map_y);
+    auto goal_msg = NavigateToPose::Goal();
+    goal_msg.pose.header.frame_id = "map";
+    goal_msg.pose.header.stamp = this->now();
+    goal_msg.pose.pose.position.x = map_x;
+    goal_msg.pose.pose.position.y = map_y;
+    goal_msg.pose.pose.orientation.w = 1.0;
+
+    auto send_goal_options = rclcpp_action::Client<NavigateToPose>::SendGoalOptions();
+    send_goal_options.result_callback =
+      [this](const rclcpp_action::ClientGoalHandle<NavigateToPose>::WrappedResult & result) {
+        if (result.code == rclcpp_action::ResultCode::SUCCEEDED) {
+          RCLCPP_INFO(this->get_logger(), "\033[1;32m Goal reached successfully! \033[0m");
+          return true;
+        } else {
+          RCLCPP_ERROR(this->get_logger(), "Failed to reach goal.");
+          return false;
+        }
+      };
+
+    navigate_to_pose_client_->async_send_goal(goal_msg, send_goal_options);
+    return true;
   }
 
   void obstacleCheckTimer()
@@ -142,7 +186,7 @@ private:
             ready_signal_timer_ = this->create_wall_timer(
                 5s, [this]() {
                     ready_signal_timer_->cancel();
-                    running_ = false;
+                    // running_ = false;
                     warn_once_ = true; // Reset warning flag for next signal
                 });
         } else {
@@ -155,7 +199,7 @@ private:
                     // Retry sending the signal after 1 second
                     if(fail_count_ >= 3) {
                         RCLCPP_ERROR(this->get_logger(), "Failed to send ReadySignal 3 times, aborting...");
-                        running_ = false; // Reset running state
+                        // running_ = false; // Reset running state
                         warn_once_ = true; // Reset warning flag for next signal
                         fail_count_ = 0; // Reset fail count
                         return;
