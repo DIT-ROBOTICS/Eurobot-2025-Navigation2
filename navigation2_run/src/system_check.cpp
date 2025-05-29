@@ -50,8 +50,8 @@ public:
     this->get_parameter("external_rival_data_path", external_rival_data_path_);
 
     // send goal
-    this->declare_parameter("goal_x", 1.5);
-    this->declare_parameter("goal_y", 1.0);
+    this->declare_parameter("goal_x", 1.2);
+    this->declare_parameter("goal_y", 0.4);
     this->get_parameter("goal_x", goal_x);
     this->get_parameter("goal_y", goal_y);
 
@@ -181,7 +181,7 @@ private:
         auto response = future.get();
         if (response->success) {
             RCLCPP_INFO(this->get_logger(), "\033[1;32m ReadySignal SUCCESS: group=%d \033[0m", response->group);
-            RCLCPP_INFO(this->get_logger(), "\033[1;32m Check again after 5 second... \033[0m");
+            // RCLCPP_INFO(this->get_logger(), "\033[1;32m Check again after 5 second... \033[0m");
             // Wait 5 seconds before next action
             ready_signal_timer_ = this->create_wall_timer(
                 5s, [this]() {
