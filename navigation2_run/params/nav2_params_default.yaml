@@ -252,7 +252,7 @@ global_costmap:
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 5.0
-        inflation_radius: 0.2
+        inflation_radius: 0.22
       rival_layer:
         plugin: "custom_path_costmap_plugin::RivalLayer"
         enabled: True
